@@ -4,7 +4,7 @@ namespace Actinoids\Modlr\RestOdm\Rest;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Zarathustra\Modlr\RestOdm\Adapter\AdapterInterface;
+use Actinoids\Modlr\RestOdm\Adapter\AdapterInterface;
 
 /**
  * REST Kernel.

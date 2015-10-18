@@ -2,7 +2,7 @@
 
 namespace Actinoids\Modlr\RestOdm\Rest;
 
-use Zarathustra\Modlr\RestOdm\Exception\AbstractHttpException;
+use Actinoids\Modlr\RestOdm\Exception\AbstractHttpException;
 
 /**
  * REST Exceptions.
