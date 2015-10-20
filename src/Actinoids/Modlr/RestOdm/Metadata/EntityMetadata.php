@@ -20,11 +20,27 @@ class EntityMetadata implements AttributeInterface
     const NAMESPACE_DELIM = '\\';
 
     /**
-     * Whether this class is considered abstract.
+     * The database name.
      *
-     * @var bool
+     * @var string
      */
-    public $abstract = false;
+    public $db;
+
+    /**
+     * The collection name.
+     *
+     * @var string
+     */
+    public $collection;
+
+    /**
+     * The ID strategy to use.
+     * Currently object is the only valid choice.
+     *
+     * @todo Implement an auto-increment integer id strategy.
+     * @var string
+     */
+    public $idStrategy = 'object';
 
     /**
      * Whether this class is considered polymorphic.
@@ -64,6 +80,14 @@ class EntityMetadata implements AttributeInterface
     public $relationships = [];
 
     /**
+     * All mixins assigned to this entity.
+     *
+     * @todo    Implement this.
+     * @var     MixinMetadata[]
+     */
+    public $mixins = [];
+
+    /**
      * Constructor.
      *
      * @param   string  $type   The resource identifier type.
@@ -83,11 +107,13 @@ class EntityMetadata implements AttributeInterface
     public function merge(EntityMetadata $metadata)
     {
         $this->setType($metadata->type);
-        $this->setAbstract($metadata->isAbstract());
+        // @todo Remove these if necessary.
         $this->setPolymorphic($metadata->isPolymorphic());
         $this->extends = $metadata->extends;
         $this->mergeAttributes($metadata->getAttributes());
         $this->mergeRelationships($metadata->getRelationships());
+        // @todo Implement this.
+        // $this->mergeMixins($metadata->getMixins());
         return $this;
     }
 
@@ -115,8 +141,9 @@ class EntityMetadata implements AttributeInterface
      */
     private function mergeAttributes(array $toAdd)
     {
-        $this->attributes = array_merge($this->attributes, $toAdd);
-        ksort($this->attributes);
+        foreach ($toAdd as $attribute) {
+            $this->addAttribute($attribute);
+        }
         return $this;
     }
 
@@ -128,30 +155,9 @@ class EntityMetadata implements AttributeInterface
      */
     private function mergeRelationships(array $toAdd)
     {
-        $this->relationships = array_merge($this->relationships, $toAdd);
-        ksort($this->relationships);
-        return $this;
-    }
-
-    /**
-     * Whether this metadata represents an abstract class.
-     *
-     * @return  bool
-     */
-    public function isAbstract()
-    {
-        return (Boolean) $this->abstract;
-    }
-
-    /**
-     * Sets this metadata as representing an abstract class.
-     *
-     * @param   bool    $bit
-     * @return  self
-     */
-    public function setAbstract($bit = true)
-    {
-        $this->abstract = (Boolean) $bit;
+        foreach ($toAdd as $relationship) {
+            $this->addRelationship($relationship);
+        }
         return $this;
     }
 
