@@ -52,7 +52,7 @@ class CacheWarmer
     /**
      * Clears all metadata objects from the cache.
      *
-     * @return  self
+     * @return  array
      */
     public function clear()
     {
