@@ -4,6 +4,9 @@ namespace Actinoids\Modlr\RestOdm\Metadata\Driver;
 
 /**
  * Interface for metadata driver implementations.
+ * Drivers generally should not be responsible for validating the created metadata objects, nor generally should not throw Exceptions. (Unless there are fatal errors).
+ * Instead they should be concerned with loading a complete (defaulted if necessary) metadata object.
+ * The MetadataFactory is then responsible for validating the objects created by the driver.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
