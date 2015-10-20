@@ -14,6 +14,16 @@ class MetadataException extends \Exception implements ExceptionInterface
         return new self(sprintf('Unable to locate metadata mapping information for Entity type "%s"', $entityType), 100);
     }
 
+    public static function invalidMetadata($entityType, $message)
+    {
+        return new self(sprintf('The mapping for Entity "%s" is invalid: %s', $entityType, $message), 101);
+    }
+
+    public static function fatalDriverError($entityType, $message)
+    {
+        return new self(sprintf('Unable to load metadata for Entity type "%s". A fatal driver error ocurred: %s', $entityType, $message), 102);
+    }
+
     public static function invalidEntityType($entityType)
     {
         return new self(sprintf('The provided Entity type "%s" is invalid.', $entityType));

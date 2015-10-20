@@ -4,6 +4,7 @@ namespace Actinoids\Modlr\RestOdm\Metadata\Driver;
 
 use Actinoids\Modlr\RestOdm\Metadata;
 use Actinoids\Modlr\RestOdm\Exception\RuntimeException;
+use Actinoids\Modlr\RestOdm\Exception\MetadataException;
 use Symfony\Component\Yaml\Yaml;
 
 /**
@@ -29,8 +30,16 @@ class YamlFileDriver extends AbstractFileDriver
 
         $metadata = new Metadata\EntityMetadata($type);
 
-        if (isset($mapping['entity']['abstract'])) {
-            $metadata->setAbstract($mapping['entity']['abstract']);
+        // if (isset($mapping['entity']['abstract'])) {
+        //     $metadata->setAbstract($mapping['entity']['abstract']);
+        // }
+
+        if (isset($mapping['entity']['db'])) {
+            $metadata->db = $mapping['entity']['db'];
+        }
+
+        if (isset($mapping['entity']['collection'])) {
+            $metadata->collection = $mapping['entity']['collection'];
         }
 
         if (isset($mapping['entity']['extends'])) {
@@ -40,6 +49,9 @@ class YamlFileDriver extends AbstractFileDriver
         if (isset($mapping['entity']['polymorphic'])) {
             $metadata->setPolymorphic($mapping['entity']['polymorphic']);
         }
+
+        // var_dump($metadata);
+        // die();
 
         $this->setAttributes($metadata, $mapping['attributes']);
         $this->setRelationships($metadata, $mapping['relationships']);
@@ -67,7 +79,7 @@ class YamlFileDriver extends AbstractFileDriver
      * @param   string  $type
      * @param   string  $file
      * @return  array
-     * @throws  RuntimeExeption If the file could not be properly parsed.
+     * @throws  MetadataException
      */
     private function getMapping($type, $file)
     {
@@ -78,7 +90,7 @@ class YamlFileDriver extends AbstractFileDriver
 
         $contents = Yaml::parse(file_get_contents($file));
         if (!isset($contents[$type])) {
-            throw new RuntimeException(sprintf('The YAML file must be keyed with the entity type "%s" but was not found.', $type));
+            throw MetadataException::fatalDriverError($type, 'No type key was found at the beginning of the YAML file.');
         }
         return $this->mappings[$type] = $this->setDefaults($contents[$type]);
     }
@@ -98,6 +110,11 @@ class YamlFileDriver extends AbstractFileDriver
             if (!is_array($mapping)) {
                 $mapping = ['type' => null];
             }
+
+            if (!isset($mapping['type'])) {
+                $mapping['type'] = null;
+            }
+
             // $this->validator->validateDataType($mapping['type']);
             switch ($mapping['type']) {
                 // case 'object':

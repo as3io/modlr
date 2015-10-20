@@ -3,6 +3,7 @@
 namespace Actinoids\Modlr\RestOdm\Metadata\Driver;
 
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
+use Actinoids\Modlr\RestOdm\Exception\MetadataException;
 
 /**
  * Abstract metadata file driver.
@@ -52,6 +53,7 @@ abstract class AbstractFileDriver implements DriverInterface
             return $this->arrayCache[$type];
         }
         $path = $this->getFilePathForType($type);
+
         if (null === $path) {
             return null;
         }
@@ -62,11 +64,16 @@ abstract class AbstractFileDriver implements DriverInterface
      * Returns the file path for an entity type.
      *
      * @param   string  $type
-     * @return  string|null
+     * @return  string
+     * @throws  MetadataException
      */
     protected function getFilePathForType($type)
     {
-        return $this->fileLocator->findFileForType($type, $this->getExtension());
+        $path = $this->fileLocator->findFileForType($type, $this->getExtension());
+        if (null === $path) {
+            throw MetadataException::fatalDriverError($type, sprintf('No mapping file was found.', $path));
+        }
+        return $path;
     }
 
     /**

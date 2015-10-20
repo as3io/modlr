@@ -2,10 +2,11 @@
 
 namespace Actinoids\Modlr\RestOdm\Metadata;
 
+use Actinoids\Modlr\RestOdm\DataTypes\TypeFactory;
 use Actinoids\Modlr\RestOdm\Exception\MetadataException;
 use Actinoids\Modlr\RestOdm\Metadata\Driver\DriverInterface;
 use Actinoids\Modlr\RestOdm\Metadata\Cache\CacheInterface;
-use Actinoids\Modlr\RestOdm\Util\Inflector;
+use Actinoids\Modlr\RestOdm\Util\NameFormatter;
 
 /**
  * The primary MetadataFactory service.
@@ -22,6 +23,20 @@ class MetadataFactory implements MetadataFactoryInterface
      * @var DriverInterface
      */
     private $driver;
+
+    /**
+     * Factory containing all valid attribute data types.
+     *
+     * @var TypeFactory
+     */
+    private $typeFactory;
+
+    /**
+     * Entity name formatting service, for entity types and field keys.
+     *
+     * @var NameFormatter
+     */
+    private $nameFormatter;
 
     /**
      * The Metadata cache instance.
@@ -46,21 +61,15 @@ class MetadataFactory implements MetadataFactoryInterface
     private $loaded;
 
     /**
-     * Inflector for formatting entity types.
-     *
-     * @var Inflector
-     */
-    private $inflector;
-
-    /**
      * Constructor.
      *
      * @param   DriverInterface $driver
      */
-    public function __construct(DriverInterface $driver)
+    public function __construct(DriverInterface $driver, TypeFactory $typeFactory, NameFormatter $nameFormatter)
     {
         $this->driver = $driver;
-        $this->inflector = new Inflector();
+        $this->typeFactory = $typeFactory;
+        $this->nameFormatter = $nameFormatter;
     }
 
     /**
@@ -112,6 +121,7 @@ class MetadataFactory implements MetadataFactoryInterface
      */
     public function getMetadataForType($type)
     {
+        $type = $this->nameFormatter->formatEntityType($type);
         if (null !== $metadata = $this->doLoadMetadata($type)) {
             // Found in memory or from cache implementation
             return $metadata;
@@ -120,6 +130,7 @@ class MetadataFactory implements MetadataFactoryInterface
         // Loop through the type hierarchy (extension) and merge metadata objects.
         foreach ($this->driver->getTypeHierarchy($type) as $hierType) {
 
+            $hierType = $this->nameFormatter->formatEntityType($hierType);
             if (null !== $loaded = $this->doLoadMetadata($hierType)) {
                 // Found in memory or from cache implementation
                 $this->mergeMetadata($metadata, $loaded);
@@ -132,6 +143,8 @@ class MetadataFactory implements MetadataFactoryInterface
             if (null === $loaded) {
                 throw MetadataException::mappingNotFound($type);
             }
+
+            $this->validateMetadata($hierType, $loaded);
 
             // // Format (and validate) the external entity type and set.
             // $loaded->externalType = $this->entityFormatter->formatExternalEntityType($hierType);
@@ -157,15 +170,95 @@ class MetadataFactory implements MetadataFactoryInterface
     }
 
     /**
+     * Validates Metadata properties.
+     *
+     * @todo    This should go into a seperate validator class.
+     * @param   string          $type
+     * @param   EntityMetadata  $metadata
+     */
+    public function validateMetadata($type, EntityMetadata $metadata)
+    {
+        // if (!preg_match($memberPattern, $type)) {
+        //     throw MetadataException::invalidMetadata($type, sprintf('The name "%s" is invalid. Only letters and underscores (not as the first or last character) are allowed.', $type));
+        // }
+
+        if ($type !== $metadata->type) {
+            throw MetadataException::invalidMetadata($type, 'Metadata type mismatch.');
+        }
+
+        $validIdStrategies = ['object'];
+        if (!in_array($metadata->idStrategy, $validIdStrategies)) {
+            throw MetadataException::invalidMetadata($type, sprintf('The id strategy "%s" is invalid. Valid types are "%s"', $metadata->idStrategy, implode('", "', $validIdStrategies)));
+        }
+
+        // var_dump($metadata->isChildEntity(), $metadata->type);
+        // die();
+
+        if (false === $metadata->isChildEntity() && (empty($metadata->db) || empty($metadata->collection))) {
+            throw MetadataException::invalidMetadata($type, 'The database and collection names cannot be empty.');
+        }
+
+        if (true === $metadata->isChildEntity()) {
+            if (true === $metadata->isPolymorphic()) {
+                throw MetadataException::invalidMetadata($type, 'An entity cannot both be polymorphic and be a child.');
+            }
+            if ($metadata->extends === $metadata->type) {
+                throw MetadataException::invalidMetadata($type, 'An entity cannot extend itself.');
+            }
+            $allTypes = $this->getAllTypeNames();
+            if (!in_array($metadata->extends, $allTypes)) {
+                throw MetadataException::invalidMetadata($type, sprintf('The entity extension type "%s" does not exist.', $metadata->extends));
+            }
+            $parent = $this->doLoadMetadata($metadata->extends);
+            if (false === $parent->isPolymorphic()) {
+                throw MetadataException::invalidMetadata($type, sprintf('Parent classes must be polymorphic. Parent entity "%s" is not polymorphic.', $metadata->extends));
+            }
+        }
+
+        foreach ($metadata->getAttributes() as $attribute) {
+            if (empty($attribute->key)) {
+                throw MetadataException::invalidMetadata($type, 'All fields must contain a key');
+            }
+
+            // @todo Validate field key
+            // $this->nameFormatter->validateFieldKey($attribute)
+
+            // if (!preg_match($memberPattern, $attribute->key)) {
+            //     throw MetadataException::invalidMetadata($type, sprintf('The field key "%s" is invalid. Only letters and underscores (not as the first or last character) are allowed.', $attribute->key));
+            // }
+
+            if (false === $this->typeFactory->hasType($attribute->dataType)) {
+                throw MetadataException::invalidMetadata($type, sprintf('The data type "%s" for attribute "%s" is invalid', $attribute->dataType, $attribute->getKey()));
+            }
+
+            if (true === $metadata->isChildEntity()) {
+                if ($parent->hasAttribute($attribute->key)) {
+                    throw MetadataException::invalidMetadata($type, sprintf('Parent entity type "%s" already contains field "%s"', $parent->type, $attribute->key));
+                }
+            }
+
+            $todo = ['object', 'array'];
+            if (in_array($attribute->dataType, $todo)) {
+                throw MetadataException::invalidMetadata($type, 'NYI: Object and array attribute types still need expanding!!');
+            }
+        }
+
+        foreach ($metadata->getRelationships() as $relationship) {
+            throw MetadataException::invalidMetadata($type, 'NYI: Relationship metadata must still be validated!!');
+
+            if (!preg_match($memberPattern, $relationship->key)) {
+                throw MetadataException::invalidMetadata($type, sprintf('The field key "%s" is invalid. Only letters and underscores (not as the first or last character) are allowed.', $attribute->key));
+            }
+        }
+        return true;
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function getAllTypeNames()
     {
-        $types = [];
-        foreach ($this->driver->getAllTypeNames() as $type) {
-            $types[] = $this->formatEntityType($type);
-        }
-        return $types;
+        return $this->driver->getAllTypeNames();
     }
 
     /**
@@ -254,26 +347,6 @@ class MetadataFactory implements MetadataFactoryInterface
         } else {
             $metadata->merge($toAdd);
         }
-    }
-
-    /**
-     * Formats the entity type.
-     *
-     * @param   string  $type
-     * @return  string
-     */
-    private function formatEntityType($type)
-    {
-        $delim = EntityMetadata::NAMESPACE_DELIM;
-
-        if (false === stristr($type, $delim)) {
-            return $this->inflector->studlify($type);
-        }
-        $parts = explode($delim, $type);
-        foreach ($parts as &$part) {
-            $part = $this->inflector->studlify($part);
-        }
-        return implode($delim, $parts);
     }
 
     /**
