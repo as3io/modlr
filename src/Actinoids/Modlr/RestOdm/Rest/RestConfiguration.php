@@ -2,6 +2,8 @@
 
 namespace Actinoids\Modlr\RestOdm\Rest;
 
+use Actinoids\Modlr\RestOdm\Util\Validator;
+
 /**
  * REST Configuration.
  *
@@ -9,31 +11,56 @@ namespace Actinoids\Modlr\RestOdm\Rest;
  */
 class RestConfiguration
 {
-    // @todo Should be determined by the server/version config
-    const ROOT_ENDPOINT = '/api/1.0';
-    const NS_DELIM_EXTERNAL = '_';
-    const NS_DELIM_INTERNAL = '\\';
+    const ROOT_ENDPOINT = '/1.0';
+    const EXTENSION_DELIM = '__';
 
     /**
-     * The configured API scheme, such as http or https.
+     * Validator service for handling common validation tasks.
      *
-     * @var string
+     * @var Validator
      */
-    private $scheme;
-
-    /**
-     * The configured API hostname.
-     *
-     * @var string
-     */
-    private $host;
+    private $validator;
 
     /**
      * Whether all relationship fields should be included by default.
      *
-     * @param   bool
+     * @var bool
      */
     private $includeAll = true;
+
+    /**
+     * Determines how entity names should be formatted.
+     *
+     * @var string
+     */
+    private $entityFormat = 'studlycaps';
+
+    /**
+     * Determines how field key names should be formatted.
+     *
+     * @var string
+     */
+    private $fieldKeyFormat = 'camelcase';
+
+    /**
+     * Constructor.
+     *
+     * @param   Validator|null  $validator
+     */
+    public function __construct(Validator $validator = null)
+    {
+        $this->validator = $validator ?: new Validator();
+    }
+
+    /**
+     * Gets the validator service.
+     *
+     * @return  Validator
+     */
+    public function getValidator()
+    {
+        return $this->validator;
+    }
 
     /**
      * Gets the root API endpoint shared by all requests.
@@ -46,67 +73,59 @@ class RestConfiguration
     }
 
     /**
-     * Gets the internal entity type namespace delimiter.
+     * Sets the entity type format.
      *
-     * @return  string
-     */
-    public function getInternalNamespaceDelim()
-    {
-        return self::NS_DELIM_INTERNAL;
-    }
-
-    /**
-     * Gets the external entity type namespace delimiter.
-     *
-     * @return  string
-     */
-    public function getExternalNamespaceDelim()
-    {
-        return self::NS_DELIM_EXTERNAL;
-    }
-
-    /**
-     * Sets the scheme for all API requests.
-     *
-     * @param   string  $scheme
+     * @param   string  $format
      * @return  self
      */
-    public function setScheme($scheme)
+    public function setEntityFormat($format)
     {
-        $this->scheme = $scheme;
+        $this->validator->validateStringFormat($format);
+        $this->entityFormat = $format;
         return $this;
     }
 
     /**
-     * Gets the scheme for all API requests.
+     * Gets the entity type format.
      *
      * @return  string
      */
-    public function getScheme()
+    public function getEntityFormat()
     {
-        return $this->scheme;
+        return $this->entityFormat;
     }
 
     /**
-     * Sets the hostname for all API requests.
+     * Sets the field key format.
      *
-     * @param   string  $host
+     * @param   string  $format
      * @return  self
      */
-    public function setHost($host)
+    public function setFieldKeyFormat($format)
     {
-        $this->host = $host;
+        $this->validator->validateStringFormat($format);
+        $this->fieldKeyFormat = $format;
         return $this;
     }
 
     /**
-     * Gets the hostname for all API requests.
+     * Gets the field key format.
      *
      * @return  string
      */
-    public function getHost()
+    public function getFieldKeyFormat()
     {
-        return $this->host;
+        return $this->fieldKeyFormat;
+    }
+
+    /**
+     * Gets the model extension delimiter.
+     *
+     * @return  string
+     */
+    public function getExtensionDelimiter()
+    {
+        self::EXTENSION_DELIM;
     }
 
     /**
