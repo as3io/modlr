@@ -11,7 +11,7 @@ use Actinoids\Modlr\RestOdm\Util\Validator;
  */
 class RestConfiguration
 {
-    const ROOT_ENDPOINT = '/1.0';
+    private $rootEndpoint = '/';
 
     /**
      * Validator service for handling common validation tasks.
@@ -19,6 +19,20 @@ class RestConfiguration
      * @var Validator
      */
     private $validator;
+
+    /**
+     * The configured API scheme, such as http or https.
+     *
+     * @var string
+     */
+    private $scheme;
+
+    /**
+     * The configured API hostname.
+     *
+     * @var string
+     */
+    private $host;
 
     /**
      * Whether all relationship fields should be included by default.
@@ -68,7 +82,19 @@ class RestConfiguration
      */
     public function getRootEndpoint()
     {
-        return self::ROOT_ENDPOINT;
+        return $this->rootEndpoint;
+    }
+
+    /**
+     * Sets the root API endpoint shared by all requests.
+     *
+     * @param   string  $endpoint
+     * @return  self
+     */
+    public function setRootEndpoint($endpoint)
+    {
+        $this->rootEndpoint = $endpoint;
+        return $this;
     }
 
     /**
@@ -115,6 +141,50 @@ class RestConfiguration
     public function getFieldKeyFormat()
     {
         return $this->fieldKeyFormat;
+    }
+
+    /**
+     * Sets the scheme for all API requests.
+     *
+     * @param   string  $scheme
+     * @return  self
+     */
+    public function setScheme($scheme)
+    {
+        $this->scheme = $scheme;
+        return $this;
+    }
+
+    /**
+     * Gets the scheme for all API requests.
+     *
+     * @return  string
+     */
+    public function getScheme()
+    {
+        return $this->scheme;
+    }
+
+    /**
+     * Sets the hostname for all API requests.
+     *
+     * @param   string  $host
+     * @return  self
+     */
+    public function setHost($host)
+    {
+        $this->host = $host;
+        return $this;
+    }
+
+    /**
+     * Gets the hostname for all API requests.
+     *
+     * @return  string
+     */
+    public function getHost()
+    {
+        return $this->host;
     }
 
     /**

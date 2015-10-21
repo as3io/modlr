@@ -141,13 +141,13 @@ class JsonApiAdapter implements AdapterInterface
      */
     public function handleException(\Exception $e)
     {
+        $refl = new \ReflectionClass($e);
         if ($e instanceof HttpExceptionInterface) {
-            $refl = new \ReflectionClass($e);
             $title  = sprintf('%s::%s', $refl->getShortName(), $e->getErrorType());
             $detail = $e->getMessage();
             $status = $e->getHttpCode();
         } else {
-            $title  = 'Exception';
+            $title  = $refl->getShortName();
             $detail = 'An internal server error occured';
             $status = 500;
         }
@@ -162,6 +162,7 @@ class JsonApiAdapter implements AdapterInterface
      */
     public function getInternalEntityType($externalType)
     {
+        return $externalType;
         $parts = explode($this->config->getExternalNamespaceDelim(), $externalType);
         foreach ($parts as &$part) {
             $part = $this->inflector->studlify($part);
@@ -174,6 +175,7 @@ class JsonApiAdapter implements AdapterInterface
      */
     public function getExternalEntityType($internalType)
     {
+        return $internalType;
         $parts = explode($this->config->getInternalNamespaceDelim(), $internalType);
         foreach ($parts as &$part) {
             $part = $this->inflector->dasherize($part);
