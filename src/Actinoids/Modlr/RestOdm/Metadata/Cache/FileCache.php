@@ -117,7 +117,6 @@ class FileCache implements CacheInterface
      */
     private function getCacheFile($type)
     {
-        $type = str_replace(EntityMetadata::NAMESPACE_DELIM, '_', $type);
         return $this->dir.'/ModlrData.'.$this->cachePrefix.'.'.$type.'.'.$this->extension;
     }
 

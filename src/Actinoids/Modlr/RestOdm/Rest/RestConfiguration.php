@@ -12,7 +12,6 @@ use Actinoids\Modlr\RestOdm\Util\Validator;
 class RestConfiguration
 {
     const ROOT_ENDPOINT = '/1.0';
-    const EXTENSION_DELIM = '__';
 
     /**
      * Validator service for handling common validation tasks.
@@ -33,7 +32,7 @@ class RestConfiguration
      *
      * @var string
      */
-    private $entityFormat = 'studlycaps';
+    private $entityFormat = 'dash';
 
     /**
      * Determines how field key names should be formatted.
@@ -116,16 +115,6 @@ class RestConfiguration
     public function getFieldKeyFormat()
     {
         return $this->fieldKeyFormat;
-    }
-
-    /**
-     * Gets the model extension delimiter.
-     *
-     * @return  string
-     */
-    public function getExtensionDelimiter()
-    {
-        self::EXTENSION_DELIM;
     }
 
     /**

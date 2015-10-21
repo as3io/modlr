@@ -21,7 +21,7 @@ class MetadataException extends \Exception implements ExceptionInterface
 
     public static function fatalDriverError($entityType, $message)
     {
-        return new self(sprintf('Unable to load metadata for Entity type "%s". A fatal driver error ocurred: %s', $entityType, $message), 102);
+        return new self(sprintf('Unable to load metadata for Entity type "%s" - a fatal driver error ocurred: %s', $entityType, $message), 102);
     }
 
     public static function invalidEntityType($entityType)

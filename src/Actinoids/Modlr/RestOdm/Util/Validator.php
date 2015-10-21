@@ -1,4 +1,5 @@
 <?php
+
 namespace Actinoids\Modlr\RestOdm\Util;
 
 /**
@@ -15,6 +16,11 @@ class Validator
      */
     private $stringFormats = ['dash', 'camelcase', 'studlycaps', 'underscore'];
 
+    /**
+     * Valid regex patterns per name format.
+     *
+     * @var array
+     */
     private $nameFormats = [
         'studlycaps'    => '/^[A-Z]{1}[a-zA-Z]{0,}$/',
         'camelcase'     => '/^[a-z]{1}[a-zA-Z]{0,}$/',
@@ -28,18 +34,16 @@ class Validator
      * @param   string  $format
      * @param   string  $name
      * @return  bool
-     * @throws  InvalidArgumentException
      */
-    public function validateName($format, $name)
+    public function isNameValid($format, $name)
     {
-        $this->validateStringFormat($format);
+        if (false === $this->isFormatValid($format)) {
+            return false;
+        }
         $name = iconv(mb_detect_encoding($name), 'UTF-8', $name);
 
         $valid = $this->nameFormats[$format];
-        if (!preg_match($valid, $name)) {
-            throw new InvalidArgumentException(sprintf('The name "%s" contains an invalid character.', $name));
-        }
-        return true;
+        return !preg_match($valid, $name) ? false : true;
     }
 
     /**
@@ -47,13 +51,9 @@ class Validator
      *
      * @param   string  $format
      * @return  bool
-     * @throws  InvalidArgumentException
      */
-    public function validateStringFormat($format)
+    public function isFormatValid($format)
     {
-        if (!in_array($format, $this->stringFormats)) {
-            throw new InvalidArgumentException(sprintf('The string format "%s" is invalid. Valid formats are "%s"', $format, implode(', ', $this->stringFormats)));
-        }
-        return true;
+        return in_array($format, $this->stringFormats);
     }
 }

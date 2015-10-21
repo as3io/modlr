@@ -36,4 +36,14 @@ interface DriverInterface
      * @return  array
      */
     public function getTypeHierarchy($type, array $types = []);
+
+    /**
+     * Gets all types owned by the provided type.
+     * Is recursive.
+     *
+     * @param   string  $type
+     * @param   array   $types
+     * @return  array
+     */
+    public function getOwnedTypes($type, array $types = []);
 }

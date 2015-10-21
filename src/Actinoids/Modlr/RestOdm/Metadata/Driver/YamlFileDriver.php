@@ -30,10 +30,6 @@ class YamlFileDriver extends AbstractFileDriver
 
         $metadata = new Metadata\EntityMetadata($type);
 
-        // if (isset($mapping['entity']['abstract'])) {
-        //     $metadata->setAbstract($mapping['entity']['abstract']);
-        // }
-
         if (isset($mapping['entity']['db'])) {
             $metadata->db = $mapping['entity']['db'];
         }
@@ -42,16 +38,14 @@ class YamlFileDriver extends AbstractFileDriver
             $metadata->collection = $mapping['entity']['collection'];
         }
 
+        if (isset($mapping['entity']['polymorphic'])) {
+            $metadata->setPolymorphic(true);
+            $metadata->ownedTypes = $this->getOwnedTypes($metadata->type);
+        }
+
         if (isset($mapping['entity']['extends'])) {
             $metadata->extends = $mapping['entity']['extends'];
         }
-
-        if (isset($mapping['entity']['polymorphic'])) {
-            $metadata->setPolymorphic($mapping['entity']['polymorphic']);
-        }
-
-        // var_dump($metadata);
-        // die();
 
         $this->setAttributes($metadata, $mapping['attributes']);
         $this->setRelationships($metadata, $mapping['relationships']);
@@ -67,10 +61,36 @@ class YamlFileDriver extends AbstractFileDriver
         $mapping = $this->getMapping($type, $path);
 
         $types[] = $type;
-        if (isset($mapping['entity']['extends'])) {
+        if (isset($mapping['entity']['extends']) && $mapping['entity']['extends'] !== $type) {
             return $this->getTypeHierarchy($mapping['entity']['extends'], $types);
         }
         return array_reverse($types);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getOwnedTypes($type, array $types = [])
+    {
+        $all = $this->getAllTypeNames();
+        foreach ($this->getAllTypeNames() as $searchType) {
+            if ($type === $searchType) {
+                continue;
+            }
+            if (0 !== strpos($searchType, $type)) {
+                continue;
+            }
+
+            $path = $this->getFilePathForType($searchType);
+            $mapping = $this->getMapping($searchType, $path);
+
+            if (!isset($mapping['entity']['extends']) || $mapping['entity']['extends'] !== $type) {
+                continue;
+            }
+            $types[] = $searchType;
+
+        }
+        return $types;
     }
 
     /**
@@ -90,7 +110,7 @@ class YamlFileDriver extends AbstractFileDriver
 
         $contents = Yaml::parse(file_get_contents($file));
         if (!isset($contents[$type])) {
-            throw MetadataException::fatalDriverError($type, 'No type key was found at the beginning of the YAML file.');
+            throw MetadataException::fatalDriverError($type, sprintf('No type key was found at the beginning of the YAML file. Expected "%s"', $type));
         }
         return $this->mappings[$type] = $this->setDefaults($contents[$type]);
     }
@@ -152,9 +172,17 @@ class YamlFileDriver extends AbstractFileDriver
                 $mapping = ['type' => null, 'entity' => null];
             }
 
-            if (!in_array($mapping['entity'], $allTypes)) {
-                throw new RuntimeException(sprintf('No YAML mapping file was found for related entity type "%s" as found on relationship field "%s::%s"', $mapping['entity'], $metadata->type, $key));
+            if (!isset($mapping['type'])) {
+                $mapping['type'] = null;
             }
+
+            if (!isset($mapping['entity'])) {
+                $mapping['entity'] = null;
+            }
+
+            // if (!in_array($mapping['entity'], $allTypes)) {
+            //     throw new RuntimeException(sprintf('No YAML mapping file was found for related entity type "%s" as found on relationship field "%s::%s"', $mapping['entity'], $metadata->type, $key));
+            // }
 
             $relationship = new Metadata\RelationshipMetadata($key, $mapping['type'], $mapping['entity']);
             $metadata->addRelationship($relationship);

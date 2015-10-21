@@ -13,11 +13,17 @@ use Actinoids\Modlr\RestOdm\Exception\MetadataException;
 class EntityMetadata implements AttributeInterface
 {
     /**
-     * The id key name and type; global namespace delimiter.
+     * The id key name and type.
      */
     const ID_KEY  = 'id';
     const ID_TYPE = 'string';
-    const NAMESPACE_DELIM = '\\';
+
+    /**
+     * Uniquely defines the type of entity.
+     *
+     * @var string
+     */
+    public $type;
 
     /**
      * The database name.
@@ -50,18 +56,17 @@ class EntityMetadata implements AttributeInterface
     public $polymorphic = false;
 
     /**
+     * Child entity types this entity owns.
+     * Only used for polymorphic entities.
+     */
+    public $ownedTypes = [];
+
+    /**
      * The entity type this entity extends.
      *
      * @var bool
      */
     public $extends;
-
-    /**
-     * Uniquely defines the type of entity.
-     *
-     * @var string
-     */
-    public $type;
 
     /**
      * All attribute fields assigned to this entity.
@@ -100,6 +105,7 @@ class EntityMetadata implements AttributeInterface
     /**
      * Merges an EntityMetadata instance with this instance.
      * For use with entity class extension.
+     * Only merge items where you want the child class to override the parent!
      *
      * @param   EntityMetadata  $metadata
      * @return  self
@@ -110,6 +116,7 @@ class EntityMetadata implements AttributeInterface
         // @todo Remove these if necessary.
         $this->setPolymorphic($metadata->isPolymorphic());
         $this->extends = $metadata->extends;
+        $this->ownedTypes = $metadata->ownedTypes;
         $this->mergeAttributes($metadata->getAttributes());
         $this->mergeRelationships($metadata->getRelationships());
         // @todo Implement this.
