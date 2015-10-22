@@ -68,6 +68,13 @@ class EntityMetadata implements AttributeInterface
      */
     public $extends;
 
+     /**
+     * Whether this class is abstract.
+     *
+     * @var bool
+     */
+    public $abstract = false;
+
     /**
      * All attribute fields assigned to this entity.
      * An attribute is a "standard" field, such as a string, integer, array, etc.
@@ -115,6 +122,7 @@ class EntityMetadata implements AttributeInterface
         $this->setType($metadata->type);
         // @todo Remove these if necessary.
         $this->setPolymorphic($metadata->isPolymorphic());
+        $this->setAbstract($metadata->isAbstract());
         $this->extends = $metadata->extends;
         $this->ownedTypes = $metadata->ownedTypes;
         $this->mergeAttributes($metadata->getAttributes());
@@ -187,6 +195,28 @@ class EntityMetadata implements AttributeInterface
     public function setPolymorphic($bit = true)
     {
         $this->polymorphic = (Boolean) $bit;
+        return $this;
+    }
+
+    /**
+     * Whether this metadata represents an abstract class.
+     *
+     * @return  bool
+     */
+    public function isAbstract()
+    {
+        return (Boolean) $this->abstract;
+    }
+
+    /**
+     * Sets this metadata as representing an abstract class.
+     *
+     * @param   bool    $bit
+     * @return  self
+     */
+    public function setAbstract($bit = true)
+    {
+        $this->abstract = (Boolean) $bit;
         return $this;
     }
 
