@@ -38,6 +38,10 @@ class YamlFileDriver extends AbstractFileDriver
             $metadata->collection = $mapping['entity']['collection'];
         }
 
+        if (isset($mapping['entity']['abstract'])) {
+            $metadata->setAbstract(true);
+        }
+
         if (isset($mapping['entity']['polymorphic'])) {
             $metadata->setPolymorphic(true);
             $metadata->ownedTypes = $this->getOwnedTypes($metadata->type);
@@ -151,6 +155,11 @@ class YamlFileDriver extends AbstractFileDriver
                     $attribute = new Metadata\AttributeMetadata($key, $mapping['type']);
                     break;
             }
+
+            if (isset($mapping['description'])) {
+                $attribute->description = $mapping['description'];
+            }
+
             $metadata->addAttribute($attribute);
         }
         return $metadata;
@@ -185,6 +194,11 @@ class YamlFileDriver extends AbstractFileDriver
             // }
 
             $relationship = new Metadata\RelationshipMetadata($key, $mapping['type'], $mapping['entity']);
+
+            if (isset($mapping['description'])) {
+                $relationship->description = $mapping['description'];
+            }
+
             $metadata->addRelationship($relationship);
         }
         return $metadata;
