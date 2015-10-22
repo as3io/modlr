@@ -4,6 +4,7 @@ namespace Actinoids\Modlr\RestOdm\Serializer;
 
 use Actinoids\Modlr\RestOdm\Metadata\MetadataFactory;
 use Actinoids\Modlr\RestOdm\Metadata\AttributeMetadata;
+use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
 use Actinoids\Modlr\RestOdm\DataTypes\TypeFactory;
 use Actinoids\Modlr\RestOdm\Rest\RestRequest;
@@ -49,10 +50,56 @@ class JsonApiSerializer implements SerializerInterface
     /**
      * {@inheritDoc}
      */
-    public function normalize(RestPayload $payload)
+    public function normalize(RestPayload $payload, AdapterInterface $adapter)
     {
-        var_dump(__METHOD__);
+        $data = @json_decode($payload->getData(), true);
+        if (!is_array($data) || empty($data)) {
+            throw SerializerException::unableToNormalizePayload('The payload was empty.');
+        }
+        if (!isset($data['type'])) {
+            throw SerializerException::badRequest('The "type" member was missing from the payload. All payloads must contain a type.');
+        }
+
+        $flattened = [];
+        if (isset($data['attributes']) && is_array($data['attributes'])) {
+            foreach ($data['attributes'] as $key => $value) {
+                $flattened[$key] = $value;
+            }
+        }
+        if (isset($data['relationships']) && is_array($data['relationships'])) {
+            foreach ($data['relationships'] as $key => $value) {
+                $flattened[$key] = $value;
+            }
+        }
+
+        var_dump($flattened);
         die();
+
+        $metadata = $adapter->getEntityMetadata($data['type']);
+        $resource = $this->hydrateOne($metadata, null, $data, []);
+        var_dump(__METHOD__, $data);
+        die();
+    }
+
+    /**
+     * Hydrates a single payload array into a Struct\Resource object.
+     *
+     * @todo    Hydrators need to exist on their own, and injected seperately.
+     * @param   EntityMetadata  $metadata
+     * @param   string          $identifier
+     * @param   array           $data
+     * @param   array           $inclusions
+     * @return  Struct\Resource
+     */
+    protected function hydrateOne(EntityMetadata $metadata, $identifier, array $data, array $inclusions)
+    {
+        $resource = $this->sf->createResource($metadata->type, 'one');
+        var_dump($resource);
+        die();
+        $entity = $this->hydrateEntity($metadata, $identifier, $data, $inclusions);
+        $this->sf->applyEntity($resource, $entity);
+        $resource->setIncludedData($this->hydrateIncluded());
+        return $resource;
     }
 
     /**
@@ -66,7 +113,7 @@ class JsonApiSerializer implements SerializerInterface
         if (0 === $this->depth && $resource->hasIncludedData()) {
             $serialized['included'] = $this->serializeData($resource->getIncludedData(), $adapter);
         }
-        return (0 === $this->depth) ? $this->encode($serialized) : $serialized;
+        return (0 === $this->depth) ? new RestPayload($this->encode($serialized)) : $serialized;
     }
 
     /**
@@ -135,16 +182,16 @@ class JsonApiSerializer implements SerializerInterface
 
         foreach ($metadata->getAttributes() as $key => $attrMeta) {
             $attribute = $entity->getAttribute($key);
-            $formattedKey = $adapter->getExternalFieldKey($key);
-            $serialized['attributes'][$formattedKey] = $this->serializeAttribute($attribute, $attrMeta);
+            // $formattedKey = $adapter->getExternalFieldKey($key);
+            $serialized['attributes'][$key] = $this->serializeAttribute($attribute, $attrMeta);
         }
 
         $serialized['links'] = ['self' => $adapter->buildUrl($metadata, $entity->getId())];
 
         foreach ($metadata->getRelationships() as $key => $relMeta) {
             $relationship = $entity->getRelationship($key);
-            $formattedKey = $adapter->getExternalFieldKey($key);
-            $serialized['relationships'][$formattedKey] = $this->serializeRelationship($entity, $relationship, $relMeta, $adapter);
+            // $formattedKey = $adapter->getExternalFieldKey($key);
+            $serialized['relationships'][$key] = $this->serializeRelationship($entity, $relationship, $relMeta, $adapter);
         }
         return $serialized;
     }

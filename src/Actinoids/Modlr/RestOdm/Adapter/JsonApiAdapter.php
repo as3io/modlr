@@ -98,19 +98,27 @@ class JsonApiAdapter implements AdapterInterface
                     if (false === $request->isRelationship() && false === $request->hasFilters()) {
                         return $this->findRecord($metadata, $request->getIdentifier(), $request->getFieldset(), $request->getInclusions());
                     }
+                    throw AdapterException::badRequest('No GET handler found.');
                 } else {
                     return $this->findMany($metadata, [], $request->getPagination(), $request->getFieldset(), $request->getInclusions(), $request->getSorting());
                 }
-                break;
+                throw AdapterException::badRequest('No GET handler found.');
             case 'POST':
-                break;
+                // @todo Must validate JSON content type
+                if (false === $request->hasIdentifier()) {
+                    if (true === $request->hasPayload()) {
+                        return $this->createRecord($metadata, $request->getPayload(), $request->getFieldset(), $request->getInclusions());
+                    }
+                    throw AdapterException::requestPayloadNotFound('Unable to create new entity.');
+                }
+                throw AdapterException::badRequest('Creating a new record while providing an id is not supported.');
             case 'PATCH':
-                break;
+                // @todo Must validate JSON content type
+                throw AdapterException::badRequest('No PATCH request handler found.');
             case 'DELETE':
-                break;
+                throw AdapterException::badRequest('No DELETE request handler found.');
             default:
                 throw AdapterException::invalidRequestMethod($request->getMethod());
-                break;
         }
         var_dump(__METHOD__, $request);
         die();
@@ -139,8 +147,21 @@ class JsonApiAdapter implements AdapterInterface
     /**
      * {@inheritDoc}
      */
+    public function createRecord(EntityMetadata $metadata, Rest\RestPayload $payload, array $fields = [], array $inclusions = [])
+    {
+        $resource = $this->normalize($payload);
+        // @todo Make sure the resource is flagged as new
+        // @todo Make sure resource matches the metadata type. Throw exception if mismatch.
+        var_dump(__METHOD__, $resource);
+        die();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function handleException(\Exception $e)
     {
+        throw $e;
         $refl = new \ReflectionClass($e);
         if ($e instanceof HttpExceptionInterface) {
             $title  = sprintf('%s::%s', $refl->getShortName(), $e->getErrorType());
@@ -220,6 +241,7 @@ class JsonApiAdapter implements AdapterInterface
      */
     public function normalize(Rest\RestPayload $payload)
     {
+        return $this->getSerializer()->normalize($payload, $this);
         var_dump(__METHOD__);
         die();
     }
@@ -229,7 +251,7 @@ class JsonApiAdapter implements AdapterInterface
      */
     public function serialize(Struct\Resource $resource)
     {
-        return new Rest\RestPayload($this->getSerializer()->serialize($resource, $this));
+        return $this->getSerializer()->serialize($resource, $this);
     }
 
     /**

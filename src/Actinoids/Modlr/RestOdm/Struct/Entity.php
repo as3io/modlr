@@ -19,6 +19,28 @@ class Entity extends Identifier
     protected $relationships = [];
 
     /**
+     * Allows for manually setting an id.
+     *
+     * @param   string  $id
+     * @return  self
+     */
+    public function setId($id)
+    {
+        $this->id = (String) $id;
+        return $this;
+    }
+
+    /**
+     * Determines if this is a new entity.
+     *
+     * @return  bool
+     */
+    public function isNew()
+    {
+        return !empty($this->id);
+    }
+
+    /**
      * Gets all attribute objects of this entity.
      *
      * @return  Attribute[]

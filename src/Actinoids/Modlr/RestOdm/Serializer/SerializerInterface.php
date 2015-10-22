@@ -23,17 +23,18 @@ interface SerializerInterface
     /**
      * Normalizes a RestPayload into a Struct\Resource.
      *
-     * @param   RestPayload     $payload
+     * @param   RestPayload         $payload
+     * @param   AdapterInterface    $adapter
      * @return  Struct\Resource
      */
-    public function normalize(RestPayload $payload);
+    public function normalize(RestPayload $payload, AdapterInterface $adapter);
 
     /**
      * Serializes a Struct\Resource object into a Rest\RestPayload object
      *
      * @param   Struct\Resource     $resource
      * @param   AdapterInterface    $adapter
-     * @param   RestPayload
+     * @return  mixed
      */
     public function serialize(Struct\Resource $resource, AdapterInterface $adapter);
 

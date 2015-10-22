@@ -22,4 +22,28 @@ class AdapterException extends AbstractHttpException
             __FUNCTION__
         );
     }
+
+    public static function badRequest($message = null)
+    {
+        return new self(
+            sprintf(
+                'Oops. We were unable to process this API request. %s',
+                $message
+            ),
+            400,
+            __FUNCTION__
+        );
+    }
+
+    public static function requestPayloadNotFound($message = null)
+    {
+        return new self(
+            sprintf(
+                'No request payload was found with the request. %s',
+                $message
+            ),
+            400,
+            __FUNCTION__
+        );
+    }
 }

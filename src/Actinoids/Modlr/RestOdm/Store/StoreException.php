@@ -36,4 +36,16 @@ class StoreException extends AbstractHttpException
             __FUNCTION__
         );
     }
+
+    public static function nyi($type)
+    {
+        return new self(
+            sprintf(
+                'Oops! A feature has been accessed while accessing "%s" that has not yet been completed.',
+                $type
+            ),
+            500,
+            __FUNCTION__
+        );
+    }
 }
