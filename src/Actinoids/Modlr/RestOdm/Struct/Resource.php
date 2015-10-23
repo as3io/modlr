@@ -141,6 +141,49 @@ class Resource
     }
 
     /**
+     * Gets type and identifiers to include, based on the resource state.
+     *
+     * @param   array   $filter     Relationships to filter, set as ['fieldKey' => true]
+     * @return  array
+     */
+    public function getDataToInclude(array $filter = [])
+    {
+        $toInclude = [];
+        if (false === $this->hasData()) {
+            return $toInclude;
+        }
+        if (true === $this->isOne()) {
+            $this->extractToInclude($this->getPrimaryData(), $filter, $toInclude);
+        } else {
+            foreach ($this->getPrimaryData() as $entity) {
+                $this->extractToInclude($entity, $filter, $toInclude);
+            }
+        }
+        return $toInclude;
+    }
+
+    /**
+     * Extracts types and ids to include, from a single entity's relationsips.
+     * Passes toInclude by reference so multiple entities can be appended.
+     *
+     * @param   Entity  $entity
+     * @param   array   $filter
+     * @param   array   &$toInclude
+     */
+    protected function extractToInclude(Entity $entity, array $filter, array &$toInclude = [])
+    {
+        foreach ($entity->getRelationships() as $relationship) {
+            if (false === $relationship->hasData()) {
+                continue;
+            }
+            if (empty($filter) || isset($filter[$relationship->getKey()])) {
+                $relData = $relationship->getPrimaryData();
+                $toInclude[$relData->getType()][$relData->getId()] = true;
+            }
+        }
+    }
+
+    /**
      * Determines if included (side-loaded) data exists.
      *
      * @return  bool

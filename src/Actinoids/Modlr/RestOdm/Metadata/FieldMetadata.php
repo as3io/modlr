@@ -20,6 +20,13 @@ abstract class FieldMetadata
     public $key;
 
     /**
+     * A friendly description of the field.
+     *
+     * @var string
+     */
+    public $description;
+
+    /**
      * Constructor.
      *
      * @param   string  $key

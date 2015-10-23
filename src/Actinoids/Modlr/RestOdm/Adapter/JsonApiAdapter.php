@@ -11,6 +11,7 @@ use Actinoids\Modlr\RestOdm\Rest;
 use Actinoids\Modlr\RestOdm\Struct;
 use Actinoids\Modlr\RestOdm\Util\Inflector;
 use Actinoids\Modlr\RestOdm\Exception\HttpExceptionInterface;
+use Actinoids\Modlr\RestOdm\Exception\InvalidArgumentException;
 
 /**
  * Adapter for handling API operations using the JSON API specification.
@@ -98,19 +99,27 @@ class JsonApiAdapter implements AdapterInterface
                     if (false === $request->isRelationship() && false === $request->hasFilters()) {
                         return $this->findRecord($metadata, $request->getIdentifier(), $request->getFieldset(), $request->getInclusions());
                     }
+                    throw AdapterException::badRequest('No GET handler found.');
                 } else {
                     return $this->findMany($metadata, [], $request->getPagination(), $request->getFieldset(), $request->getInclusions(), $request->getSorting());
                 }
-                break;
+                throw AdapterException::badRequest('No GET handler found.');
             case 'POST':
-                break;
+                // @todo Must validate JSON content type
+                if (false === $request->hasIdentifier()) {
+                    if (true === $request->hasPayload()) {
+                        return $this->createRecord($metadata, $request->getPayload(), $request->getFieldset(), $request->getInclusions());
+                    }
+                    throw AdapterException::requestPayloadNotFound('Unable to create new entity.');
+                }
+                throw AdapterException::badRequest('Creating a new record while providing an id is not supported.');
             case 'PATCH':
-                break;
+                // @todo Must validate JSON content type
+                throw AdapterException::badRequest('No PATCH request handler found.');
             case 'DELETE':
-                break;
+                throw AdapterException::badRequest('No DELETE request handler found.');
             default:
                 throw AdapterException::invalidRequestMethod($request->getMethod());
-                break;
         }
         var_dump(__METHOD__, $request);
         die();
@@ -139,8 +148,31 @@ class JsonApiAdapter implements AdapterInterface
     /**
      * {@inheritDoc}
      */
+    public function createRecord(EntityMetadata $metadata, Rest\RestPayload $payload, array $fields = [], array $inclusions = [])
+    {
+        $resource = $this->normalize($payload);
+        if (true === $resource->isMany()) {
+            throw AdapterException::badRequest('Multiple records were found in the payload. Batch creation is currently not supported.');
+        }
+        if (false === $resource->getPrimaryData()->isNew()) {
+            throw AdapterException::badRequest('An "id" member was found in the payload. Client-side ID generation is currently not supported.');
+        }
+        try {
+            $this->mf->validateResourceTypes($metadata->type, $resource->getEntityType());
+        } catch (InvalidArgumentException $e) {
+            throw AdapterException::badRequest($e->getMessage());
+        }
+        $resource = $this->getStore()->createRecord($metadata, $resource, $fields, $inclusions);
+        $payload = $this->serialize($resource);
+        return $this->createRestResponse(201, $payload);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function handleException(\Exception $e)
     {
+        throw $e;
         $refl = new \ReflectionClass($e);
         if ($e instanceof HttpExceptionInterface) {
             $title  = sprintf('%s::%s', $refl->getShortName(), $e->getErrorType());
@@ -220,8 +252,7 @@ class JsonApiAdapter implements AdapterInterface
      */
     public function normalize(Rest\RestPayload $payload)
     {
-        var_dump(__METHOD__);
-        die();
+        return $this->getSerializer()->normalize($payload, $this);
     }
 
     /**
@@ -229,7 +260,7 @@ class JsonApiAdapter implements AdapterInterface
      */
     public function serialize(Struct\Resource $resource)
     {
-        return new Rest\RestPayload($this->getSerializer()->serialize($resource, $this));
+        return $this->getSerializer()->serialize($resource, $this);
     }
 
     /**

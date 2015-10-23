@@ -6,6 +6,7 @@ use Actinoids\Modlr\RestOdm\Exception\MetadataException;
 use Actinoids\Modlr\RestOdm\Metadata\Driver\DriverInterface;
 use Actinoids\Modlr\RestOdm\Metadata\Cache\CacheInterface;
 use Actinoids\Modlr\RestOdm\Util\EntityUtility;
+use Actinoids\Modlr\RestOdm\Exception\InvalidArgumentException;
 
 /**
  * The primary MetadataFactory service.
@@ -228,6 +229,21 @@ class MetadataFactory implements MetadataFactoryInterface
             return true;
         }
         return $this->isDescendantOf($childMeta->getParentEntityType(), $parent);
+    }
+
+    public function validateResourceTypes($parentType, $childType)
+    {
+        $meta = $this->getMetadataForType($parentType);
+        if (true === $meta->isPolymorphic()) {
+            if (true === $meta->isAbstract() && false === $this->isDescendantOf($childType, $parentType)) {
+                throw new InvalidArgumentException(sprintf('The resource type "%s" is polymorphic and abstract. Resource "%s" must be a descendent of "%s"', $parentType, $childType, $parentType));
+            }
+        }
+
+        if (false === $meta->isPolymorphic() && $parentType !== $childType) {
+            throw new InvalidArgumentException(sprintf('This resource only supports resources of type "%s" - resource type "%s" was provided', $parentType, $childType));
+        }
+        return true;
     }
 
     /**

@@ -152,6 +152,11 @@ class EntityUtility
                 }
             }
         }
+
+        if (false === $metadata->isPolymorphic() && true === $metadata->isAbstract()) {
+            throw MetadataException::invalidMetadata($metadata->type, 'An entity must be polymorphic to be abstract.');
+        }
+
         if (false === $metadata->isChildEntity()) {
             return true;
         }

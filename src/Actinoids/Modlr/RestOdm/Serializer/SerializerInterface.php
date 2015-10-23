@@ -2,6 +2,7 @@
 
 namespace Actinoids\Modlr\RestOdm\Serializer;
 
+use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Adapter\AdapterInterface;
 use Actinoids\Modlr\RestOdm\Rest\RestPayload;
 use Actinoids\Modlr\RestOdm\Struct;
@@ -22,18 +23,19 @@ interface SerializerInterface
 
     /**
      * Normalizes a RestPayload into a Struct\Resource.
-     *
-     * @param   RestPayload     $payload
+     *ta.
+     * @param   RestPayload         $payload    The incoming payload.
+     * @param   AdapterInterface    $adapter    The adapter.
      * @return  Struct\Resource
      */
-    public function normalize(RestPayload $payload);
+    public function normalize(RestPayload $payload, AdapterInterface $adapter);
 
     /**
      * Serializes a Struct\Resource object into a Rest\RestPayload object
      *
      * @param   Struct\Resource     $resource
      * @param   AdapterInterface    $adapter
-     * @param   RestPayload
+     * @return  mixed
      */
     public function serialize(Struct\Resource $resource, AdapterInterface $adapter);
 

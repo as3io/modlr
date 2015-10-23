@@ -22,23 +22,23 @@ class TypeFactory
      * @var array
      */
     private $types = [
-        'array'     => 'Zarathustra\Modlr\RestOdm\DataTypes\Types\ArrayType',
-        'boolean'   => 'Zarathustra\Modlr\RestOdm\DataTypes\Types\BooleanType',
-        'date'      => 'Zarathustra\Modlr\RestOdm\DataTypes\Types\DateType',
-        'float'     => 'Zarathustra\Modlr\RestOdm\DataTypes\Types\FloatType',
-        'integer'   => 'Zarathustra\Modlr\RestOdm\DataTypes\Types\IntegerType',
-        'mixed'     => 'Zarathustra\Modlr\RestOdm\DataTypes\Types\MixedType',
-        'object'    => 'Zarathustra\Modlr\RestOdm\DataTypes\Types\ObjectType',
-        'string'    => 'Zarathustra\Modlr\RestOdm\DataTypes\Types\StringType',
+        'array'     => 'Actinoids\Modlr\RestOdm\DataTypes\Types\ArrayType',
+        'boolean'   => 'Actinoids\Modlr\RestOdm\DataTypes\Types\BooleanType',
+        'date'      => 'Actinoids\Modlr\RestOdm\DataTypes\Types\DateType',
+        'float'     => 'Actinoids\Modlr\RestOdm\DataTypes\Types\FloatType',
+        'integer'   => 'Actinoids\Modlr\RestOdm\DataTypes\Types\IntegerType',
+        'mixed'     => 'Actinoids\Modlr\RestOdm\DataTypes\Types\MixedType',
+        'object'    => 'Actinoids\Modlr\RestOdm\DataTypes\Types\ObjectType',
+        'string'    => 'Actinoids\Modlr\RestOdm\DataTypes\Types\StringType',
     ];
-    
+
     /**
      * In-memory loaded type objects.
      *
      * @var array
      */
     private $loaded = [];
-    
+
     /**
      * Converts the value from PHP to the external Modlr value.
      *
@@ -50,7 +50,7 @@ class TypeFactory
     {
         return $this->getType($name)->convertToModlrValue($value);
     }
-    
+
     /**
      * Converts the value from external Modlr value to the PHP value.
      *
@@ -62,7 +62,7 @@ class TypeFactory
     {
         return $this->getType($name)->convertToPHPValue($value);
     }
-    
+
     /**
      * Gets all registered types by name/key.
      *
@@ -72,7 +72,7 @@ class TypeFactory
     {
         return array_keys($this->types);
     }
-    
+
     /**
      * Gets a type object.
      *
@@ -95,7 +95,7 @@ class TypeFactory
         }
         return $this->loaded[$name] = new $fqcn;
     }
-    
+
     /**
      * Adds a type object.
      *
@@ -111,7 +111,7 @@ class TypeFactory
         }
         return $this->setType($name, $fqcn);
     }
-    
+
     /**
      * Overrides a type object with new class.
      *
@@ -127,7 +127,7 @@ class TypeFactory
         }
         return $this->setType($name, $fqcn);
     }
-    
+
     /**
      * Sets a type.
      *
@@ -140,7 +140,7 @@ class TypeFactory
         $this->types[$name] = $fqcn;
         return $this;
     }
-    
+
     /**
      * Determines if a type exists.
      *

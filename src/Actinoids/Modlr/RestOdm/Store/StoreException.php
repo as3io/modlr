@@ -24,6 +24,18 @@ class StoreException extends AbstractHttpException
         );
     }
 
+    public static function badRequest($message = null)
+    {
+        return new self(
+            sprintf(
+                'Oops! We were unable to handle database operations for this record. %s',
+                $message
+            ),
+            500,
+            __FUNCTION__
+        );
+    }
+
     public static function invalidInclude($type, $fieldKey)
     {
         return new self(
@@ -33,6 +45,18 @@ class StoreException extends AbstractHttpException
                 $type
             ),
             400,
+            __FUNCTION__
+        );
+    }
+
+    public static function nyi($type)
+    {
+        return new self(
+            sprintf(
+                'Oops! A feature has been accessed while accessing "%s" that has not yet been completed.',
+                $type
+            ),
+            500,
             __FUNCTION__
         );
     }
