@@ -37,7 +37,7 @@ class Entity extends Identifier
      */
     public function isNew()
     {
-        return !empty($this->id);
+        return empty($this->id);
     }
 
     /**

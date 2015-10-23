@@ -2,16 +2,15 @@
 
 namespace Actinoids\Modlr\RestOdm\Serializer;
 
-use Actinoids\Modlr\RestOdm\Metadata\MetadataFactory;
 use Actinoids\Modlr\RestOdm\Metadata\AttributeMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
 use Actinoids\Modlr\RestOdm\DataTypes\TypeFactory;
-use Actinoids\Modlr\RestOdm\Rest\RestRequest;
 use Actinoids\Modlr\RestOdm\Rest\RestPayload;
 use Actinoids\Modlr\RestOdm\Struct;
 use Actinoids\Modlr\RestOdm\Exception\RuntimeException;
 use Actinoids\Modlr\RestOdm\Adapter\AdapterInterface;
+use Actinoids\Modlr\RestOdm\Hydrator\JsonApiHydrator;
 
 class JsonApiSerializer implements SerializerInterface
 {
@@ -24,6 +23,14 @@ class JsonApiSerializer implements SerializerInterface
     private $typeFactory;
 
     /**
+     * The Resource hydrator.
+     * Used for normalizing incoming payloads into Struct\Resource objects.
+     *
+     * @var JsonApiHydrator
+     */
+    private $factory;
+
+    /**
      * Denotes the current object depth of the serializer.
      *
      * @var int
@@ -31,20 +38,14 @@ class JsonApiSerializer implements SerializerInterface
     private $depth = 0;
 
     /**
-     * A stack of resources objects to include.
-     *
-     * @var Resource[]
-     */
-    private $toInclude = [];
-
-    /**
      * Constructor.
      *
      * @param   TypeFactory     $typeFactory
      */
-    public function __construct(TypeFactory $typeFactory)
+    public function __construct(TypeFactory $typeFactory, JsonApiHydrator $hydrator)
     {
         $this->typeFactory = $typeFactory;
+        $this->hydrator = $hydrator;
     }
 
     /**
@@ -53,53 +54,51 @@ class JsonApiSerializer implements SerializerInterface
     public function normalize(RestPayload $payload, AdapterInterface $adapter)
     {
         $data = @json_decode($payload->getData(), true);
-        if (!is_array($data) || empty($data)) {
-            throw SerializerException::unableToNormalizePayload('The payload was empty.');
+        if (!is_array($data)) {
+            throw SerializerException::badRequest('Unable to parse. Is the JSON valid?');
         }
+        if (!isset($data['data'])) {
+            throw SerializerException::badRequest('No "data" member was found in the payload. All payloads must be keyed with "data."');
+        }
+
+        $data = $data['data'];
+        if (true === $this->isSequentialArray($data)) {
+            throw SerializerException::badRequest('Normalizing multiple records is currently not supported.');
+        }
+
         if (!isset($data['type'])) {
             throw SerializerException::badRequest('The "type" member was missing from the payload. All payloads must contain a type.');
         }
 
+        $metadata = $adapter->getEntityMetadata($data['type']);
         $flattened = [];
         if (isset($data['attributes']) && is_array($data['attributes'])) {
-            foreach ($data['attributes'] as $key => $value) {
-                $flattened[$key] = $value;
+            foreach ($metadata->getAttributes() as $key => $attrMeta) {
+                if (!isset($data['attributes'][$key])) {
+                    continue;
+                }
+                $flattened[$key] = $this->typeFactory->convertToPHPValue($attrMeta->dataType, $data['attributes'][$key]);
             }
         }
+
         if (isset($data['relationships']) && is_array($data['relationships'])) {
             foreach ($data['relationships'] as $key => $value) {
                 $flattened[$key] = $value;
             }
         }
-
-        var_dump($flattened);
-        die();
-
-        $metadata = $adapter->getEntityMetadata($data['type']);
-        $resource = $this->hydrateOne($metadata, null, $data, []);
-        var_dump(__METHOD__, $data);
-        die();
+        $flattened['type'] = $data['type'];
+        return $this->hydrator->hydrateOne($metadata, null, $flattened, []);
     }
 
     /**
-     * Hydrates a single payload array into a Struct\Resource object.
+     * Determines if an array is sequential.
      *
-     * @todo    Hydrators need to exist on their own, and injected seperately.
-     * @param   EntityMetadata  $metadata
-     * @param   string          $identifier
-     * @param   array           $data
-     * @param   array           $inclusions
-     * @return  Struct\Resource
+     * @param   array   $arr
+     * @return  bool
      */
-    protected function hydrateOne(EntityMetadata $metadata, $identifier, array $data, array $inclusions)
+    protected function isSequentialArray(array $arr)
     {
-        $resource = $this->sf->createResource($metadata->type, 'one');
-        var_dump($resource);
-        die();
-        $entity = $this->hydrateEntity($metadata, $identifier, $data, $inclusions);
-        $this->sf->applyEntity($resource, $entity);
-        $resource->setIncludedData($this->hydrateIncluded());
-        return $resource;
+        return (range(0, count($arr) - 1) === array_keys($arr));
     }
 
     /**

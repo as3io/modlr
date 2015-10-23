@@ -199,17 +199,7 @@ class StructFactory
      */
     protected function validateResourceTypes($parentType, $childType)
     {
-        $meta = $this->mf->getMetadataForType($parentType);
-        if (true === $meta->isPolymorphic()) {
-            if (true === $meta->isAbstract() && false === $this->mf->isDescendantOf($childType, $parentType)) {
-                throw new InvalidArgumentException(sprintf('The resource type "%s" is polymorphic and abstract. Resource "%s" must be a descendent of "%s"', $parentType, $childType, $parentType));
-            }
-        }
-
-        if (false === $meta->isPolymorphic() && $parentType !== $childType) {
-            throw new InvalidArgumentException(sprintf('This resource only supports resources of type "%s" - resource type "%s" was provided', $parentType, $childType));
-        }
-        return true;
+        return $this->mf->validateResourceTypes($parentType, $childType);
     }
 
     /**

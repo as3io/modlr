@@ -11,6 +11,7 @@ use Actinoids\Modlr\RestOdm\Rest;
 use Actinoids\Modlr\RestOdm\Struct;
 use Actinoids\Modlr\RestOdm\Util\Inflector;
 use Actinoids\Modlr\RestOdm\Exception\HttpExceptionInterface;
+use Actinoids\Modlr\RestOdm\Exception\InvalidArgumentException;
 
 /**
  * Adapter for handling API operations using the JSON API specification.
@@ -150,10 +151,20 @@ class JsonApiAdapter implements AdapterInterface
     public function createRecord(EntityMetadata $metadata, Rest\RestPayload $payload, array $fields = [], array $inclusions = [])
     {
         $resource = $this->normalize($payload);
-        // @todo Make sure the resource is flagged as new
-        // @todo Make sure resource matches the metadata type. Throw exception if mismatch.
-        var_dump(__METHOD__, $resource);
-        die();
+        if (true === $resource->isMany()) {
+            throw AdapterException::badRequest('Multiple records were found in the payload. Batch creation is currently not supported.');
+        }
+        if (false === $resource->getPrimaryData()->isNew()) {
+            throw AdapterException::badRequest('An "id" member was found in the payload. Client-side ID generation is currently not supported.');
+        }
+        try {
+            $this->mf->validateResourceTypes($metadata->type, $resource->getEntityType());
+        } catch (InvalidArgumentException $e) {
+            throw AdapterException::badRequest($e->getMessage());
+        }
+        $resource = $this->getStore()->createRecord($metadata, $resource, $fields, $inclusions);
+        $payload = $this->serialize($resource);
+        return $this->createRestResponse(201, $payload);
     }
 
     /**
@@ -242,8 +253,6 @@ class JsonApiAdapter implements AdapterInterface
     public function normalize(Rest\RestPayload $payload)
     {
         return $this->getSerializer()->normalize($payload, $this);
-        var_dump(__METHOD__);
-        die();
     }
 
     /**

@@ -24,6 +24,18 @@ class StoreException extends AbstractHttpException
         );
     }
 
+    public static function badRequest($message = null)
+    {
+        return new self(
+            sprintf(
+                'Oops! We were unable to handle database operations for this record. %s',
+                $message
+            ),
+            500,
+            __FUNCTION__
+        );
+    }
+
     public static function invalidInclude($type, $fieldKey)
     {
         return new self(
