@@ -190,7 +190,6 @@ class JsonApiAdapter implements AdapterInterface
      */
     public function handleException(\Exception $e)
     {
-        throw $e;
         $refl = new \ReflectionClass($e);
         if ($e instanceof HttpExceptionInterface) {
             $title  = sprintf('%s::%s', $refl->getShortName(), $e->getErrorType());
