@@ -7,6 +7,7 @@ use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\MetadataFactory;
 use Actinoids\Modlr\RestOdm\Store\StoreInterface;
 use Actinoids\Modlr\RestOdm\Serializer\JsonApiSerializer;
+use Actinoids\Modlr\RestOdm\Normalizer\JsonApiNormalizer;
 use Actinoids\Modlr\RestOdm\Rest;
 use Actinoids\Modlr\RestOdm\Struct;
 use Actinoids\Modlr\RestOdm\Util\Inflector;
@@ -35,6 +36,13 @@ class JsonApiAdapter implements AdapterInterface
     private $serializer;
 
     /**
+     * The JsonApiNormalizer
+     *
+     * @var JsonApiNormalizer
+     */
+    private $normalizer;
+
+    /**
      * The Store to use for persistence operations.
      *
      * @var StoreInterface
@@ -58,13 +66,15 @@ class JsonApiAdapter implements AdapterInterface
      *
      * @param   MetadataFactory         $mf
      * @param   JsonApiSerializer       $serializer
+     * @param   JsonApiNormalizer       $normalizer
      * @param   StoreInterface          $store
      * @param   Rest\RestConfiguration  $config
      */
-    public function __construct(MetadataFactory $mf, JsonApiSerializer $serializer, StoreInterface $store, Rest\RestConfiguration $config)
+    public function __construct(MetadataFactory $mf, JsonApiSerializer $serializer, JsonApiNormalizer $normalizer, StoreInterface $store, Rest\RestConfiguration $config)
     {
         $this->mf = $mf;
         $this->serializer = $serializer;
+        $this->normalizer = $normalizer;
         $this->store = $store;
         $this->config = $config;
         $this->inflector = new Inflector();
@@ -84,6 +94,14 @@ class JsonApiAdapter implements AdapterInterface
     public function getSerializer()
     {
         return $this->serializer;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getNormalizer()
+    {
+        return $this->normalizer;
     }
 
     /**
@@ -252,7 +270,7 @@ class JsonApiAdapter implements AdapterInterface
      */
     public function normalize(Rest\RestPayload $payload)
     {
-        return $this->getSerializer()->normalize($payload, $this);
+        return $this->getNormalizer()->normalize($payload, $this);
     }
 
     /**

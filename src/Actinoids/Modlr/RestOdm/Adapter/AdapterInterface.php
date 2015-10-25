@@ -4,6 +4,7 @@ namespace Actinoids\Modlr\RestOdm\Adapter;
 
 use Actinoids\Modlr\RestOdm\Store\StoreInterface;
 use Actinoids\Modlr\RestOdm\Serializer\SerializerInterface;
+use Actinoids\Modlr\RestOdm\Normalizer\NormalizerInterface;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Rest;
 use Actinoids\Modlr\RestOdm\Struct;
@@ -87,11 +88,18 @@ interface AdapterInterface
     public function getStore();
 
     /**
-     * Gets the Serializer for serializing and normalizing REST payloads.
+     * Gets the Serializer for serializing resources.
      *
      * @return  SerializerInterface
      */
     public function getSerializer();
+
+    /**
+     * Gets the Normalizer for normalizing REST payloads.
+     *
+     * @return  NormalizerInterface
+     */
+    public function getNormalizer();
 
     /**
      * Gets entity metadata, based on entity type.
