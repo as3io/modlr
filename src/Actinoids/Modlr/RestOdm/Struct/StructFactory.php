@@ -2,7 +2,9 @@
 
 namespace Actinoids\Modlr\RestOdm\Struct;
 
+use Actinoids\Modlr\RestOdm\DataTypes\TypeFactory;
 use Actinoids\Modlr\RestOdm\Metadata\MetadataFactory;
+use Actinoids\Modlr\RestOdm\Metadata\AttributeMetadata;
 use Actinoids\Modlr\RestOdm\Exception\InvalidArgumentException;
 
 /**
@@ -18,13 +20,19 @@ class StructFactory
     private $mf;
 
     /**
+     * @var TypeFactory
+     */
+    private $typeFactory;
+
+    /**
      * Constructor.
      *
      * @param   MetadataFactory   $mf
      */
-    public function __construct(MetadataFactory $mf)
+    public function __construct(MetadataFactory $mf, TypeFactory $typeFactory)
     {
         $this->mf = $mf;
+        $this->typeFactory = $typeFactory;
     }
 
     /**
@@ -153,7 +161,7 @@ class StructFactory
             if (!isset($data[$key])) {
                 continue;
             }
-            $this->applyAttribute($entity, $key, $data[$key]);
+            $this->applyAttribute($entity, $attribute, $data[$key]);
         }
         return $this;
     }
@@ -161,15 +169,16 @@ class StructFactory
     /**
      * Applies a single attribute value to a resource.
      *
-     * @param   Entity      $entity     The entity to apply the attribute value to.
-     * @param   string      $fieldKey   The attribute field key.
-     * @param   mixed       $value      The attribute value.
+     * @param   Entity              $entity     The entity to apply the attribute value to.
+     * @param   AttributeMetadata   $attribute  The attribute metadata.
+     * @param   mixed               $value      The attribute value.
      * @return  self
      */
 
-    public function applyAttribute(Entity $entity, $fieldKey, $value)
+    public function applyAttribute(Entity $entity, AttributeMetadata $attribute, $value)
     {
-        $entity->addAttribute($this->createAttribute($fieldKey, $value));
+        $value = $this->typeFactory->convertToNormalizedValue($attribute->dataType, $value);
+        $entity->addAttribute($this->createAttribute($attribute->key, $value));
         return $this;
     }
 

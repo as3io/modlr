@@ -12,16 +12,22 @@ class ArrayType implements TypeInterface
     /**
      * {@inheritDoc}
      */
-    public function convertToModlrValue($value)
+    public function convertToSerializedValue($value)
     {
+        if (empty($value)) {
+            return [];
+        }
         return array_values($this->extractArray($value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public function convertToPHPValue($value)
+    public function convertToNormalizedValue($value)
     {
+        if (empty($value)) {
+            return [];
+        }
         return array_values($this->extractArray($value));
     }
 
@@ -33,10 +39,6 @@ class ArrayType implements TypeInterface
      */
     protected function extractArray($value)
     {
-        if (empty($value)) {
-            return [];
-        }
-
         if ($value instanceof \Traversable) {
             $array = [];
             foreach ($value as $key => $value) {

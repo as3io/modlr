@@ -12,28 +12,28 @@ class BooleanType implements TypeInterface
     /**
      * {@inheritDoc}
      */
-    public function convertToModlrValue($value)
+    public function convertToSerializedValue($value)
     {
+        if (null === $value) {
+            return $value;
+        }
         if (is_object($value)) {
-            return (Boolean) (String) $value;
+            $value = (String) $value;
         }
-        if (null !== $value) {
-            return (Boolean) $value;
-        }
-        return null;
+        return (Boolean) $value;
     }
 
     /**
      * {@inheritDoc}
      */
-    public function convertToPHPValue($value)
+    public function convertToNormalizedValue($value)
     {
+        if (null === $value) {
+            return $value;
+        }
         if (is_object($value)) {
-            return (Boolean) (String) $value;
+            $value = (String) $value;
         }
-        if (null !== $value) {
-            return (Boolean) $value;
-        }
-        return null;
+        return (Boolean) $value;
     }
 }

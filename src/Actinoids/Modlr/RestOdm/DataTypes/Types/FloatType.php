@@ -12,28 +12,28 @@ class FloatType implements TypeInterface
     /**
      * {@inheritDoc}
      */
-    public function convertToModlrValue($value)
+    public function convertToSerializedValue($value)
     {
+        if (null === $value) {
+            return $value;
+        }
         if (is_object($value)) {
-            return (Float) (String) $value;
+            $value = (String) $value;
         }
-        if (null !== $value) {
-            return (Float) $value;
-        }
-        return null;
+        return (Float) $value;
     }
 
     /**
      * {@inheritDoc}
      */
-    public function convertToPHPValue($value)
+    public function convertToNormalizedValue($value)
     {
+        if (null === $value) {
+            return $value;
+        }
         if (is_object($value)) {
-            return (Float) (String) $value;
+            $value = (String) $value;
         }
-        if (null !== $value) {
-            return (Float) $value;
-        }
-        return null;
+        return (Float) $value;
     }
 }

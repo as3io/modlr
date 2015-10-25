@@ -12,16 +12,22 @@ class ObjectType implements TypeInterface
     /**
      * {@inheritDoc}
      */
-    public function convertToModlrValue($value)
+    public function convertToSerializedValue($value)
     {
+        if (empty($value)) {
+            return null;
+        }
         return $this->extractObject($value);
     }
 
     /**
      * {@inheritDoc}
      */
-    public function convertToPHPValue($value)
+    public function convertToNormalizedValue($value)
     {
+        if (empty($value)) {
+            return null;
+        }
         return $this->extractObject($value);
     }
 
@@ -33,10 +39,6 @@ class ObjectType implements TypeInterface
      */
     protected function extractObject($value)
     {
-        if (empty($value)) {
-            return null;
-        }
-
         if ($value instanceof \Traversable) {
             $array = [];
             foreach ($value as $key => $value) {
