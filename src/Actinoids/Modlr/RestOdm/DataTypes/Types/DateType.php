@@ -14,7 +14,7 @@ class DateType implements TypeInterface
     /**
      * {@inheritDoc}
      */
-    public function convertToModlrValue($value)
+    public function convertToSerializedValue($value)
     {
         if (null === $value) {
             return null;
@@ -25,12 +25,15 @@ class DateType implements TypeInterface
     /**
      * {@inheritDoc}
      */
-    public function convertToPHPValue($value)
+    public function convertToNormalizedValue($value)
     {
         if (null === $value) {
             return null;
         }
-        return $this->createDateTime($value);
+        if ($value instanceof \MongoDate) {
+            return $value;
+        }
+        return new \MongoDate($this->createDateTime($value)->getTimestamp());
     }
 
     /**
@@ -41,10 +44,11 @@ class DateType implements TypeInterface
      */
     private function createDateTime($value)
     {
-        $date = new DateTime();
         if ($value instanceof DateTime) {
-            $date = $value;
-        } elseif ($value instanceof \MongoDate) {
+            return $value;
+        }
+        $date = new DateTime();
+        if ($value instanceof \MongoDate) {
             $date->setTimestamp($value->sec);
         } elseif (is_object($value)) {
             $value = (String) $value;

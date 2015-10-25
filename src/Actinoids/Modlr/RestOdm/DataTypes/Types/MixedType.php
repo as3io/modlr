@@ -13,7 +13,7 @@ class MixedType implements TypeInterface
     /**
      * {@inheritDoc}
      */
-    public function convertToModlrValue($value)
+    public function convertToSerializedValue($value)
     {
         return $value;
     }
@@ -21,7 +21,7 @@ class MixedType implements TypeInterface
     /**
      * {@inheritDoc}
      */
-    public function convertToPHPValue($value)
+    public function convertToNormalizedValue($value)
     {
         return $value;
     }

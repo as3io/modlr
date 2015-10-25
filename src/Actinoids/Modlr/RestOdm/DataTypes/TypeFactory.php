@@ -40,27 +40,30 @@ class TypeFactory
     private $loaded = [];
 
     /**
-     * Converts the value from PHP to the external Modlr value.
+     * Converts the value to the serialized (external) value.
      *
      * @param   string  $name   The data type name.
      * @param   mixed   $value  The value to convert.
      * @return  mixed
      */
-    public function convertToModlrValue($name, $value)
+    public function convertToSerializedValue($name, $value)
     {
-        return $this->getType($name)->convertToModlrValue($value);
+        if (!isset($this->requiresSerializedConversion[$name])) {
+            return $value;
+        }
+        return $this->getType($name)->convertToSerializedValue($value);
     }
 
     /**
-     * Converts the value from external Modlr value to the PHP value.
+     * Converts the value to the normalized (internal) value.
      *
      * @param   string  $name   The data type name.
      * @param   mixed   $value  The value to convert.
      * @return  mixed
      */
-    public function convertToPHPValue($name, $value)
+    public function convertToNormalizedValue($name, $value)
     {
-        return $this->getType($name)->convertToPHPValue($value);
+        return $this->getType($name)->convertToNormalizedValue($value);
     }
 
     /**

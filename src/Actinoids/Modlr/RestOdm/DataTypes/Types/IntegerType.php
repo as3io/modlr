@@ -12,28 +12,31 @@ class IntegerType implements TypeInterface
     /**
      * {@inheritDoc}
      */
-    public function convertToModlrValue($value)
+    public function convertToSerializedValue($value)
     {
+        if (null === $value) {
+            return $value;
+        }
         if (is_object($value)) {
-            return (Integer) (String) $value;
+            $value = (String) $value;
         }
-        if (null !== $value) {
-            return (Integer) $value;
-        }
-        return null;
+        return (Integer) $value;
     }
 
     /**
      * {@inheritDoc}
      */
-    public function convertToPHPValue($value)
+    public function convertToNormalizedValue($value)
     {
+        if (null === $value) {
+            return $value;
+        }
+        if ($value instanceof \MongoInt64) {
+            return $value;
+        }
         if (is_object($value)) {
-            return (Integer) (String) $value;
+            $value = (Integer) (String) $value;
         }
-        if (null !== $value) {
-            return (Integer) $value;
-        }
-        return null;
+        return new \MongoInt64($value);
     }
 }

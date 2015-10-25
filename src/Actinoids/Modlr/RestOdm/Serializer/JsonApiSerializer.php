@@ -38,6 +38,16 @@ class JsonApiSerializer implements SerializerInterface
     private $depth = 0;
 
     /**
+     * Denotes types that should be converted to serialized format.
+     *
+     * @var array
+     */
+    private $typesRequiringConversion = [
+        'date'      => true,
+        'integer'   => true,
+    ];
+
+    /**
      * Constructor.
      *
      * @param   TypeFactory     $typeFactory
@@ -71,23 +81,25 @@ class JsonApiSerializer implements SerializerInterface
         }
 
         $metadata = $adapter->getEntityMetadata($data['type']);
-        $flattened = [];
+        $flattened['type'] = $data['type'];
         if (isset($data['attributes']) && is_array($data['attributes'])) {
             foreach ($metadata->getAttributes() as $key => $attrMeta) {
                 if (!isset($data['attributes'][$key])) {
                     continue;
                 }
-                $flattened[$key] = $this->typeFactory->convertToPHPValue($attrMeta->dataType, $data['attributes'][$key]);
+                $flattened[$key] = $data['attributes'][$key];
             }
         }
 
         if (isset($data['relationships']) && is_array($data['relationships'])) {
-            foreach ($data['relationships'] as $key => $value) {
-                $flattened[$key] = $value;
+            foreach ($metadata->getRelationships() as $key => $relMeta) {
+                if (!isset($data['relationships'][$key])) {
+                    continue;
+                }
+                $flattened[$key] = $data['relationships'][$key];
             }
         }
-        $flattened['type'] = $data['type'];
-        return $this->hydrator->hydrateOne($metadata, null, $flattened, []);
+        return $this->hydrator->hydrateOne($metadata, null, $flattened);
     }
 
     /**
@@ -222,7 +234,10 @@ class JsonApiSerializer implements SerializerInterface
         //     }
         //     return $serialized;
         // }
-        return $this->typeFactory->convertToModlrValue($attrMeta->dataType, $attribute->getValue());
+        if (isset($this->typesRequiringConversion[$attrMeta->dataType])) {
+            return $this->typeFactory->convertToModlrValue($attrMeta->dataType, $attribute->getValue());
+        }
+        return $attribute->getValue();
     }
 
     /**

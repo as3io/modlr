@@ -12,22 +12,22 @@ class StringType implements TypeInterface
     /**
      * {@inheritDoc}
      */
-    public function convertToModlrValue($value)
+    public function convertToSerializedValue($value)
     {
-        if (null !== $value) {
-            return (String) $value;
+        if (empty($value)) {
+            return null;
         }
-        return null;
+        return (String) $value;
     }
 
     /**
      * {@inheritDoc}
      */
-    public function convertToPHPValue($value)
+    public function convertToNormalizedValue($value)
     {
-        if (null !== $value) {
-            return (String) $value;
+        if (empty($value)) {
+            return null;
         }
-        return null;
+        return (String) $value;
     }
 }
