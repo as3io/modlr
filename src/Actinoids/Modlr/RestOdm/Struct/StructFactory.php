@@ -174,7 +174,6 @@ class StructFactory
      * @param   mixed               $value      The attribute value.
      * @return  self
      */
-
     public function applyAttribute(Entity $entity, AttributeMetadata $attribute, $value)
     {
         $value = $this->typeFactory->convertToNormalizedValue($attribute->dataType, $value);

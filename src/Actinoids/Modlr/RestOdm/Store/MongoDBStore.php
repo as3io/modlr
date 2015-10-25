@@ -83,21 +83,53 @@ class MongoDBStore implements StoreInterface
         $entity = $resource->getPrimaryData();
         $entity->setId($identifier);
 
-        $record = [
-            '_id'   => $identifier,
-        ];
+        $record = $this->extractRawRecord($metadata, $resource);
+        $this->dbInsert($metadata, $record);
+        $this->setIncludedData($resource, $inclusions);
+        return $resource;
+    }
 
-        if (true === $metadata->isChildEntity()) {
-            $record['_type'] = $entity->getType();
-        }
+    /**
+     * Extracts a raw MongoDB array record from a resource.
+     *
+     * @param   EntityMetadata  $metadata
+     * @param   Struct\Resource $resource
+     * @return  array
+     */
+    protected function extractRawRecord(EntityMetadata $metadata, Struct\Resource $resource)
+    {
+        $entity = $resource->getPrimaryData();
+        $record = $this->extractIdAndType($metadata, $entity, []);
+        $record = $this->extractAttributes($metadata, $entity, $record);
+        $record = $this->extractRelationships($metadata, $entity, $resource, $record);
+        return $record;
+    }
 
-        if (true === $metadata->isPolymorphic()) {
-            if (true === $metadata->isAbstract()) {
-                throw StoreException::badRequest('Records cannot be persisted that are polymorphic and abstract.');
-            }
-            $record['_type'] = $entity->getType();
-        }
+    /**
+     * Extracts a raw ID and Type and adds to the provided raw record.
+     *
+     * @param   EntityMetadata      $metadata
+     * @param   Struct\Identifier   $identifier
+     * @param   array               $record
+     * @return  array
+     */
+    protected function extractIdAndType(EntityMetadata $metadata, Struct\Identifier $identifier, array $record)
+    {
+        $record['_id'] = $this->formatIdentifiers($metadata, $identifier->getId());
+        $record['_type'] = $identifier->getType();
+        return $record;
+    }
 
+    /**
+     * Extracts raw attributes from an entity and adds them to the provided raw record.
+     *
+     * @param   EntityMetadata  $metadata
+     * @param   Struct\Entity   $entity
+     * @param   array           $record
+     * @return  array
+     */
+    protected function extractAttributes(EntityMetadata $metadata, Struct\Entity $entity, array $record)
+    {
         foreach ($metadata->getAttributes() as $key => $attrMeta) {
             if (false === $entity->hasAttribute($key)) {
                 continue;
@@ -109,57 +141,74 @@ class MongoDBStore implements StoreInterface
             }
             $record[$key] = $attribute->getValue();
         }
+        return $record;
+    }
 
-        // @todo This needs to be abstracted/reusable @see setIncludedData()
-        // @todo Also need to find a way to cache records/resources that are already found to prevent double query and double hydration.
-        $toInclude = $resource->getDataToInclude();
-        $queried = [];
-        foreach ($toInclude as $type => $identifiers) {
-            // @todo Long term metadata objects should be stored directly on the Struct/Entity objects themselves.
-            // @todo This would prevent needing the MF service as a dependancy in so many classes.
-            $relatedEntityMetadata = $this->hydrator->getMetadataFactory()->getMetadataForType($type);
-            $formattedIds = $this->formatIdentifiers($metadata, array_keys($identifiers));
-            $queried[$type] = $this->queryMongoDb($relatedEntityMetadata, ['id' => ['$in' => $formattedIds]])->toArray();
-        }
-
-        // @todo This entire process needs to be abstracted into simpiler methods!
+    /**
+     * Extracts raw relations from an entity and adds them to the provided raw record.
+     *
+     * @param   EntityMetadata  $metadata
+     * @param   Struct\Entity   $entity
+     * @param   Struct\Resource $resource
+     * @param   array           $record
+     * @return  array
+     */
+    protected function extractRelationships(EntityMetadata $metadata, Struct\Entity $entity, Struct\Resource $resource, array $record)
+    {
+        $queried = $this->queryIncludedData($resource);
         foreach ($metadata->getRelationships() as $key => $relMeta) {
-            $type = $relMeta->entityType;
-            if (!isset($queried[$type]) && !empty($queried[$type])) {
+            if (false === $entity->hasRelationship($key)) {
+                // Entity does not have the relationship.
+                continue;
+            }
+            $relationship = $entity->getRelationship($key);
+            if (false === $relationship->hasData()) {
+                // This would be true on create, but necessarily on update. Data could be set and then removed.
                 continue;
             }
 
-            $relatedEntityMetadata = $this->hydrator->getMetadataFactory()->getMetadataForType($type);
-            if ($relMeta->isOne()) {
-                $dbRecord = reset($queried[$type]);
-                if ($relatedEntityMetadata->isChildEntity() || $relatedEntityMetadata->isPolymorphic()) {
-                    $rel = ['_id' => $dbRecord['_id'], '_type' => $relatedEntityMetadata->type];
-                } else {
-                    $rel = $dbRecord['_id'];
-                }
-                $record[$key] = $rel;
+            $relatedEntityMetadata = $this->hydrator->getMetadataFactory()->getMetadataForType($relMeta->entityType);
+            if ($relationship->isOne()) {
+                $record[$key] = $this->extractIdAndType($relatedEntityMetadata, $relationship->getPrimaryData(), []);
             } else {
-                $rel = [];
-                foreach ($queried[$type] as $dbRecord) {
-                    if ($relatedEntityMetadata->isChildEntity() || $relatedEntityMetadata->isPolymorphic()) {
-                        $rel[] = ['_id' => $dbRecord['_id'], '_type' => $relatedEntityMetadata->type];
-                    } else {
-                        $rel[] = $dbRecord['_id'];
-                    }
+                $many = [];
+                foreach ($relationship->getPrimaryData() as $identifier) {
+                    $many[] = $this->extractIdAndType($relatedEntityMetadata, $identifier, []);
                 }
-                if (!empty($rel)) {
-                    $record[$key] = $rel;
-                }
+                $record[$key] = $many;
             }
         }
+        return $record;
+    }
 
-        $collection = $this->connection->selectCollection($metadata->db, $metadata->collection);
-        $qb = $collection->createQueryBuilder()
+    /**
+     * Inserts a raw record to the database.
+     *
+     * @param   EntityMetadata  $metadata
+     * @param   array           $record
+     */
+    protected function dbInsert(EntityMetadata $metadata, array $record)
+    {
+        if (true === $metadata->isPolymorphic() && true === $metadata->isAbstract()) {
+            throw StoreException::badRequest('Records cannot be persisted that are polymorphic and abstract.');
+        }
+        $qb = $this->createQueryBuilder($metadata)
             ->insert()
             ->setNewObj($record)
         ;
-        $qb->getQuery()->execute();
-        return $resource;
+        return $qb->getQuery()->execute();
+    }
+
+    /**
+     * Creates a query builder object based on the provided metadata.
+     *
+     * @param   EntityMetadata  $metadata
+     * @return  \Doctrine\MongoDB\Query\Builder
+     */
+    protected function createQueryBuilder(EntityMetadata $metadata)
+    {
+        $collection = $this->connection->selectCollection($metadata->db, $metadata->collection);
+        return $collection->createQueryBuilder();
     }
 
     /**
@@ -178,18 +227,24 @@ class MongoDBStore implements StoreInterface
         if (!isset($inclusions['*'])) {
             $filter = $inclusions;
         }
-        $toInclude = $resource->getDataToInclude($filter);
+        $queried = $this->queryIncludedData($resource, $filter);
+        $collection = $this->hydrator->hydrateIncluded($queried);
+        $resource->setIncludedData($collection);
+        return $resource;
+    }
+
+    protected function queryIncludedData(Struct\Resource $resource, array $filter = [])
+    {
+        $toQuery = $resource->getDataToInclude($filter);
         $queried = [];
-        foreach ($toInclude as $type => $identifiers) {
+        foreach ($toQuery as $type => $identifiers) {
             // @todo Long term metadata objects should be stored directly on the Struct/Entity objects themselves.
             // @todo This would prevent needing the MF service as a dependancy in so many classes.
             $metadata = $this->hydrator->getMetadataFactory()->getMetadataForType($type);
             $formattedIds = $this->formatIdentifiers($metadata, array_keys($identifiers));
             $queried[$type] = $this->queryMongoDb($metadata, ['id' => ['$in' => $formattedIds]])->toArray();
         }
-        $collection = $this->hydrator->hydrateIncluded($queried);
-        $resource->setIncludedData($collection);
-        return $resource;
+        return $queried;
     }
 
     /**
@@ -203,13 +258,7 @@ class MongoDBStore implements StoreInterface
      */
     protected function queryMongoDb(EntityMetadata $metadata, array $criteria, array $fields = [], array $sort = [])
     {
-        // Note: if entity metadata needs to change to not include db and collection (e.g. database agnostic) this would need to change.
-        $collection = $this->connection->selectCollection($metadata->db, $metadata->collection);
-
-        if ($metadata->isChildEntity()) {
-            $criteria['_type'] = $metadata->type;
-        }
-
+        $criteria['_type'] = $metadata->type;
         if (isset($criteria['id'])) {
             $criteria['_id'] = $criteria['id'];
             unset($criteria['id']);
@@ -220,7 +269,7 @@ class MongoDBStore implements StoreInterface
             unset($sort['id']);
         }
 
-        $qb = $collection->createQueryBuilder()
+        $qb = $this->createQueryBuilder($metadata)
             ->find()
             ->setQueryArray($criteria)
         ;
