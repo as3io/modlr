@@ -10,7 +10,6 @@ use Actinoids\Modlr\RestOdm\Rest\RestPayload;
 use Actinoids\Modlr\RestOdm\Struct;
 use Actinoids\Modlr\RestOdm\Exception\RuntimeException;
 use Actinoids\Modlr\RestOdm\Adapter\AdapterInterface;
-use Actinoids\Modlr\RestOdm\Hydrator\JsonApiHydrator;
 
 class JsonApiSerializer implements SerializerInterface
 {
@@ -21,14 +20,6 @@ class JsonApiSerializer implements SerializerInterface
      * @var TypeFactory
      */
     private $typeFactory;
-
-    /**
-     * The Resource hydrator.
-     * Used for normalizing incoming payloads into Struct\Resource objects.
-     *
-     * @var JsonApiHydrator
-     */
-    private $factory;
 
     /**
      * Denotes the current object depth of the serializer.
@@ -52,65 +43,9 @@ class JsonApiSerializer implements SerializerInterface
      *
      * @param   TypeFactory     $typeFactory
      */
-    public function __construct(TypeFactory $typeFactory, JsonApiHydrator $hydrator)
+    public function __construct(TypeFactory $typeFactory)
     {
         $this->typeFactory = $typeFactory;
-        $this->hydrator = $hydrator;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function normalize(RestPayload $payload, AdapterInterface $adapter)
-    {
-        $data = @json_decode($payload->getData(), true);
-        if (!is_array($data)) {
-            throw SerializerException::badRequest('Unable to parse. Is the JSON valid?');
-        }
-        if (!isset($data['data'])) {
-            throw SerializerException::badRequest('No "data" member was found in the payload. All payloads must be keyed with "data."');
-        }
-
-        $data = $data['data'];
-        if (true === $this->isSequentialArray($data)) {
-            throw SerializerException::badRequest('Normalizing multiple records is currently not supported.');
-        }
-
-        if (!isset($data['type'])) {
-            throw SerializerException::badRequest('The "type" member was missing from the payload. All payloads must contain a type.');
-        }
-
-        $metadata = $adapter->getEntityMetadata($data['type']);
-        $flattened['type'] = $data['type'];
-        if (isset($data['attributes']) && is_array($data['attributes'])) {
-            foreach ($metadata->getAttributes() as $key => $attrMeta) {
-                if (!isset($data['attributes'][$key])) {
-                    continue;
-                }
-                $flattened[$key] = $data['attributes'][$key];
-            }
-        }
-
-        if (isset($data['relationships']) && is_array($data['relationships'])) {
-            foreach ($metadata->getRelationships() as $key => $relMeta) {
-                if (!isset($data['relationships'][$key])) {
-                    continue;
-                }
-                $flattened[$key] = $data['relationships'][$key];
-            }
-        }
-        return $this->hydrator->hydrateOne($metadata, null, $flattened);
-    }
-
-    /**
-     * Determines if an array is sequential.
-     *
-     * @param   array   $arr
-     * @return  bool
-     */
-    protected function isSequentialArray(array $arr)
-    {
-        return (range(0, count($arr) - 1) === array_keys($arr));
     }
 
     /**
