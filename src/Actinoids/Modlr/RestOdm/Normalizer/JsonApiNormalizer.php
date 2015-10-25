@@ -2,54 +2,25 @@
 
 namespace Actinoids\Modlr\RestOdm\Normalizer;
 
+use Actinoids\Modlr\RestOdm\Struct;
 use Actinoids\Modlr\RestOdm\Rest\RestPayload;
+use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Adapter\AdapterInterface;
-use Actinoids\Modlr\RestOdm\Hydrator\JsonApiHydrator;
 
-class JsonApiNormalizer implements NormalizerInterface
+/**
+ * Normalizes REST payloads in Struct\Resources based on the JSON API spec.
+ *
+ * @author Jacob Bare <jacob.bare@gmail.com>
+ */
+class JsonApiNormalizer extends AbstractNormalizer
 {
-    /**
-     * The Resource hydrator.
-     * Used for normalizing incoming payloads into Struct\Resource objects.
-     *
-     * @var JsonApiHydrator
-     */
-    private $hydrator;
-
-    /**
-     * Constructor.
-     *
-     * @param   TypeFactory     $typeFactory
-     */
-    public function __construct(JsonApiHydrator $hydrator)
-    {
-        $this->hydrator = $hydrator;
-    }
-
     /**
      * {@inheritDoc}
      */
-    public function normalize(RestPayload $payload, AdapterInterface $adapter)
+    protected function flattenExtracted(array $extracted, EntityMetadata $metadata)
     {
-        $data = @json_decode($payload->getData(), true);
-        if (!is_array($data)) {
-            throw NormalizerException::badRequest('Unable to parse. Is the JSON valid?');
-        }
-        if (!isset($data['data'])) {
-            throw NormalizerException::badRequest('No "data" member was found in the payload. All payloads must be keyed with "data."');
-        }
-
-        $data = $data['data'];
-        if (true === $this->isSequentialArray($data)) {
-            throw NormalizerException::badRequest('Normalizing multiple records is currently not supported.');
-        }
-
-        if (!isset($data['type'])) {
-            throw NormalizerException::badRequest('The "type" member was missing from the payload. All payloads must contain a type.');
-        }
-
-        $metadata = $adapter->getEntityMetadata($data['type']);
-        $flattened['type'] = $data['type'];
+        $data = $extracted['data'];
+        $flattened['type'] = $metadata->type;
         if (isset($data['attributes']) && is_array($data['attributes'])) {
             foreach ($metadata->getAttributes() as $key => $attrMeta) {
                 if (!isset($data['attributes'][$key])) {
@@ -77,7 +48,46 @@ class JsonApiNormalizer implements NormalizerInterface
                 $flattened[$key] = $rel['data'];
             }
         }
-        return $this->hydrator->hydrateOne($metadata, null, $flattened);
+        return $flattened;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function extractMetadata(array $extracted, AdapterInterface $adapter)
+    {
+        return $adapter->getEntityMetadata($extracted['data']['type']);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function extractPayload(RestPayload $payload)
+    {
+        $extracted = @json_decode($payload->getData(), true);
+        if (!is_array($extracted)) {
+            throw NormalizerException::badRequest('Unable to parse. Is the JSON valid?');
+        }
+        return $extracted;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function validateExtracted(array $extracted)
+    {
+        if (!isset($extracted['data']) || !is_array($extracted['data'])) {
+            throw NormalizerException::badRequest('No "data" member was found in the payload. All payloads must be keyed with "data."');
+        }
+
+        if (true === $this->isSequentialArray($extracted['data'])) {
+            throw NormalizerException::badRequest('Normalizing multiple records is currently not supported.');
+        }
+
+        if (!isset($extracted['data']['type'])) {
+            throw NormalizerException::badRequest('The "type" member was missing from the payload. All payloads must contain a type.');
+        }
+        return $extracted;
     }
 
     /**
