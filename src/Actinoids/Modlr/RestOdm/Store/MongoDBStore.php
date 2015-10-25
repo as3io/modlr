@@ -15,6 +15,9 @@ use Doctrine\MongoDB\Connection;
  */
 class MongoDBStore implements StoreInterface
 {
+    const ID_FIELD = '_id';
+    const POLYMORPHIC_KEY = '_type';
+
     /**
      * The Doctine MongoDB connection.
      *
@@ -75,10 +78,8 @@ class MongoDBStore implements StoreInterface
      */
     public function createRecord(EntityMetadata $metadata, Struct\Resource $resource, array $fields = [], array $inclusions = [])
     {
-        if (false === $resource->isOne()) {
-            throw StoreException::badRequest('Record creation only supports single resources, not multiple');
-        }
         $identifier = $this->generateIdentifier($metadata);
+
         $entity = $resource->getPrimaryData();
         $entity->setId($identifier);
 
@@ -106,17 +107,50 @@ class MongoDBStore implements StoreInterface
                 // Do not store null values.
                 continue;
             }
-            switch ($attrMeta->dataType) {
-                case 'integer':
-                    $value = new \MongoInt64($attribute->getValue());
-                    break;
-                case 'date':
-                    $value = new \MongoDate($attribute->getValue()->getTimestamp());
-                default:
-                    $value = $attribute->getValue();
-                    break;
+            $record[$key] = $attribute->getValue();
+        }
+
+        // @todo This needs to be abstracted/reusable @see setIncludedData()
+        // @todo Also need to find a way to cache records/resources that are already found to prevent double query and double hydration.
+        $toInclude = $resource->getDataToInclude();
+        $queried = [];
+        foreach ($toInclude as $type => $identifiers) {
+            // @todo Long term metadata objects should be stored directly on the Struct/Entity objects themselves.
+            // @todo This would prevent needing the MF service as a dependancy in so many classes.
+            $relatedEntityMetadata = $this->hydrator->getMetadataFactory()->getMetadataForType($type);
+            $formattedIds = $this->formatIdentifiers($metadata, array_keys($identifiers));
+            $queried[$type] = $this->queryMongoDb($relatedEntityMetadata, ['id' => ['$in' => $formattedIds]])->toArray();
+        }
+
+        // @todo This entire process needs to be abstracted into simpiler methods!
+        foreach ($metadata->getRelationships() as $key => $relMeta) {
+            $type = $relMeta->entityType;
+            if (!isset($queried[$type]) && !empty($queried[$type])) {
+                continue;
             }
-            $record[$key] = $value;
+
+            $relatedEntityMetadata = $this->hydrator->getMetadataFactory()->getMetadataForType($type);
+            if ($relMeta->isOne()) {
+                $dbRecord = reset($queried[$type]);
+                if ($relatedEntityMetadata->isChildEntity() || $relatedEntityMetadata->isPolymorphic()) {
+                    $rel = ['_id' => $dbRecord['_id'], '_type' => $relatedEntityMetadata->type];
+                } else {
+                    $rel = $dbRecord['_id'];
+                }
+                $record[$key] = $rel;
+            } else {
+                $rel = [];
+                foreach ($queried[$type] as $dbRecord) {
+                    if ($relatedEntityMetadata->isChildEntity() || $relatedEntityMetadata->isPolymorphic()) {
+                        $rel[] = ['_id' => $dbRecord['_id'], '_type' => $relatedEntityMetadata->type];
+                    } else {
+                        $rel[] = $dbRecord['_id'];
+                    }
+                }
+                if (!empty($rel)) {
+                    $record[$key] = $rel;
+                }
+            }
         }
 
         $collection = $this->connection->selectCollection($metadata->db, $metadata->collection);
@@ -154,7 +188,7 @@ class MongoDBStore implements StoreInterface
             $queried[$type] = $this->queryMongoDb($metadata, ['id' => ['$in' => $formattedIds]])->toArray();
         }
         $collection = $this->hydrator->hydrateIncluded($queried);
-        $resource->setIncludedData($collection);;
+        $resource->setIncludedData($collection);
         return $resource;
     }
 
