@@ -158,7 +158,7 @@ class StructFactory
         $this->validateData($data);
         $meta = $this->mf->getMetadataForType($entity->getType());
         foreach ($meta->getAttributes() as $key => $attribute) {
-            if (!isset($data[$key])) {
+            if (!array_key_exists($key, $data)) {
                 continue;
             }
             $this->applyAttribute($entity, $attribute, $data[$key]);

@@ -90,6 +90,110 @@ class MongoDBStore implements StoreInterface
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function updateRecord(EntityMetadata $metadata, Struct\Resource $resource, array $fields = [], array $inclusions = [])
+    {
+        $new = $resource->getPrimaryData();
+        $identifier = $new->getId();
+
+        $result = $this->queryMongoDb($metadata, ['id' => $this->formatIdentifiers($metadata, $identifier)], $fields)->getSingleResult();
+        if (null === $result) {
+            throw StoreException::recordNotFound($metadata->type, $identifier);
+        }
+        $old = $this->hydrator->hydrateOne($metadata, $identifier, $result)->getPrimaryData();
+        $changeset = $this->calculateChangeSet($metadata, $resource, $old, $new);
+
+        if (!empty($changeset)) {
+            $this->dbUpdate($metadata, $identifier, $changeset);
+            return $this->findRecord($metadata, $identifier, $fields, $inclusions);
+        } else {
+            $this->setIncludedData($old, $inclusions);
+            return $old;
+        }
+    }
+
+    protected function calculateChangeSet(EntityMetadata $metadata, Struct\Resource $resource, Struct\Entity $old, Struct\Entity $new)
+    {
+        if ($old->getId() !== $new->getId()) {
+            throw StoreException::badRequest('The old and new ids are mismatched. Cannot update.');
+        }
+        if ($old->getType() !== $new->getType()) {
+            throw StoreException::badRequest('The old and new entity types are mismatched. Cannot update.');
+        }
+
+        $changeset = [];
+        foreach ($metadata->getAttributes() as $key => $attrMeta) {
+            if (false === $new->hasAttribute($key)) {
+                continue;
+            }
+
+            $oldValue = ($old->hasAttribute($key)) ? $old->getAttribute($key)->getValue() : null;
+            $newValue = $new->getAttribute($key)->getValue();
+
+            if ($oldValue != $newValue) {
+                $changeset[$key][0] = $oldValue;
+                $changeset[$key][1] = $newValue;
+            }
+        }
+
+        $oldRel = $this->extractRelationships($metadata, $old, $resource, []);
+        $newRel = $this->extractRelationships($metadata, $new, $resource, []);
+
+        foreach ($metadata->getRelationships() as $key => $relMeta) {
+            if (false === $new->hasRelationship($key)) {
+                continue;
+            }
+
+            $oldValue = (isset($oldRel[$key])) ? $oldRel[$key] : null;
+            $newValue = (isset($newRel[$key])) ? $newRel[$key] : null;
+
+            if (empty($oldValue) && empty($newValue)) {
+                continue;
+            } elseif (empty($oldValue) && !empty($newValue)) {
+                $changeset[$key][0] = null;
+                $changeset[$key][1] = $newValue;
+            } elseif (!empty($oldValue) && empty($newValue)) {
+                $changeset[$key][0] = $oldValue;
+                $changeset[$key][1] = null;
+            }
+
+            if (true === $relMeta->isOne()) {
+                if ($oldValue['_id'] != $newValue['_id']) {
+                    $changeset[$key][0] = $oldValue;
+                    $changeset[$key][1] = $newValue;
+                } else {
+                    continue;
+                }
+            } else {
+                if (count($oldValue) !== count($newValue)) {
+                    $changeset[$key][0] = $oldValue;
+                    $changeset[$key][1] = $newValue;
+                } else {
+                    $oldIds = [];
+                    $newIds = [];
+                    foreach ($oldValue as $item) {
+                        // @todo Prevent allowing relating the same model more than once.
+                        $oldIds[(String) $item['_id']] = true;
+                    }
+                    ksort($oldIds);
+
+                    foreach ($newValue as $item) {
+                        // @todo Prevent allowing relating the same model more than once.
+                        $newIds[(String) $item['_id']] = true;
+                    }
+                    ksort($newIds);
+                    if ($oldIds !== $newIds) {
+                        $changeset[$key][0] = $oldValue;
+                        $changeset[$key][0] = $newValue;
+                    }
+                }
+            }
+        }
+        return $changeset;
+    }
+
+    /**
      * Extracts a raw MongoDB array record from a resource.
      *
      * @param   EntityMetadata  $metadata
@@ -153,7 +257,7 @@ class MongoDBStore implements StoreInterface
      * @param   array           $record
      * @return  array
      */
-    protected function extractRelationships(EntityMetadata $metadata, Struct\Entity $entity, Struct\Resource $resource, array $record)
+    protected function extractRelationships(EntityMetadata $metadata, Struct\Entity $entity, Struct\Resource $resource, array $record, $new = false)
     {
         $queried = $this->queryIncludedData($resource);
         foreach ($metadata->getRelationships() as $key => $relMeta) {
@@ -162,17 +266,24 @@ class MongoDBStore implements StoreInterface
                 continue;
             }
             $relationship = $entity->getRelationship($key);
-            if (false === $relationship->hasData()) {
-                // This would be true on create, but necessarily on update. Data could be set and then removed.
+            if (false === $relationship->hasData() && false === $new) {
                 continue;
             }
 
             $relatedEntityMetadata = $this->hydrator->getMetadataFactory()->getMetadataForType($relMeta->entityType);
             if ($relationship->isOne()) {
+                $id = $relationship->getPrimaryData()->getId();
+                if (empty($id)) {
+                    continue;
+                }
                 $record[$key] = $this->extractIdAndType($relatedEntityMetadata, $relationship->getPrimaryData(), []);
             } else {
                 $many = [];
                 foreach ($relationship->getPrimaryData() as $identifier) {
+                    $id = $identifier->getId();
+                    if (empty($id)) {
+                        continue;
+                    }
                     $many[] = $this->extractIdAndType($relatedEntityMetadata, $identifier, []);
                 }
                 $record[$key] = $many;
@@ -196,6 +307,33 @@ class MongoDBStore implements StoreInterface
             ->insert()
             ->setNewObj($record)
         ;
+        return $qb->getQuery()->execute();
+    }
+
+    /**
+     * Inserts a raw record to the database.
+     *
+     * @param   EntityMetadata  $metadata
+     * @param   mixed           $identifier
+     * @param   array           $changeset
+     */
+    protected function dbUpdate(EntityMetadata $metadata, $identifier, array $changeset)
+    {
+        if (true === $metadata->isPolymorphic() && true === $metadata->isAbstract()) {
+            throw StoreException::badRequest('Records cannot be persisted that are polymorphic and abstract.');
+        }
+        $qb = $this->createQueryBuilder($metadata)
+            ->update()
+            ->field('_id')->equals($this->formatIdentifiers($metadata, $identifier))
+        ;
+        foreach ($changeset as $key => $set) {
+            list($old, $new) = $set;
+            if (null === $new) {
+                $qb->field($key)->unsetField();
+                continue;
+            }
+            $qb->field($key)->set($new);
+        }
         return $qb->getQuery()->execute();
     }
 

@@ -95,7 +95,7 @@ abstract class AbstractHydrator implements HydratorInterface
 
         foreach ($metadata->getRelationships() as $key => $relMeta) {
 
-            if (!isset($data[$key]) || ($relMeta->isMany() && !is_array($data[$key]))) {
+            if (false === array_key_exists($key, $data) || ($relMeta->isMany() && !is_array($data[$key]))) {
                 continue;
             }
 

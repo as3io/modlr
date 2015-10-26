@@ -152,7 +152,7 @@ class JsonApiSerializer implements SerializerInterface
     protected function serializeAttribute(Struct\Attribute $attribute = null, AttributeMetadata $attrMeta)
     {
         if (null === $attribute) {
-            return $this->typeFactory->convertToModlrValue($attrMeta->dataType, null);
+            return $this->typeFactory->convertToSerializedValue($attrMeta->dataType, null);
         }
         // if ('object' === $attrMeta->dataType && $attrMeta->hasAttributes()) {
         //     // If object attributes (sub-attributes) are defined, attempt to convert them to the proper data types.
@@ -170,7 +170,7 @@ class JsonApiSerializer implements SerializerInterface
         //     return $serialized;
         // }
         if (isset($this->typesRequiringConversion[$attrMeta->dataType])) {
-            return $this->typeFactory->convertToModlrValue($attrMeta->dataType, $attribute->getValue());
+            return $this->typeFactory->convertToSerializedValue($attrMeta->dataType, $attribute->getValue());
         }
         return $attribute->getValue();
     }

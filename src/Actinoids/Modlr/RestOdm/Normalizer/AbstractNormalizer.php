@@ -54,7 +54,8 @@ abstract class AbstractNormalizer implements NormalizerInterface
     {
         $metadata = $this->extractMetadata($extracted, $adapter);
         $flattened = $this->flattenExtracted($extracted, $metadata);
-        return $this->hydrator->hydrateOne($metadata, null, $flattened);
+        $identifier = (isset($flattened['id'])) ? $flattened['id'] : null;
+        return $this->hydrator->hydrateOne($metadata, $identifier, $flattened);
     }
 
     /**
