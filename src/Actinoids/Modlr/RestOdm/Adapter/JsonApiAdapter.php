@@ -133,7 +133,13 @@ class JsonApiAdapter implements AdapterInterface
                 throw AdapterException::badRequest('Creating a new record while providing an id is not supported.');
             case 'PATCH':
                 // @todo Must validate JSON content type
-                throw AdapterException::badRequest('No PATCH request handler found.');
+                if (false === $request->hasIdentifier()) {
+                    throw AdapterException::badRequest('No identifier found. You must specify an ID in the URL.');
+                }
+                if (false === $request->hasPayload()) {
+                    throw AdapterException::requestPayloadNotFound('Unable to update entity.');
+                }
+                return $this->updateRecord($metadata, $request->getIdentifier(), $request->getPayload(), $request->getFieldset(), $request->getInclusions());
             case 'DELETE':
                 throw AdapterException::badRequest('No DELETE request handler found.');
             default:
@@ -181,6 +187,33 @@ class JsonApiAdapter implements AdapterInterface
             throw AdapterException::badRequest($e->getMessage());
         }
         $resource = $this->getStore()->createRecord($metadata, $resource, $fields, $inclusions);
+        $payload = $this->serialize($resource);
+        return $this->createRestResponse(201, $payload);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function updateRecord(EntityMetadata $metadata, $identifier, Rest\RestPayload $payload, array $fields = [], array $inclusions = [])
+    {
+        $resource = $this->normalize($payload);
+        if (true === $resource->isMany()) {
+            throw AdapterException::badRequest('Multiple records were found in the payload. Batch creation is currently not supported.');
+        }
+        if (true === $resource->getPrimaryData()->isNew()) {
+            throw AdapterException::badRequest('No "id" member was found in the payload.');
+        }
+
+        if ($identifier !== $resource->getPrimaryData()->getId()) {
+            throw AdapterException::badRequest(sprintf('The identifiers are mismatched. Expected "id" member value to be "%s"', $identifier));
+
+        }
+        try {
+            $this->mf->validateResourceTypes($metadata->type, $resource->getEntityType());
+        } catch (InvalidArgumentException $e) {
+            throw AdapterException::badRequest($e->getMessage());
+        }
+        $resource = $this->getStore()->updateRecord($metadata, $resource, $fields, $inclusions);
         $payload = $this->serialize($resource);
         return $this->createRestResponse(201, $payload);
     }

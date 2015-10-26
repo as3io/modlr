@@ -20,10 +20,15 @@ class JsonApiNormalizer extends AbstractNormalizer
     protected function flattenExtracted(array $extracted, EntityMetadata $metadata)
     {
         $data = $extracted['data'];
+
+        if (isset($data['id']) && !empty($data['id'])) {
+            $flattened['id'] = $data['id'];
+        }
+
         $flattened['type'] = $metadata->type;
         if (isset($data['attributes']) && is_array($data['attributes'])) {
             foreach ($metadata->getAttributes() as $key => $attrMeta) {
-                if (!isset($data['attributes'][$key])) {
+                if (false === array_key_exists($key, $data['attributes'])) {
                     continue;
                 }
                 $flattened[$key] = $data['attributes'][$key];
@@ -32,13 +37,23 @@ class JsonApiNormalizer extends AbstractNormalizer
 
         if (isset($data['relationships']) && is_array($data['relationships'])) {
             foreach ($metadata->getRelationships() as $key => $relMeta) {
-                if (!isset($data['relationships'][$key])) {
+                if (false === array_key_exists($key, $data['relationships'])) {
                     continue;
                 }
                 $rel = $data['relationships'][$key];
-                if (!is_array($rel) || !isset($rel['data'])) {
+                if (false === array_key_exists('data', $rel)) {
                     throw NormalizerException::badRequest(sprintf('The "data" member was missing from the payload for relationship "%s"', $key));
                 }
+
+                if (empty($rel['data'])) {
+                    $flattened[$key] = null;
+                    continue;
+                }
+
+                if (!is_array($rel['data'])) {
+                    throw NormalizerException::badRequest(sprintf('The "data" member is not valid in the payload for relationship "%s"', $key));
+                }
+
                 if (true === $relMeta->isOne() && true === $this->isSequentialArray($rel['data'])) {
                     throw NormalizerException::badRequest(sprintf('The data payload for relationship "%s" is malformed. Data types of "one" must be an associative array, sequential found.', $key));
                 }

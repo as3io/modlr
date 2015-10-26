@@ -178,7 +178,11 @@ class Resource
             }
             if (empty($filter) || isset($filter[$relationship->getKey()])) {
                 $relData = $relationship->getPrimaryData();
-                $toInclude[$relData->getType()][$relData->getId()] = true;
+                $identifier = $relData->getId();
+                if (empty($identifier)) {
+                    continue;
+                }
+                $toInclude[$relData->getType()][$identifier] = true;
             }
         }
     }
