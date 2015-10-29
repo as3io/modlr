@@ -5,11 +5,11 @@ namespace Actinoids\Modlr\RestOdm\Store;
 use Actinoids\Modlr\RestOdm\Exception\AbstractHttpException;
 
 /**
- * Store exceptions.
+ * Persister exceptions.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class StoreException extends AbstractHttpException
+class PersisterException extends AbstractHttpException
 {
     public static function recordNotFound($type, $identifer)
     {
@@ -28,7 +28,7 @@ class StoreException extends AbstractHttpException
     {
         return new self(
             sprintf(
-                'Oops! We were unable to handle store operations for this record. %s',
+                'Oops! We were unable to handle database operations for this record. %s',
                 $message
             ),
             500,
@@ -36,25 +36,12 @@ class StoreException extends AbstractHttpException
         );
     }
 
-    public static function invalidInclude($type, $fieldKey)
+    public static function nyi($featureDescription)
     {
         return new self(
             sprintf(
-                'The relationship key "%s" was not found on entity "%s"',
-                $fieldKey,
-                $type
-            ),
-            400,
-            __FUNCTION__
-        );
-    }
-
-    public static function nyi($type)
-    {
-        return new self(
-            sprintf(
-                'Oops! A feature has been accessed while accessing "%s" that has not yet been completed.',
-                $type
+                'Oops! A feature was accessed that is currently unimplemented: %s',
+                $featureDescription
             ),
             500,
             __FUNCTION__

@@ -77,8 +77,16 @@ class YamlFileDriver extends AbstractFileDriver
     public function getOwnedTypes($type, array $types = [])
     {
         $all = $this->getAllTypeNames();
+
+        $path = $this->getFilePathForType($type);
+        $superMapping = $this->getMapping($type, $path);
+
+        $abstract = isset($superMapping['entity']['abstract']) && true === $superMapping['entity']['abstract'];
+
         foreach ($this->getAllTypeNames() as $searchType) {
-            if ($type === $searchType) {
+
+            if ($type === $searchType && false === $abstract) {
+                $types[] = $type;
                 continue;
             }
             if (0 !== strpos($searchType, $type)) {
@@ -92,7 +100,6 @@ class YamlFileDriver extends AbstractFileDriver
                 continue;
             }
             $types[] = $searchType;
-
         }
         return $types;
     }
