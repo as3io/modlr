@@ -28,7 +28,7 @@ class StoreException extends AbstractHttpException
     {
         return new self(
             sprintf(
-                'Oops! We were unable to handle database operations for this record. %s',
+                'Oops! We were unable to handle store operations for this record. %s',
                 $message
             ),
             500,
