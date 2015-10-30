@@ -14,10 +14,9 @@ class State
 {
     private $status = [
         'empty'     => false,
-        'loading'   => false,
         'loaded'    => false,
         'dirty'     => false,
-        'saving'    => false,
+        'deleting'  => false,
         'deleted'   => false,
         'new'       => false,
     ];
@@ -27,11 +26,29 @@ class State
         $this->setEmpty();
     }
 
-    public function setNew()
+    public function is($status)
+    {
+        return $this->status[$status];
+    }
+
+    public function setDeleted($bit = true)
+    {
+        $this->set('deleted', $bit);
+        if ($this->is('deleted')) {
+            $this->setDeleting(false);
+            $this->setDirty(false);
+        }
+    }
+
+    public function setDeleting($bit = true)
+    {
+        $this->set('deleting', $bit);
+    }
+
+    public function setNew($bit = true)
     {
         $this->setLoaded();
-        $this->setDirty();
-        $this->set('new', true);
+        $this->set('new', $bit);
     }
 
     public function setLoaded($bit = true)

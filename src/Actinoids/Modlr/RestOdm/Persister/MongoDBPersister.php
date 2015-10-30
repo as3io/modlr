@@ -2,6 +2,7 @@
 
 namespace Actinoids\Modlr\RestOdm\Persister;
 
+use Actinoids\Modlr\RestOdm\Models\Model;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Doctrine\MongoDB\Connection;
 use \MongoId;
@@ -55,6 +56,74 @@ class MongoDBPersister implements PersisterInterface
     /**
      * {@inheritDoc}
      */
+    public function create(Model $model)
+    {
+        $metadata = $model->getMetadata();
+        $insert[$this->getIdentifierKey()] = $this->convertId($model->getId());
+        if (true === $metadata->isChildEntity()) {
+            $insert[$this->getPolymorphicKey()] = $metadata->type;
+        }
+        foreach ($model->getChangeSet() as $key => $values) {
+            $insert[$key] = $values['new'];
+        }
+        $this->createQueryBuilder($metadata)
+            ->insert()
+            ->setNewObj($insert)
+            ->getQuery()
+            ->execute()
+        ;
+        return $model;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function update(Model $model)
+    {
+        $metadata = $model->getMetadata();
+        $criteria = $this->getRetrieveCritiera($metadata, $model->getId());
+
+        $update = [];
+        foreach ($model->getChangeSet() as $key => $values) {
+            if (null === $values['new']) {
+                $op = '$unset';
+                $value = 1;
+            } else {
+                $op = '$set';
+                $value = $values['new'];
+            }
+           $update[$op][$key] = $value;
+        }
+        $this->createQueryBuilder($metadata)
+            ->update()
+            ->setQueryArray($criteria)
+            ->setNewObj($update)
+            ->getQuery()
+            ->execute();
+        ;
+        return $model;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function delete(Model $model)
+    {
+        $metadata = $model->getMetadata();
+        $criteria = $this->getRetrieveCritiera($metadata, $model->getId());
+
+        $this->createQueryBuilder($metadata)
+            ->remove()
+            ->setQueryArray($criteria)
+            ->getQuery()
+            ->execute();
+        ;
+        return $model;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function generateId($strategy = null)
     {
         if (false === $this->isIdStrategySupported($strategy)) {
@@ -70,6 +139,9 @@ class MongoDBPersister implements PersisterInterface
     {
         if (false === $this->isIdStrategySupported($strategy)) {
             throw PersisterException::nyi('ID conversion currently only supports an object strategy, or none at all.');
+        }
+        if ($identifier instanceof MongoId) {
+            return $identifier;
         }
         return new MongoId($identifier);
     }
