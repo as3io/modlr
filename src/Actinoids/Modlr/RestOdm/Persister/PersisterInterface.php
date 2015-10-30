@@ -2,6 +2,7 @@
 
 namespace Actinoids\Modlr\RestOdm\Persister;
 
+use Actinoids\Modlr\RestOdm\Models\Model;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 
 /**
@@ -19,6 +20,30 @@ interface PersisterInterface
      * @return  Record|null
      */
     public function retrieve(EntityMetadata $metadata, $identifier);
+
+    /**
+     * Creates a new database record from a model instance.
+     *
+     * @param   Model   $model
+     * @return  Model
+     */
+    public function create(Model $model);
+
+    /**
+     * Updates an existing database record from a model instance.
+     *
+     * @param   Model   $model
+     * @return  Model
+     */
+    public function update(Model $model);
+
+    /**
+     * Deletes a database record.
+     *
+     * @param   Model   $model
+     * @return  Model
+     */
+    public function delete(Model $model);
 
     /**
      * Gets the identifier field key name for this database.
