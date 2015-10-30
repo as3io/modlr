@@ -14,8 +14,8 @@ use \MongoId;
  */
 class MongoDBPersister implements PersisterInterface
 {
-    const IDENTIFIER_KEY = '_id';
-    const POLYMORPHIC_KEY = '_type';
+    const IDENTIFIER_KEY    = '_id';
+    const POLYMORPHIC_KEY   = '_type';
 
     /**
      * The Doctine MongoDB connection.
@@ -32,6 +32,26 @@ class MongoDBPersister implements PersisterInterface
     public function __construct(Connection $connection)
     {
         $this->connection = $connection;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @todo    Implement sorting and pagination (limit/skip).
+     */
+    public function all(EntityMetadata $metadata, array $identifiers = [])
+    {
+        $criteria = $this->getRetrieveCritiera($metadata, $identifiers);
+        $cursor = $this->createQueryBuilder($metadata)
+            ->find()
+            ->setQueryArray($criteria)
+            ->getQuery()
+            ->execute()
+        ;
+        $records = [];
+        foreach ($cursor as $result) {
+            $records[] = $this->hydrateRecord($metadata, $result);
+        }
+        return $records;
     }
 
     /**
@@ -203,13 +223,15 @@ class MongoDBPersister implements PersisterInterface
      */
     protected function getRetrieveCritiera(EntityMetadata $metadata, $identifiers)
     {
-        $criteria = [$this->getIdentifierKey() => null];
-        if (is_array($identifiers) && !empty($identifiers)) {
+        $criteria = [];
+        if (is_array($identifiers)) {
             $ids = [];
             foreach ($identifiers as $id) {
                 $ids[] = $this->convertId($id);
             }
-            $criteria[$this->getIdentifierKey()] = ['$in' => $ids];
+            if (!empty($ids)) {
+                $criteria[$this->getIdentifierKey()] = ['$in' => $ids];
+            }
         } else {
             $criteria[$this->getIdentifierKey()] = $this->convertId($identifiers);
         }

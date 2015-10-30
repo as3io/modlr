@@ -13,6 +13,16 @@ use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 interface PersisterInterface
 {
     /**
+     * Gets all records for the specified type, optinally filtered by a set of identifiers.
+     *
+     * @todo    Implement sorting and pagination (limit/skip).
+     * @param   EntityMetadata  $metadata
+     * @param   array           $identifiers
+     * @return  Record[]
+     */
+    public function all(EntityMetadata $metadata, array $identifiers = []);
+
+    /**
      * Retrieves a single model record from the database.
      *
      * @param   EntityMetadata  $metadata   The metadata for the model/record.

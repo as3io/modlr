@@ -3,6 +3,7 @@
 namespace Actinoids\Modlr\RestOdm\Store;
 
 use Actinoids\Modlr\RestOdm\Models\Model;
+use Actinoids\Modlr\RestOdm\Models\Collection;
 use Actinoids\Modlr\RestOdm\Metadata\MetadataFactory;
 use Actinoids\Modlr\RestOdm\Persister\PersisterInterface;
 use Actinoids\Modlr\RestOdm\Persister\Record;
@@ -66,6 +67,31 @@ class Store
     }
 
     /**
+     * Finds all records (or filtered by specific identifiers) for a type.
+     *
+     * @todo    Add sorting and pagination (limit/skip).
+     * @todo    Handle find all with identifiers.
+     * @param   string  $typeKey        The model type.
+     * @param   array   $idenitifiers   The model identifiers (optional).
+     * @return  Collection
+     */
+    public function findAll($typeKey, array $identifiers = [])
+    {
+        $metadata = $this->getMetadataForType($typeKey);
+        $collection = new Collection($metadata);
+
+        if (!empty($identifiers)) {
+            throw StoreException::nyi('Finding multiple records with specified identifiers is not yet supported.');
+        }
+
+        foreach ($this->retrieveRecords($typeKey, $identifiers) as $record) {
+            $model = $this->loadModel($typeKey, $record);
+            $collection->add($model);
+        }
+        return $collection;
+    }
+
+    /**
      * Creates a new record.
      * The model will not be comitted to the persistence layer until $model->save() is called.
      *
@@ -114,6 +140,20 @@ class Store
             throw StoreException::recordNotFound($typeKey, $identifier);
         }
         return $record;
+    }
+
+     /**
+     * Retrieves multiple Record objects from the persistence layer.
+     *
+     * @todo    Implement sorting and pagination (limit/skip).
+     * @param   string  $typeKey        The model type.
+     * @param   array   $identifiers    The model identifier.
+     * @return  Record[]
+     */
+    public function retrieveRecords($typeKey, array $identifiers)
+    {
+        $persister = $this->getPersisterFor($typeKey);
+        return $persister->all($this->getMetadataForType($typeKey), $identifiers);
     }
 
     /**

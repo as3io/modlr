@@ -51,6 +51,7 @@ class Model
     /**
      * Constructor.
      *
+     * @todo    Currently, if properties are applied on construct for a new model, they will not be reflected in the changeset.
      * @param   EntityMetadata  $metadata   The internal entity metadata that supports this Model.
      * @param   string          $identifier The database identifier.
      * @param   Store           $store      The model store service for handling persistence operations.
@@ -82,6 +83,14 @@ class Model
         $this->attributes->set($key, $value);
         $this->state->setDirty($this->isDirty());
         return $this;
+    }
+
+    public function getAttribute($key)
+    {
+        if (false === $this->getMetadata()->hasAttribute($key)) {
+            return null;
+        }
+        return $this->attributes->get($key);
     }
 
     /**
