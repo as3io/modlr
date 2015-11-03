@@ -2,6 +2,8 @@
 
 namespace Actinoids\Modlr\RestOdm\Models;
 
+use Actinoids\Modlr\RestOdm\Models\Relationships;
+use Actinoids\Modlr\RestOdm\Persister\Record;
 use Actinoids\Modlr\RestOdm\Store\Store;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 
@@ -28,6 +30,20 @@ class Model
     protected $attributes;
 
     /**
+     * The Model's has-one relationships
+     *
+     * @var Relationships\HasOne
+     */
+    protected $hasOneRelationships;
+
+    /**
+     * The Model's has-many relationships
+     *
+     * @var Relationships\HasMany
+     */
+    protected $hasManyRelationships;
+
+    /**
      * The model state.
      *
      * @var State
@@ -51,19 +67,113 @@ class Model
     /**
      * Constructor.
      *
-     * @todo    Currently, if properties are applied on construct for a new model, they will not be reflected in the changeset.
+     * @todo    Currently, if properties are applied on construct for a new model (new record), they will not be reflected in the changeset.
      * @param   EntityMetadata  $metadata   The internal entity metadata that supports this Model.
      * @param   string          $identifier The database identifier.
      * @param   Store           $store      The model store service for handling persistence operations.
-     * @param   array           $properties The model's attributes and relationships as a flattened, keyed array.
+     * @param   Record          $record     The model's attributes and relationships from the db layer to init the model with.
      */
-    public function __construct(EntityMetadata $metadata, $identifier, Store $store, array $properties = [])
+    public function __construct(EntityMetadata $metadata, $identifier, Store $store, Record $record = null)
     {
         $this->metadata = $metadata;
         $this->identifier = $identifier;
         $this->store = $store;
         $this->state = new State();
-        $this->initialize($properties);
+        $this->initialize($record);
+    }
+
+    /**
+     * Gets a model property: an attribute value, a has-one model, or a has-many model collection.
+     * Returns null if the property does not exist on the model or is not set.
+     * Is a proxy for @see getAttribute($key) and getRelationship($key)
+     *
+     * @param   string  $key    The property field key.
+     * @return  Model|Collection|null|mixed
+     */
+    public function get($key)
+    {
+        if (true === $this->getMetadata()->hasAttribute($key)) {
+            return $this->getAttribute($key);
+        }
+        return $this->getRelationship($key);
+    }
+
+    /**
+     * Gets an attribute value.
+     *
+     * @param   string  $key    The attribute key (field) name.
+     * @return  mixed
+     */
+    protected function getAttribute($key)
+    {
+        $this->touch();
+        return $this->attributes->get($key);
+    }
+
+    /**
+     * Gets a relationship value.
+     *
+     * @param   string  $key    The relationship key (field) name.
+     * @return  Model|Collection|null
+     */
+    protected function getRelationship($key)
+    {
+        $relMeta = $this->getMetadata()->getRelationship($key);
+        if (null === $relMeta) {
+            return null;
+        }
+        $this->touch();
+        if (true === $relMeta->isOne()) {
+            return $this->hasOneRelationships->get($key);
+        }
+        return $this->hasManyRelationships->get($key);
+    }
+
+    /**
+     * Pushes a Model into a has-many relationship collection.
+     * This method must be used for has-many relationships. Set will not work, as it expects an entire Collection.
+     *
+     * @param   string  $key
+     * @param   Model   $model
+     * @return  self
+     */
+    public function push($key, Model $model)
+    {
+        $relMeta = $this->getMetadata()->getRelationship($key);
+        if (null === $relMeta) {
+            return $this;
+        }
+        if (true === $relMeta->isOne()) {
+            return $this->setHasOne($key, $model);
+        }
+
+        $collection = $this->hasManyRelationships->get($key);
+        if (null === $collection) {
+            $collection = new Collection($this->getMetadata(), $this->store);
+            $this->setHasMany($key, $collection);
+        } else {
+            $this->touch();
+        }
+        $collection->push($model);
+        $this->state->setDirty($this->isDirty());
+        return $this;
+    }
+
+    /**
+     * Sets a model property: an attribute value, a has-one model, or an entire has-many model collection.
+     * Note: To push a single Model into a has-many collection, use @see push() instead.
+     * Is a proxy for @see setAttribute() and setRelationship()
+     *
+     * @param   string  $key                The property field key.
+     * @param   Model|Collection|null|mixed The value to set.
+     * @return  self.
+     */
+    public function set($key, $value)
+    {
+        if (true === $this->getMetadata()->hasAttribute($key)) {
+            return $this->setAttribute($key, $value);
+        }
+        return $this->setRelationship($key, $value);
     }
 
     /**
@@ -75,27 +185,69 @@ class Model
      * @param   mixed   $value  The value to apply.
      * @return  self
      */
-    public function attribute($key, $value)
+    protected function setAttribute($key, $value)
     {
-        if (false === $this->getMetadata()->hasAttribute($key)) {
-            return $this;
-        }
+        $this->touch();
         $this->attributes->set($key, $value);
         $this->state->setDirty($this->isDirty());
         return $this;
     }
 
-    public function getAttribute($key)
+    /**
+     * Sets a relationship value.
+     *
+     * @param   string                  $key
+     * @param   Model|Collection|null   $value
+     * @return  self
+     */
+    protected function setRelationship($key, $value)
     {
-        if (false === $this->getMetadata()->hasAttribute($key)) {
-            return null;
+        $relMeta = $this->getMetadata()->getRelationship($key);
+        if (null === $relMeta) {
+            return $this;
         }
-        return $this->attributes->get($key);
+        if (true === $relMeta->isOne()) {
+            return $this->setHasOne($key, $value);
+        }
+        return $this->setHasMany($key, $value);
+    }
+
+    /**
+     * Sets a has-one relationship.
+     *
+     * @todo    Validate the the model can be set, based on metadata.
+     * @param   string      $key    The relationship key (field) name.
+     * @param   Model|null  $model  The model to relate.
+     * @return  self
+     */
+    protected function setHasOne($key, Model $model = null)
+    {
+        $this->touch();
+        $this->hasOneRelationships->set($key, $model);
+        $this->state->setDirty($this->isDirty());
+        return $this;
+    }
+
+    /**
+     * Sets/replaces an entire has-many relationship Collection.
+     *
+     * @todo    Validate the the collection can be set, based on metadata.
+     * @param   string      $key        The relationship key (field) name.
+     * @param   Collection  $collection The model to set/replace.
+     * @return  self
+     */
+    protected function setHasMany($key, Collection $collection)
+    {
+        $this->touch();
+        $this->hasManyRelationships->set($key, $collection);
+        $this->state->setDirty($this->isDirty());
+        return $this;
     }
 
     /**
      * Saves the model.
      *
+     * @param   Implement cascade relationship saves. Or should the store handle this?
      * @return  self
      */
     public function save()
@@ -110,12 +262,14 @@ class Model
     /**
      * Rolls back a model to its original, database values.
      *
-     * @todo    Implement relationship rollbacks.
+     * @todo    Implement relationship rollbacks, especually has-many collection rollbacks.
      * @return  self
      */
     public function rollback()
     {
         $this->attributes->rollback();
+        $this->hasOneRelationships->rollback();
+        $this->hasManyRelationships->rollback();
         return $this;
     }
 
@@ -126,12 +280,7 @@ class Model
      */
     public function reload()
     {
-        if (true === $this->getState()->is('deleted')) {
-            return $this;
-        }
-        $record = $this->store->retrieveRecord($this->getType(), $this->getId());
-        $this->initialize($record->getProperties());
-        return $this;
+        return $this->touch(true);
     }
 
     /**
@@ -165,23 +314,66 @@ class Model
     }
 
     /**
-     * Initializes the modal and loads it's attributes and relationships.
+     * Touches the model.
+     * If the model is currently empty, it will query the database and fill/load the model.
      *
-     * @todo    Add relationship support.
-     * @param   array   $properties     The record attributes and relationships to apply.
+     * @param   bool    $force  Whether to force the load, even if the model is currently loaded.
      * @return  self
      */
-    protected function initialize(array $properties)
+    protected function touch($force = false)
     {
+        if (true === $this->getState()->is('deleted')) {
+            return $this;
+        }
+        if (true === $this->getState()->is('empty') || true === $force) {
+            $record = $this->store->retrieveRecord($this->getType(), $this->getId());
+            $this->initialize($record);
+        }
+        $this->state->setLoaded();
+        return $this;
+    }
+
+    /**
+     * Initializes the model and loads its attributes and relationships.
+     *
+     * @todo    Made public so collections can initialize models. Not sure if we want this??
+     * @todo    Add relationship support.
+     * @param   Record   $record     The db attributes and relationships to apply.
+     * @return  self
+     */
+    public function initialize(Record $record = null)
+    {
+        if (null === $record) {
+            $this->attributes = new Attributes();
+            $this->hasOneRelationships  = new Relationships\HasOne();
+            $this->hasManyRelationships = new Relationships\HasMany();
+            // @todo Is this necessary? They're empty.
+            $this->state->setDirty($this->isDirty());
+            return $this;
+        }
+
         $meta = $this->getMetadata();
+        $hasOne = [];
+        $hasMany = [];
         $attributes = [];
-        foreach ($properties as $key => $value) {
-            if (false === $meta->hasAttribute($key)) {
+        foreach ($record->getProperties() as $key => $value) {
+            if (true === $meta->hasAttribute($key)) {
+                $attributes[$key] = $value;
                 continue;
             }
-            $attributes[$key] = $value;
+            if (true === $meta->hasRelationship($key)) {
+                $relMeta = $meta->getRelationship($key);
+                if (true === $relMeta->isOne()) {
+                    $hasOne[$key] = $this->store->loadHasOne($value['type'], $value['id']);
+                } else {
+                    $hasMany[$key] = $this->store->loadHasMany($relMeta->getEntityType(), $value);
+                }
+            }
+
         }
-        $this->attributes = new Attributes($attributes);
+        $this->attributes           = new Attributes($attributes);
+        $this->hasOneRelationships  = new Relationships\HasOne($hasOne);
+        $this->hasManyRelationships = new Relationships\HasMany($hasMany);
         $this->state->setDirty($this->isDirty());
         return $this;
     }
@@ -189,24 +381,28 @@ class Model
     /**
      * Determines if the model is currently dirty.
      * Checks against the attribute and relationship dirty states.
-     *
-     * @todo    Implement relationships.
      * @return  bool
      */
     public function isDirty()
     {
-        return $this->attributes->areDirty();
+        return true === $this->attributes->areDirty()
+            || true === $this->hasOneRelationships->areDirty()
+            || true === $this->hasManyRelationships->areDirty()
+        ;
     }
 
     /**
      * Gets the current change set of attributes and relationships.
      *
-     * @todo    Implement relationship changeset.
      * @return  array
      */
     public function getChangeSet()
     {
-        return $this->attributes->calculateChangeSet();
+        return [
+            'attributes'    => $this->attributes->calculateChangeSet(),
+            'hasOne'        => $this->hasOneRelationships->calculateChangeSet(),
+            'hasMany'       => $this->hasManyRelationships->calculateChangeSet(),
+        ];
     }
 
     /**

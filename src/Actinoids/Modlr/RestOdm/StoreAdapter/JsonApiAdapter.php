@@ -190,7 +190,7 @@ class JsonApiAdapter
         // @todo Does the type still need to be validated here? Yes, most likely - need to compare the endpoint versus the type.
         $model = $this->getStore()->create($data['type']);
         foreach ($data['properties'] as $key => $value) {
-            $model->attribute($key, $value);
+            $model->set($key, $value);
         }
         $model->save();
         $payload = $this->serialize($model);
@@ -211,7 +211,7 @@ class JsonApiAdapter
         }
         $model = $this->getStore()->find($typeKey, $data['id']);
         foreach ($data['properties'] as $key => $value) {
-            $model->attribute($key, $value);
+            $model->set($key, $value);
         }
         $model->save();
         $payload = $this->serialize($model);
@@ -229,6 +229,7 @@ class JsonApiAdapter
      */
     public function handleException(\Exception $e)
     {
+        throw $e;
         $refl = new \ReflectionClass($e);
         if ($e instanceof HttpExceptionInterface) {
             $title  = sprintf('%s::%s', $refl->getShortName(), $e->getErrorType());
@@ -236,7 +237,7 @@ class JsonApiAdapter
             $status = $e->getHttpCode();
         } else {
             $title  = $refl->getShortName();
-            $detail = 'An internal server error occured';
+            $detail = 'Oh no! Something bad happened on the server! Please try again.';
             $status = 500;
         }
 

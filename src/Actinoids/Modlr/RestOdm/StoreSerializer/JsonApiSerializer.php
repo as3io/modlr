@@ -89,28 +89,27 @@ class JsonApiSerializer
         // $metadata = $adapter->getEntityMetadata($entity->getType());
 
         $metadata = $model->getMetadata();
-
         $serialized = [
             'type'  => $model->getType(),
             'id'    => $model->getId(),
         ];
-        // if ($this->depth > 0) {
+        if ($this->depth > 0) {
         //     // $this->includeResource($resource);
-        //     return $serialized;
-        // }
+            return $serialized;
+        }
 
         foreach ($metadata->getAttributes() as $key => $attrMeta) {
-            $value = $model->getAttribute($key);
+            $value = $model->get($key);
             $serialized['attributes'][$key] = $this->serializeAttribute($value, $attrMeta);
         }
 
         $serialized['links'] = ['self' => $adapter->buildUrl($metadata, $model->getId())];
 
-        // foreach ($metadata->getRelationships() as $key => $relMeta) {
-        //     $relationship = $entity->getRelationship($key);
-        //     // $formattedKey = $adapter->getExternalFieldKey($key);
-        //     $serialized['relationships'][$key] = $this->serializeRelationship($entity, $relationship, $relMeta, $adapter);
-        // }
+        foreach ($metadata->getRelationships() as $key => $relMeta) {
+            $relationship = $model->get($key);
+            // $formattedKey = $adapter->getExternalFieldKey($key);
+            $serialized['relationships'][$key] = $this->serializeRelationship($model, $relationship, $relMeta, $adapter);
+        }
         return $serialized;
     }
 
@@ -122,65 +121,65 @@ class JsonApiSerializer
      * @return  array
      * @throws  RuntimeException
      */
-    protected function serializeData($data, AdapterInterface $adapter)
-    {
-        if ($data instanceof Struct\Entity) {
-            $serialized = $this->serializeEntity($data, $adapter);
-        } elseif ($data instanceof Struct\Identifier) {
-            $serialized = $this->serializeIdentifier($data, $adapter);
-        } elseif ($data instanceof Struct\Collection) {
-            $serialized = $this->serializeCollection($data, $adapter);
-        } elseif (null === $data) {
-            $serialized = null;
-        } else {
-            throw new RuntimeException('Unable to serialize the provided data.');
-        }
-        return $serialized;
-    }
+    // protected function serializeData($data, AdapterInterface $adapter)
+    // {
+    //     if ($data instanceof Struct\Entity) {
+    //         $serialized = $this->serializeEntity($data, $adapter);
+    //     } elseif ($data instanceof Struct\Identifier) {
+    //         $serialized = $this->serializeIdentifier($data, $adapter);
+    //     } elseif ($data instanceof Struct\Collection) {
+    //         $serialized = $this->serializeCollection($data, $adapter);
+    //     } elseif (null === $data) {
+    //         $serialized = null;
+    //     } else {
+    //         throw new RuntimeException('Unable to serialize the provided data.');
+    //     }
+    //     return $serialized;
+    // }
 
     /**
      * {@inheritDoc}
      */
-    public function serializeIdentifier(Struct\Identifier $identifier, AdapterInterface $adapter)
-    {
-        $serialized = [
-            'type'  => $adapter->getExternalEntityType($identifier->getType()),
-            'id'    => $identifier->getId(),
-        ];
-        return $serialized;
-    }
+    // public function serializeIdentifier(Struct\Identifier $identifier, AdapterInterface $adapter)
+    // {
+    //     $serialized = [
+    //         'type'  => $adapter->getExternalEntityType($identifier->getType()),
+    //         'id'    => $identifier->getId(),
+    //     ];
+    //     return $serialized;
+    // }
 
     /**
      * {@inheritDoc}
      */
-    public function serializeEntity(Struct\Entity $entity, AdapterInterface $adapter)
-    {
-        $metadata = $adapter->getEntityMetadata($entity->getType());
+    // public function serializeEntity(Struct\Entity $entity, AdapterInterface $adapter)
+    // {
+    //     $metadata = $adapter->getEntityMetadata($entity->getType());
 
-        $serialized = [
-            'type'  => $adapter->getExternalEntityType($metadata->type),
-            'id'    => $entity->getId(),
-        ];
-        if ($this->depth > 0) {
-            // $this->includeResource($resource);
-            return $serialized;
-        }
+    //     $serialized = [
+    //         'type'  => $adapter->getExternalEntityType($metadata->type),
+    //         'id'    => $entity->getId(),
+    //     ];
+    //     if ($this->depth > 0) {
+    //         // $this->includeResource($resource);
+    //         return $serialized;
+    //     }
 
-        foreach ($metadata->getAttributes() as $key => $attrMeta) {
-            $attribute = $entity->getAttribute($key);
-            // $formattedKey = $adapter->getExternalFieldKey($key);
-            $serialized['attributes'][$key] = $this->serializeAttribute($attribute, $attrMeta);
-        }
+    //     foreach ($metadata->getAttributes() as $key => $attrMeta) {
+    //         $attribute = $entity->getAttribute($key);
+    //         // $formattedKey = $adapter->getExternalFieldKey($key);
+    //         $serialized['attributes'][$key] = $this->serializeAttribute($attribute, $attrMeta);
+    //     }
 
-        $serialized['links'] = ['self' => $adapter->buildUrl($metadata, $entity->getId())];
+    //     $serialized['links'] = ['self' => $adapter->buildUrl($metadata, $entity->getId())];
 
-        foreach ($metadata->getRelationships() as $key => $relMeta) {
-            $relationship = $entity->getRelationship($key);
-            // $formattedKey = $adapter->getExternalFieldKey($key);
-            $serialized['relationships'][$key] = $this->serializeRelationship($entity, $relationship, $relMeta, $adapter);
-        }
-        return $serialized;
-    }
+    //     foreach ($metadata->getRelationships() as $key => $relMeta) {
+    //         $relationship = $entity->getRelationship($key);
+    //         // $formattedKey = $adapter->getExternalFieldKey($key);
+    //         $serialized['relationships'][$key] = $this->serializeRelationship($entity, $relationship, $relMeta, $adapter);
+    //     }
+    //     return $serialized;
+    // }
 
     /**
      * Serializes an attribute value.
@@ -216,34 +215,48 @@ class JsonApiSerializer
         return $value;
     }
 
+    protected function serializeHasMany(Model $owner, Collection $relationship = null, JsonApiAdapter $adapter)
+    {
+        if (null === $relationship) {
+            return ['data' => null];
+        }
+        return $this->serializeCollection($relationship, $adapter);
+    }
+
+    protected function serializeHasOne(Model $owner, Model $relationship = null, JsonApiAdapter $adapter)
+    {
+        if (null === $relationship) {
+            return ['data' => null];
+        }
+        return $this->serialize($relationship, $adapter);
+    }
+
     /**
      * Serializes a relationship value
      *
      * @todo    Need support for meta.
      *
-     * @param   Struct\Entity               $owner
-     * @param   Struct\Relationship|null    $relationship
+     * @param   Model                       $owner
+     * @param   Model                       $relationship
      * @param   RelationshipMetadata        $relMeta
      * @param   AdapterInterface            $adapter
      * @return  array
      */
-    protected function serializeRelationship(Struct\Entity $owner, Struct\Relationship $relationship = null, RelationshipMetadata $relMeta, AdapterInterface $adapter)
+    protected function serializeRelationship(Model $owner, $relationship = null, RelationshipMetadata $relMeta, JsonApiAdapter $adapter)
     {
-        if (null === $relationship) {
-            // No relationship data found, use default value.
-            $relationship = new Struct\Relationship($relMeta->getKey(), $relMeta->getEntityType(), $relMeta->getRelType());
-        }
-
         $this->increaseDepth();
+        if ($relMeta->isOne()) {
+            $serialized = $this->serializeHasOne($owner, $relationship, $adapter);
+        } else {
+            $serialized = $this->serializeHasMany($owner, $relationship, $adapter);
+        }
+        $this->decreaseDepth();
 
-        $serialized = $this->serialize($relationship, $adapter);
-
-        $ownerMeta = $adapter->getEntityMetadata($owner->getType());
+        $ownerMeta = $owner->getMetadata();
         $serialized['links'] = [
             'self'      => $adapter->buildUrl($ownerMeta, $owner->getId(), $relMeta->getKey()),
             'related'   => $adapter->buildUrl($ownerMeta, $owner->getId(), $relMeta->getKey(), true),
         ];
-        $this->decreaseDepth();
         return $serialized;
     }
 

@@ -5,6 +5,7 @@ namespace Actinoids\Modlr\RestOdm\Store;
 use Actinoids\Modlr\RestOdm\Models\Model;
 use Actinoids\Modlr\RestOdm\Models\Collection;
 use Actinoids\Modlr\RestOdm\Metadata\MetadataFactory;
+use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
 use Actinoids\Modlr\RestOdm\Persister\PersisterInterface;
 use Actinoids\Modlr\RestOdm\Persister\Record;
 
@@ -78,17 +79,16 @@ class Store
     public function findAll($typeKey, array $identifiers = [])
     {
         $metadata = $this->getMetadataForType($typeKey);
-        $collection = new Collection($metadata);
 
         if (!empty($identifiers)) {
             throw StoreException::nyi('Finding multiple records with specified identifiers is not yet supported.');
         }
 
+        $models = [];
         foreach ($this->retrieveRecords($typeKey, $identifiers) as $record) {
-            $model = $this->loadModel($typeKey, $record);
-            $collection->add($model);
+            $models[] = $this->loadModel($typeKey, $record);
         }
-        return $collection;
+        return new Collection($metadata, $this, $models);
     }
 
     /**
@@ -98,15 +98,14 @@ class Store
      * @api
      * @param   string      $typeKey    The model type.
      * @param   string|null $identifier The model identifier. Generally should be null unless client-side id generation is in place.
-     * @param   array       $properties Any key/value properties to initalize the new record with.
      * @return  Model
      */
-    public function create($typeKey, $identifier = null, array $properties = [])
+    public function create($typeKey, $identifier = null)
     {
         if (empty($identifier)) {
             $identifier = $this->generateIdentifier($typeKey);
         }
-        return $this->createModel($typeKey, $identifier, $properties);
+        return $this->createModel($typeKey, $identifier);
     }
 
     /**
@@ -169,7 +168,7 @@ class Store
         // Must use the type from the record to cover polymorphic models.
         $metadata = $this->getMetadataForType($record->getType());
 
-        $model = new Model($metadata, $record->getId(), $this, $record->getProperties());
+        $model = new Model($metadata, $record->getId(), $this, $record);
         $model->getState()->setLoaded();
         $this->pushIdentityMap($model);
         return $model;
@@ -181,9 +180,9 @@ class Store
      *
      * @param   string  $typeKey    The model type.
      * @param   string  $identifier The model identifier.
-     * @param   array   $properties Any key/value properties to initalize the new record with.
+     * @return  Model
      */
-    protected function createModel($typeKey, $identifier, array $properties = [])
+    protected function createModel($typeKey, $identifier)
     {
         if (true === $this->inIdentityMap($typeKey, $identifier)) {
             throw new \RuntimeException(sprintf('A model is already loaded for type "%s" using identifier "%s"', $typeKey, $identifier));
@@ -192,10 +191,76 @@ class Store
         if (true === $metadata->isAbstract()) {
             throw StoreException::badRequest('Abstract models cannot be created directly. You must instantiate a child class');
         }
-        $model = new Model($metadata, $identifier, $this, $properties);
+        $model = new Model($metadata, $identifier, $this);
         $model->getState()->setNew();
         $this->pushIdentityMap($model);
         return $model;
+    }
+
+    /**
+     * Loads a has-one model proxy.
+     *
+     * @param   string  $relatedTypeKey
+     * @param   string  $identifier
+     * @return  Model
+     */
+    public function loadHasOne($relatedTypeKey, $identifier)
+    {
+        $identifier = $this->convertId($identifier);
+        if (true === $this->inIdentityMap($relatedTypeKey, $identifier)) {
+            return $this->getFromIdentityMap($relatedTypeKey, $identifier);
+        }
+
+        $metadata = $this->getMetadataForType($relatedTypeKey);
+        $model = new Model($metadata, $identifier, $this);
+        $this->pushIdentityMap($model);
+        return $model;
+    }
+
+    /**
+     * Loads a has-many model collection.
+     *
+     * @param   string  $relatedTypeKey
+     * @param   array   $references
+     * @return  Collection
+     */
+    public function loadHasMany($relatedTypeKey, array $references)
+    {
+        $metadata = $this->getMetadataForType($relatedTypeKey);
+        if (empty($references)) {
+            return $collection;
+        }
+        if (false === $this->isSequentialArray($references)) {
+            throw StoreException::badRequest(sprintf('Improper has many data detected for relationship "%s" - a sequential array is required.', $relatedTypeKey));
+        }
+        $models = [];
+        foreach ($references as $reference) {
+            $models[] = $this->loadHasOne($reference['type'], $reference['id']);
+        }
+        $collection = new Collection($metadata, $this, $models);
+        return $collection;
+    }
+
+    /**
+     * Loads/fills a collection of empty (unloaded) models with data from the persistence layer.
+     *
+     * @param   Collection  $collection
+     * @return  Collection
+     */
+    public function loadCollection(Collection $collection)
+    {
+        if (count($collection) === 0) {
+            return $collection;
+        }
+        $records = $this->retrieveRecords($collection->getType(), $collection->getIdentifiers());
+        foreach ($records as $record) {
+            $model = $this->find($record->getType(), $record->getId());
+            if (false === $model->getState()->is('loaded')) {
+                $model->initialize($record);
+                $model->getState()->setLoaded();
+            }
+        }
+        return $collection;
     }
 
     /**
@@ -266,7 +331,12 @@ class Store
      */
     protected function generateIdentifier($typeKey)
     {
-        return (String) $this->getPersisterFor($typeKey)->generateId();
+        return $this->convertId($this->getPersisterFor($typeKey)->generateId());
+    }
+
+    protected function convertId($identifier)
+    {
+        return (String) $identifier;
     }
 
     /**
@@ -278,6 +348,17 @@ class Store
     public function getMetadataForType($typeKey)
     {
         return $this->mf->getMetadataForType($typeKey);
+    }
+
+    /**
+     * Determines if an array is sequential.
+     *
+     * @param   array   $arr
+     * @return  bool
+     */
+    protected function isSequentialArray(array $arr)
+    {
+        return (range(0, count($arr) - 1) === array_keys($arr));
     }
 
 
