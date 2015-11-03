@@ -182,7 +182,6 @@ class YamlFileDriver extends AbstractFileDriver
      */
     protected function setRelationships(Metadata\EntityMetadata $metadata, array $relMapping)
     {
-        $allTypes = $this->getAllTypeNames();
         foreach ($relMapping as $key => $mapping) {
             if (!is_array($mapping)) {
                 $mapping = ['type' => null, 'entity' => null];
@@ -196,14 +195,18 @@ class YamlFileDriver extends AbstractFileDriver
                 $mapping['entity'] = null;
             }
 
-            // if (!in_array($mapping['entity'], $allTypes)) {
-            //     throw new RuntimeException(sprintf('No YAML mapping file was found for related entity type "%s" as found on relationship field "%s::%s"', $mapping['entity'], $metadata->type, $key));
-            // }
-
             $relationship = new Metadata\RelationshipMetadata($key, $mapping['type'], $mapping['entity']);
 
             if (isset($mapping['description'])) {
                 $relationship->description = $mapping['description'];
+            }
+
+            $path = $this->getFilePathForType($mapping['entity']);
+            $relatedEntityMapping = $this->getMapping($mapping['entity'], $path);
+
+            if (isset($relatedEntityMapping['entity']['polymorphic'])) {
+                $relationship->setPolymorphic(true);
+                $relationship->ownedTypes = $this->getOwnedTypes($mapping['entity']);
             }
 
             $metadata->addRelationship($relationship);
