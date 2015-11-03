@@ -13,21 +13,21 @@ use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 abstract class Properties
 {
     /**
-     * The original attribute values.
+     * The original property values.
      *
      * @var array
      */
     private $original = [];
 
     /**
-     * The current/modified attribute values.
+     * The current/modified property values.
      *
      * @var array
      */
     private $current = [];
 
     /**
-     * Any attributes that have been flagged for removal.
+     * Any properties that have been flagged for removal.
      *
      * @var array
      */
@@ -36,7 +36,7 @@ abstract class Properties
     /**
      * Constructor.
      *
-     * @param   array   $original   Any original attributes to apply.
+     * @param   array   $original   Any original properties to apply.
      */
     public function __construct(array $original = [])
     {
@@ -44,9 +44,9 @@ abstract class Properties
     }
 
     /**
-     * Gets the current value of an attribute.
+     * Gets the current value of an property.
      *
-     * @param   string  $key    The attribute key.
+     * @param   string  $key    The property key.
      * @return  mixed
      */
     public function get($key)
@@ -61,9 +61,9 @@ abstract class Properties
     }
 
     /**
-     * Sets a new value to an attribute.
+     * Sets a new value to an property.
      *
-     * @param   string  $key    The attribute key.
+     * @param   string  $key    The property key.
      * @param   mixed   $value  The value to set.
      * @return  mixed
      */
@@ -83,9 +83,9 @@ abstract class Properties
     }
 
     /**
-     * Sets a new value to an attribute.
+     * Sets a new value to an property.
      *
-     * @param   string  $key    The attribute key.
+     * @param   string  $key    The property key.
      * @return  self
      */
     public function remove($key)
@@ -100,7 +100,7 @@ abstract class Properties
     }
 
     /**
-     * Rolls back the attributes to their original state.
+     * Rolls back the properties to their original state.
      *
      * @return  self
      */
@@ -112,7 +112,7 @@ abstract class Properties
     }
 
     /**
-     * Replaces the current attributes with new ones.
+     * Replaces the current properties with new ones.
      * Will revert/rollback any current changes.
      *
      * @param   array   $original
@@ -127,7 +127,7 @@ abstract class Properties
 
 
     /**
-     * Deteremines if the attributes have different values from their original state.
+     * Deteremines if the properties have different values from their original state.
      *
      * @return  bool
      */
@@ -137,7 +137,7 @@ abstract class Properties
     }
 
     /**
-     * Calculates any attribute changes.
+     * Calculates any property changes.
      *
      * @return  array
      */
@@ -158,7 +158,7 @@ abstract class Properties
     }
 
     /**
-     * Clears an attribute from the removal queue.
+     * Clears an property from the removal queue.
      *
      * @param   string  $key    The field key.
      * @return  self
@@ -175,7 +175,7 @@ abstract class Properties
     }
 
     /**
-     * Clears an attribute as having been changed.
+     * Clears an property as having been changed.
      *
      * @param   string  $key    The field key.
      * @return  self
@@ -189,7 +189,7 @@ abstract class Properties
     }
 
     /**
-     * Determines if an attribute is in the removal queue.
+     * Determines if an property is in the removal queue.
      *
      * @param   string  $key    The field key.
      * @return  bool
@@ -200,7 +200,7 @@ abstract class Properties
     }
 
     /**
-     * Determines if an attribute has a new value.
+     * Determines if an property has a new value.
      *
      * @param   string  $key    The field key.
      * @return  bool
@@ -211,7 +211,7 @@ abstract class Properties
     }
 
     /**
-     * Determines if an attribute has an original value.
+     * Determines if an property has an original value.
      *
      * @param   string  $key    The field key.
      * @return  bool
@@ -222,7 +222,7 @@ abstract class Properties
     }
 
     /**
-     * Gets the attribute's original value.
+     * Gets the property's original value.
      *
      * @param   string  $key    The field key.
      * @return  mixed
@@ -236,7 +236,27 @@ abstract class Properties
     }
 
     /**
-     * Gets the attribute's current value.
+     * Gets all original properties.
+     *
+     * @return  array
+     */
+    protected function getOriginalAll()
+    {
+        return $this->original;
+    }
+
+    /**
+     * Gets all current properties.
+     *
+     * @return  array
+     */
+    protected function getCurrentAll()
+    {
+        return $this->current;
+    }
+
+    /**
+     * Gets the property's current value.
      *
      * @param   string  $key    The field key.
      * @return  mixed

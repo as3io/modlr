@@ -3,7 +3,9 @@
 namespace Actinoids\Modlr\RestOdm\Persister;
 
 use Actinoids\Modlr\RestOdm\Models\Model;
+use Actinoids\Modlr\RestOdm\Models\Collection;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
+use Actinoids\Modlr\RestOdm\Metadata\AttributeMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
 use Doctrine\MongoDB\Connection;
 use \MongoId;
@@ -87,12 +89,26 @@ class MongoDBPersister implements PersisterInterface
 
         $changeset = $model->getChangeSet();
         foreach ($changeset['attributes'] as $key => $values) {
-            $insert[$key] = $values['new'];
+            $value = $this->prepareAttribute($metadata->getAttribute($key), $values['new']);
+            if (null === $value) {
+                continue;
+            }
+            $insert[$key] = $value;
         }
-        foreach ($changeset['relationships'] as $key => $values) {
-            $insert[$key] = $this->formatRelationship($metadata->getRelationship($key), $values['new']);
+        foreach ($changeset['hasOne'] as $key => $values) {
+            $value = $this->prepareHasOne($metadata->getRelationship($key), $values['new']);
+            if (null === $value) {
+                continue;
+            }
+            $insert[$key] = $value;
         }
-
+        foreach ($changeset['hasMany'] as $key => $values) {
+            $value = $this->prepareHasMany($metadata->getRelationship($key), $values['new']);
+            if (null === $value) {
+                continue;
+            }
+            $insert[$key] = $value;
+        }
         $this->createQueryBuilder($metadata)
             ->insert()
             ->setNewObj($insert)
@@ -100,6 +116,42 @@ class MongoDBPersister implements PersisterInterface
             ->execute()
         ;
         return $model;
+    }
+
+    protected function prepareAttribute(AttributeMetadata $attrMeta, $value)
+    {
+        // @todo Handle conversion, if needed.
+        return $value;
+    }
+
+    protected function prepareHasOne(RelationshipMetadata $relMeta, Model $model = null)
+    {
+        if (null === $model) {
+            return null;
+        }
+        return $this->createReference($relMeta, $model);
+    }
+
+    protected function prepareHasMany(RelationshipMetadata $relMeta, array $models = null)
+    {
+        if (null === $models) {
+            return null;
+        }
+        $references = [];
+        foreach ($models as $model) {
+            $references[] = $this->createReference($relMeta, $model);
+        }
+        return empty($references) ? null : $references;
+    }
+
+    protected function createReference(RelationshipMetadata $relMeta, Model $model)
+    {
+        if (true === $relMeta->isPolymorphic()) {
+            $reference[$this->getIdentifierKey()] = $this->convertId($model->getId());
+            $reference[$this->getPolymorphicKey()] = $model->getType();
+            return $reference;
+        }
+        return $this->convertId($model->getId());
     }
 
     /**
@@ -117,19 +169,30 @@ class MongoDBPersister implements PersisterInterface
                 $value = 1;
             } else {
                 $op = '$set';
-                $value = $values['new'];
+                $value = $this->prepareAttribute($metadata->getAttribute($key), $values['new']);
             }
             $update[$op][$key] = $value;
         }
 
-        foreach ($changeset['relationships'] as $key => $values) {
+        // @todo Must prevent inverse relationships from persisting
+        foreach ($changeset['hasOne'] as $key => $values) {
             if (null === $values['new']) {
                 $op = '$unset';
                 $value = 1;
             } else {
                 $op = '$set';
-                // @todo Must prevent inverse relationships from persisting
-                $value = $this->formatRelationship($metadata->getRelationship($key), $values['new']);
+                $value = $this->prepareHasOne($metadata->getRelationship($key), $values['new']);
+            }
+            $update[$op][$key] = $value;
+        }
+
+        foreach ($changeset['hasMany'] as $key => $values) {
+            if (null === $values['new']) {
+                $op = '$unset';
+                $value = 1;
+            } else {
+                $op = '$set';
+                $value = $this->prepareHasMany($metadata->getRelationship($key), $values['new']);
             }
             $update[$op][$key] = $value;
         }

@@ -5,6 +5,7 @@ namespace Actinoids\Modlr\RestOdm\Store;
 use Actinoids\Modlr\RestOdm\Models\Model;
 use Actinoids\Modlr\RestOdm\Models\Collection;
 use Actinoids\Modlr\RestOdm\Metadata\MetadataFactory;
+use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
 use Actinoids\Modlr\RestOdm\Persister\PersisterInterface;
 use Actinoids\Modlr\RestOdm\Persister\Record;
@@ -83,7 +84,6 @@ class Store
         if (!empty($identifiers)) {
             throw StoreException::nyi('Finding multiple records with specified identifiers is not yet supported.');
         }
-
         $models = [];
         foreach ($this->retrieveRecords($typeKey, $identifiers) as $record) {
             $models[] = $this->loadModel($typeKey, $record);
@@ -227,11 +227,8 @@ class Store
     public function loadHasMany($relatedTypeKey, array $references)
     {
         $metadata = $this->getMetadataForType($relatedTypeKey);
-        if (empty($references)) {
-            return $collection;
-        }
         if (false === $this->isSequentialArray($references)) {
-            throw StoreException::badRequest(sprintf('Improper has many data detected for relationship "%s" - a sequential array is required.', $relatedTypeKey));
+            throw StoreException::badRequest(sprintf('Improper has-many data detected for relationship "%s" - a sequential array is required.', $relatedTypeKey));
         }
         $models = [];
         foreach ($references as $reference) {
@@ -297,6 +294,27 @@ class Store
     }
 
     /**
+     * Validates that a model type can be set to an owning metadata type.
+     *
+     * @param   EntityMetadata  $owningMeta The metadata the type will be added to.
+     * @param   string          $typeToAdd  The type to add.
+     * @return  self
+     * @throws  StoreException  If the type to add is not supported.
+     */
+    public function validateRelationshipSet(EntityMetadata $owningMeta, $typeToAdd)
+    {
+        if (true === $owningMeta->isPolymorphic()) {
+            $canSet = in_array($typeToAdd, $owningMeta->ownedTypes);
+        } else {
+            $canSet = $owningMeta->type === $typeToAdd;
+        }
+        if (false === $canSet) {
+            throw StoreException::badRequest(sprintf('The model type "%s" cannot be added to "%s", as it is not supported.', $typeToAdd, $owningMeta->type));
+        }
+        return $this;
+    }
+
+    /**
      * Determines if a model is eligible for commit.
      *
      * @todo    Does delete need to be here?
@@ -334,6 +352,12 @@ class Store
         return $this->convertId($this->getPersisterFor($typeKey)->generateId());
     }
 
+    /**
+     * Converts the id value to a normalized string.
+     *
+     * @param   mixed   $identenfier    The identifier to convert.
+     * @return  string
+     */
     protected function convertId($identifier)
     {
         return (String) $identifier;
@@ -351,6 +375,17 @@ class Store
     }
 
     /**
+     * Gets the metadata for a relationship.
+     *
+     * @param   RelationshipMetadata    $relMeta    The relationship metadata.
+     * @return  EntityMetadata
+     */
+    public function getMetadataForRelationship(RelationshipMetadata $relMeta)
+    {
+        return $this->getMetadataForType($relMeta->getEntityType());
+    }
+
+    /**
      * Determines if an array is sequential.
      *
      * @param   array   $arr
@@ -358,6 +393,9 @@ class Store
      */
     protected function isSequentialArray(array $arr)
     {
+        if (empty($arr)) {
+            return true;
+        }
         return (range(0, count($arr) - 1) === array_keys($arr));
     }
 

@@ -5,7 +5,6 @@ namespace Actinoids\Modlr\RestOdm\Models;
 use Actinoids\Modlr\RestOdm\Store\Store;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use \Iterator;
-use \ArrayAccess;
 use \Countable;
 
 /**
@@ -13,7 +12,7 @@ use \Countable;
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class Collection implements Iterator, ArrayAccess, Countable
+class Collection implements Iterator, Countable
 {
     /**
      * Original models assigned to this collection.
@@ -84,16 +83,32 @@ class Collection implements Iterator, ArrayAccess, Countable
         }
     }
 
+    /**
+     * Gets the model collection type.
+     *
+     * @return  string
+     */
     public function getType()
     {
         return $this->metadata->type;
     }
 
+    /**
+     * Gets the metadata for the model collection.
+     *
+     * @return  EntityMetadata
+     */
     public function getMetadata()
     {
         return $this->metadata;
     }
 
+    /**
+     * Gets all the identifiers of all models in this collection.
+     *
+     * @param   bool    $onlyEmpty  Flags whether to only include empty (non-loaded) model ids.
+     * @return  array
+     */
     public function getIdentifiers($onlyEmpty = true)
     {
         $identifiers = [];
@@ -109,7 +124,6 @@ class Collection implements Iterator, ArrayAccess, Countable
      * Adds an model to this collection.
      * Is used during initial collection construction.
      *
-     * @todo    Validate that incomining models are supported by this collection.
      * @param   Model   $model
      * @return  self
      */
@@ -124,6 +138,11 @@ class Collection implements Iterator, ArrayAccess, Countable
         return $this;
     }
 
+    /**
+     * Rollsback the collection it it's original state.
+     *
+     * @return  self
+     */
     public function rollback()
     {
         $this->models = $this->original;
@@ -132,13 +151,25 @@ class Collection implements Iterator, ArrayAccess, Countable
         return $this;
     }
 
+    /**
+     * Clears/empties the collection.
+     *
+     * @return  self
+     */
     public function clear()
     {
         $this->models = [];
         $this->added = [];
         $this->removed = $this->original;
+        return $this;
     }
 
+    /**
+     * Pushes a Model into the collection.
+     *
+     * @param   Model   $model  The model to push.
+     * @return  self
+     */
     public function push(Model $model)
     {
         $this->validateAdd($model);
@@ -153,64 +184,98 @@ class Collection implements Iterator, ArrayAccess, Countable
         if (true === $this->hasOriginal($model)) {
             return $this;
         }
-        $this->set('models', $model);
         $this->set('added', $model);
+        $this->set('models', $model);
         return $this;
     }
 
+    /**
+     * Removes a Model from the collection.
+     *
+     * @param   Model   $model  The model to push.
+     * @return  self
+     */
     public function remove(Model $model)
     {
         $this->validateAdd($model);
         if (true === $this->willRemove($model)) {
             return $this;
         }
+
         if (true === $this->willAdd($model)) {
             $this->evict('added', $model);
             $this->evict('models', $model);
             return $this;
         }
 
-        $this->evict('models', $model);
-        $this->set('removed', $model);
+        if (true === $this->hasOriginal($model)) {
+            $this->evict('models', $model);
+            $this->set('removed', $model);
+        }
         return $this;
     }
 
+    /**
+     * Validates that the collection supports the incoming model.
+     *
+     * @param   Model   $model  The model to validate.
+     */
     protected function validateAdd(Model $model)
     {
-        if (false === $this->canAdd($model)) {
-            throw new \InvalidArgumentException(sprintf('The model type "%s" cannot be added to this collection, as it is not supported.'));
-        }
+        $this->store->validateRelationshipSet($this->getMetadata(), $model->getType());
     }
 
-    public function canAdd(Model $model)
-    {
-        $metadata = $this->getMetadata();
-        if (true === $metadata->isPolymorphic()) {
-            return in_array($model->getType(), $metadata->ownedTypes);
-        }
-        return $metadata->type === $model->getType();
-    }
-
+    /**
+     * Determines if the Model is scheduled for removal from the collection.
+     *
+     * @param   Model   $model  The model to check.
+     * @return  bool
+     */
     public function willRemove(Model $model)
     {
         return -1 !== $this->indexOf('removed', $model);
     }
 
+    /**
+     * Determines if the Model is scheduled for addition to the collection.
+     *
+     * @param   Model   $model  The model to check.
+     * @return  bool
+     */
     public function willAdd(Model $model)
     {
         return -1 !== $this->indexOf('added', $model);
     }
 
+    /**
+     * Determines if the Model is included in the collection.
+     *
+     * @param   Model   $model  The model to check.
+     * @return  bool
+     */
     public function has(Model $model)
     {
         return -1 !== $this->indexOf('models', $model);
     }
 
+    /**
+     * Determines if the Model is included in the original set.
+     *
+     * @param   Model   $model  The model to check.
+     * @return  bool
+     */
     protected function hasOriginal(Model $model)
     {
         return -1 !== $this->indexOf('original', $model);
     }
 
+    /**
+     * Sets a Model to a collection property (original, added, removed, models).
+     *
+     * @param   string  $property   The property key
+     * @param   Model   $model      The model to set.
+     * @return  self
+     */
     protected function set($property, Model $model)
     {
         $models = $this->$property;
@@ -219,6 +284,13 @@ class Collection implements Iterator, ArrayAccess, Countable
         return $this;
     }
 
+    /**
+     * Evicts a Model from a collection property (original, added, removed, models).
+     *
+     * @param   string  $property   The property key
+     * @param   Model   $model      The model to set.
+     * @return  self
+     */
     protected function evict($property, Model $model)
     {
         $index = $this->indexOf($property, $model);
@@ -228,6 +300,14 @@ class Collection implements Iterator, ArrayAccess, Countable
         return $this;
     }
 
+    /**
+     * Gets the Model array index from a collection property (original, added, removed, models).
+     * Will return -1 if the model was not found.
+     *
+     * @param   string  $property   The property key
+     * @param   Model   $model      The model to check.
+     * @return  int
+     */
     protected function indexOf($property, Model $model)
     {
         // @todo For performance, can we create a map using the model's composite key to avoid these loops?
@@ -239,11 +319,21 @@ class Collection implements Iterator, ArrayAccess, Countable
         return -1;
     }
 
+    /**
+     * Determines if models in this collection have been loaded from the persistence layer.
+     *
+     * @return  bool
+     */
     public function isLoaded()
     {
         return $this->loaded;
     }
 
+    /**
+     * Determines if any models in this collection are dirty (have changes).
+     *
+     * @return  bool
+     */
     public function hasDirtyModels()
     {
         foreach ($this->models as $model) {
@@ -254,9 +344,40 @@ class Collection implements Iterator, ArrayAccess, Countable
         return false;
     }
 
+    /**
+     * Determines if this collection is dirty (has changes).
+     *
+     * @return  bool
+     */
     public function isDirty()
     {
         return !empty($this->added) || !empty($this->removed);
+    }
+
+    /**
+     * Calculates the change set of this collection.
+     *
+     * @return  array
+     */
+    public function calculateChangeSet()
+    {
+        if (false === $this->isDirty()) {
+            return [];
+        }
+        return [
+            'old' => empty($this->original) ? null : $this->original,
+            'new' => empty($this->models) ? null : $this->models,
+        ];
+    }
+
+    /**
+     * Determines if this collection is empty.
+     *
+     * @return  bool
+     */
+    public function isEmpty()
+    {
+        return 0 === $this->count();
     }
 
     /**
@@ -320,37 +441,5 @@ class Collection implements Iterator, ArrayAccess, Countable
     public function valid()
     {
         return isset($this->models[$this->pos]);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function offsetSet($offset, $value)
-    {
-        $this->add($value);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function offsetExists($offset)
-    {
-        return isset($this->models[$offset]);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function offsetUnset($offset)
-    {
-        unset($this->models[$offset]);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function offsetGet($offset)
-    {
-        return isset($this->models[$offset]) ? $this->models[$offset] : null;
     }
 }
