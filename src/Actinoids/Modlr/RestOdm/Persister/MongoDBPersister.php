@@ -78,6 +78,7 @@ class MongoDBPersister implements PersisterInterface
 
     /**
      * {@inheritDoc}
+     * @todo    Optimize the changeset to query generation.
      */
     public function create(Model $model)
     {
@@ -156,6 +157,7 @@ class MongoDBPersister implements PersisterInterface
 
     /**
      * {@inheritDoc}
+     * @todo    Optimize the changeset to query generation.
      */
     public function update(Model $model)
     {
@@ -205,28 +207,6 @@ class MongoDBPersister implements PersisterInterface
             ->execute();
         ;
         return $model;
-    }
-
-    protected function formatRelationship(RelationshipMetadata $relMeta, $value)
-    {
-        if (true === $relMeta->isOne()) {
-            return $this->formatReference($relMeta, $value);
-        }
-        $collection = [];
-        foreach ($value as $model) {
-            $collection[] = $this->formatReference($relMeta, $model);
-        }
-        return $collection;
-    }
-
-    protected function formatReference(RelationshipMetadata $relMeta, Model $model)
-    {
-        if (true === $relMeta->isPolymorphic()) {
-            $reference[$this->getIdentifierKey()] = $this->convertId($model->getId());
-            $reference[$this->getPolymorphicKey()] = $model->getType();
-            return $reference;
-        }
-        return $this->convertId($model->getId());
     }
 
     /**

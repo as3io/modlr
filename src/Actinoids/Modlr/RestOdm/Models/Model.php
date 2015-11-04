@@ -44,6 +44,15 @@ class Model
     protected $hasManyRelationships;
 
     /**
+     * Enables/disables collection auto-initialization on iteration.
+     * Will not load/fill the collection from the database if false.
+     * Is useful for large hasMany iterations where only id and type are required (ala serialization).
+     *
+     * @var bool
+     */
+    protected $collectionAutoInit = true;
+
+    /**
      * The model state.
      *
      * @var State
@@ -112,6 +121,18 @@ class Model
     public function getCompositeKey()
     {
         return sprintf('%s.%s', $this->getType(), $this->getId());
+    }
+
+    /**
+     * Enables or disables has-many collection auto-initialization from the database.
+     *
+     * @param   bool    $bit    Whether to enable/disable.
+     * @return  self
+     */
+    public function enableCollectionAutoInit($bit = true)
+    {
+        $this->collectionAutoInit = (Boolean) $bit;
+        return $this;
     }
 
     /**
@@ -204,7 +225,10 @@ class Model
         if (true === $this->isHasMany($key)) {
             $this->touch();
             $collection = $this->hasManyRelationships->get($key);
-            return iterator_to_array($collection);
+            if ($collection->isLoaded($collection)) {
+                return iterator_to_array($collection);
+            }
+            return (true === $this->collectionAutoInit) ? iterator_to_array($collection) : $collection->allWithoutLoad();
         }
         return null;
     }
@@ -478,6 +502,52 @@ class Model
     }
 
     /**
+     * Applies an array of raw model properties (attributes and relationships) to the model instance.
+     *
+     * @todo    Confirm that we want this method. It's currently used for creating and updating via the API adapter. Also see initialize()
+     * @param   array   $properties     The properties to apply.
+     * @return  self
+     */
+    public function apply(array $properties)
+    {
+        foreach ($properties as $key => $value) {
+            if (true === $this->isAttribute($key)) {
+                $value = $value;
+                $this->set($key, $value);
+                continue;
+            }
+            if (true === $this->isHasOne($key)) {
+                if (empty($value)) {
+                    $this->clear($key);
+                    continue;
+                }
+                $value = $this->store->loadHasOne($value['type'], $value['id']);
+                $this->set($key, $value);
+                continue;
+            }
+
+        }
+
+        foreach ($this->getMetadata()->getRelationships() as $key => $relMeta) {
+            if (true === $relMeta->isOne()) {
+                continue;
+            }
+            // Array key exists must exist to determine if the
+            if (!isset($properties[$key])) {
+                continue;
+            }
+
+            $this->clear($key);
+            $collection = $this->store->loadHasMany($relMeta->getEntityType(), $properties[$key]);
+            foreach ($collection->allWithoutLoad() as $value) {
+                $this->push($key, $value);
+            }
+        }
+        $this->doDirtyCheck();
+        return $this;
+    }
+
+    /**
      * Initializes the model and loads its attributes and relationships.
      *
      * @todo    Made public so collections can initialize models. Not sure if we want this??
@@ -506,6 +576,9 @@ class Model
         }
 
         foreach ($this->getMetadata()->getRelationships() as $key => $relMeta) {
+            if (true === $relMeta->isOne()) {
+                continue;
+            }
             if (null === $record || !isset($record->getProperties()[$key])) {
                 // Fill with empty collection.
                 $value = [];

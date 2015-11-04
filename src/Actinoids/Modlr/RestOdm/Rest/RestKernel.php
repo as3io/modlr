@@ -4,7 +4,6 @@ namespace Actinoids\Modlr\RestOdm\Rest;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Actinoids\Modlr\RestOdm\StoreAdapter\JsonApiAdapter;
 use Actinoids\Modlr\RestOdm\Adapter\AdapterInterface;
 
 /**
@@ -34,7 +33,7 @@ class RestKernel
      * @param   AdapterInterface    $adapter
      * @param   RestConfiguration   $config
      */
-    public function __construct(JsonApiAdapter $adapter, RestConfiguration $config)
+    public function __construct(AdapterInterface $adapter, RestConfiguration $config)
     {
         $this->adapter = $adapter;
         $this->config = $config;

@@ -4,7 +4,6 @@ namespace Actinoids\Modlr\RestOdm\Normalizer;
 
 use Actinoids\Modlr\RestOdm\Adapter\AdapterInterface;
 use Actinoids\Modlr\RestOdm\Rest\RestPayload;
-use Actinoids\Modlr\RestOdm\Struct;
 
 /**
  * Interface for normalizing rest payloads in the implementing format.
@@ -14,11 +13,11 @@ use Actinoids\Modlr\RestOdm\Struct;
 interface NormalizerInterface
 {
     /**
-     * Normalizes a RestPayload into a Struct\Resource.
+     * Normalizes a RestPayload into an array that can be applied to a model.
      *
      * @param   RestPayload         $payload    The incoming payload.
      * @param   AdapterInterface    $adapter    The adapter.
-     * @return  Struct\Resource
+     * @return  array
      */
     public function normalize(RestPayload $payload, AdapterInterface $adapter);
 }

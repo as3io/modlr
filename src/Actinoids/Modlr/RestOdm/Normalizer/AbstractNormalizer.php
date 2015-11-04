@@ -2,96 +2,100 @@
 
 namespace Actinoids\Modlr\RestOdm\Normalizer;
 
-use Actinoids\Modlr\RestOdm\Struct;
 use Actinoids\Modlr\RestOdm\Rest\RestPayload;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Adapter\AdapterInterface;
-use Actinoids\Modlr\RestOdm\Hydrator\HydratorInterface;
 
 /**
- * Abstract implementation of normalizing REST payloads into Struct\Resources.
+ * Abstract implementation of normalizing REST payloads into arrays that can be applied to a Model.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
 abstract class AbstractNormalizer implements NormalizerInterface
 {
     /**
-     * The Resource hydrator.
-     * Used for normalizing incoming payloads into Struct\Resource objects.
-     *
-     * @var HydratorInterface
-     */
-    protected $hydrator;
-
-    /**
-     * Constructor.
-     *
-     * @param   HydratorInterface   $hydrator
-     */
-    public function __construct(HydratorInterface $hydrator)
-    {
-        $this->hydrator = $hydrator;
-    }
-
-    /**
      * {@inheritDoc}
      */
     public function normalize(RestPayload $payload, AdapterInterface $adapter)
     {
-        $extracted = $this->extractPayload($payload);
-        $this->validateExtracted($extracted);
-        return $this->createResource($extracted, $adapter);
+        $rawPayload = $this->getRawPayload($payload);
+        $this->validateRawPayload($rawPayload);
+        return $this->createNormalizedArray($rawPayload, $adapter);
     }
 
     /**
-     * Creates a Struct\Resource object from an extracted array payload.
+     * Creates a normalized array from an raw array payload.
      *
-     * @param   array               $extracted
+     * @param   array               $rawPayload
      * @param   AdapterInterface    $adapter
-     * @return  Struct\Resource
+     * @return  array
      */
-    protected function createResource(array $extracted, AdapterInterface $adapter)
+    protected function createNormalizedArray(array $rawPayload, AdapterInterface $adapter)
     {
-        $metadata = $this->extractMetadata($extracted, $adapter);
-        $flattened = $this->flattenExtracted($extracted, $metadata);
-        $identifier = (isset($flattened['id'])) ? $flattened['id'] : null;
-        return $this->hydrator->hydrateOne($metadata, $identifier, $flattened);
+        $metadata = $this->extractMetadata($rawPayload, $adapter);
+        // @todo Should this be wrapped in an object, or is a hash fine?
+        return [
+            'id'            => $this->extractId($rawPayload),
+            'type'          => $metadata->type,
+            'properties'    => $this->extractProperties($rawPayload, $metadata)
+        ];
     }
 
     /**
-     * Takes an extracted array payload and flattens it to an array of key/values.
+     * Extracts the EntityMetadata from the raw array payload.
      *
-     * @param   array           $extracted
+     * @param   array               $rawPayload
+     * @param   AdapterInterface    $adapter
+     * @return  EntityMetadata
+     */
+    protected function extractMetadata(array $rawPayload, AdapterInterface $adapter)
+    {
+        return $adapter->getEntityMetadata($this->extractType($rawPayload));
+    }
+
+    /**
+     * Takes an raw array payload and extracts the model's unique id.
+     *
+     * @param   array           $rawPayload
+     * @return  string|null
+     * @throws  NormalizerException     On failed attempts to extract the id.
+     */
+    abstract protected function extractId(array $rawPayload);
+
+    /**
+     * Takes an raw array payload and extracts the model's type.
+     *
+     * @param   array           $rawPayload
+     * @return  string
+     * @throws  NormalizerException     On failed attempts to extract the model type.
+     */
+    abstract protected function extractType(array $rawPayload);
+
+    /**
+     * Takes an raw array payload and extracts the model properties (attributes and relationships) as a flattened, key/value array.
+     *
+     * @param   array           $rawPayload
      * @param   EntityMetadata  $metadata
      * @return  array
      * @throws  NormalizerException     On failed attempts to flatten the array.
      */
-    abstract protected function flattenExtracted(array $extracted, EntityMetadata $metadata);
+    abstract protected function extractProperties(array $rawPayload, EntityMetadata $metadata);
 
     /**
-     * Extracts the EntityMetadata from the extracted array payload.
-     *
-     * @param   array               $extracted
-     * @param   AdapterInterface    $adapter
-     * @return  EntityMetadata
-     */
-    abstract protected function extractMetadata(array $extracted, AdapterInterface $adapter);
-
-    /**
-     * Extracts array data from a REST payload.
+     * Extracts raw array data from a REST payload.
      *
      * @param   RestPayload     $payload
      * @return  array
      * @throws  NormalizerException
      */
-    abstract protected function extractPayload(RestPayload $payload);
+    abstract protected function getRawPayload(RestPayload $payload);
 
     /**
-     * Validates an extract payload array.
+     * Validates a the raw payload array.
      *
-     * @param   array   $extracted
+     * @param   array   $rawPayload
      * @return  array
      * @throws  NormalizerException
      */
-    abstract protected function validateExtracted(array $extracted);
+    abstract protected function validateRawPayload(array $rawPayload);
 }

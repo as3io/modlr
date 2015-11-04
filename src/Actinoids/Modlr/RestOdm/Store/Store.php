@@ -224,9 +224,12 @@ class Store
      * @param   array   $references
      * @return  Collection
      */
-    public function loadHasMany($relatedTypeKey, array $references)
+    public function loadHasMany($relatedTypeKey, array $references = null)
     {
         $metadata = $this->getMetadataForType($relatedTypeKey);
+        if (null === $references) {
+            $references = [];
+        }
         if (false === $this->isSequentialArray($references)) {
             throw StoreException::badRequest(sprintf('Improper has-many data detected for relationship "%s" - a sequential array is required.', $relatedTypeKey));
         }
