@@ -1,2 +1,2 @@
 # modlr-rest-odm
-Simplified PHP library for fast and efficient RESTful API for MongoDB. Designed for use with front end web frameworks such as EmberJS. Open Source REST ODM Library used by http://modlr.space
+Simplified, fast, and efficient MongoDB ODM library. Provides full REST API support, following the JSON API spec (http://www.jsonapi.org). Optimized for use with front end web frameworks such as EmberJS. Can also be used as a PHP-based ODM, similar to Doctrine.
