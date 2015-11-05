@@ -3,7 +3,10 @@
 namespace Actinoids\Modlr\RestOdm\Persister;
 
 use Actinoids\Modlr\RestOdm\Models\Model;
+use Actinoids\Modlr\RestOdm\Models\Collection;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
+use Actinoids\Modlr\RestOdm\Metadata\AttributeMetadata;
+use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
 use Doctrine\MongoDB\Connection;
 use \MongoId;
 
@@ -14,8 +17,8 @@ use \MongoId;
  */
 class MongoDBPersister implements PersisterInterface
 {
-    const IDENTIFIER_KEY = '_id';
-    const POLYMORPHIC_KEY = '_type';
+    const IDENTIFIER_KEY    = '_id';
+    const POLYMORPHIC_KEY   = '_type';
 
     /**
      * The Doctine MongoDB connection.
@@ -32,6 +35,26 @@ class MongoDBPersister implements PersisterInterface
     public function __construct(Connection $connection)
     {
         $this->connection = $connection;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @todo    Implement sorting and pagination (limit/skip).
+     */
+    public function all(EntityMetadata $metadata, array $identifiers = [])
+    {
+        $criteria = $this->getRetrieveCritiera($metadata, $identifiers);
+        $cursor = $this->createQueryBuilder($metadata)
+            ->find()
+            ->setQueryArray($criteria)
+            ->getQuery()
+            ->execute()
+        ;
+        $records = [];
+        foreach ($cursor as $result) {
+            $records[] = $this->hydrateRecord($metadata, $result);
+        }
+        return $records;
     }
 
     /**
@@ -55,6 +78,7 @@ class MongoDBPersister implements PersisterInterface
 
     /**
      * {@inheritDoc}
+     * @todo    Optimize the changeset to query generation.
      */
     public function create(Model $model)
     {
@@ -63,8 +87,28 @@ class MongoDBPersister implements PersisterInterface
         if (true === $metadata->isChildEntity()) {
             $insert[$this->getPolymorphicKey()] = $metadata->type;
         }
-        foreach ($model->getChangeSet() as $key => $values) {
-            $insert[$key] = $values['new'];
+
+        $changeset = $model->getChangeSet();
+        foreach ($changeset['attributes'] as $key => $values) {
+            $value = $this->prepareAttribute($metadata->getAttribute($key), $values['new']);
+            if (null === $value) {
+                continue;
+            }
+            $insert[$key] = $value;
+        }
+        foreach ($changeset['hasOne'] as $key => $values) {
+            $value = $this->prepareHasOne($metadata->getRelationship($key), $values['new']);
+            if (null === $value) {
+                continue;
+            }
+            $insert[$key] = $value;
+        }
+        foreach ($changeset['hasMany'] as $key => $values) {
+            $value = $this->prepareHasMany($metadata->getRelationship($key), $values['new']);
+            if (null === $value) {
+                continue;
+            }
+            $insert[$key] = $value;
         }
         $this->createQueryBuilder($metadata)
             ->insert()
@@ -75,25 +119,86 @@ class MongoDBPersister implements PersisterInterface
         return $model;
     }
 
+    protected function prepareAttribute(AttributeMetadata $attrMeta, $value)
+    {
+        // @todo Handle conversion, if needed.
+        return $value;
+    }
+
+    protected function prepareHasOne(RelationshipMetadata $relMeta, Model $model = null)
+    {
+        if (null === $model) {
+            return null;
+        }
+        return $this->createReference($relMeta, $model);
+    }
+
+    protected function prepareHasMany(RelationshipMetadata $relMeta, array $models = null)
+    {
+        if (null === $models) {
+            return null;
+        }
+        $references = [];
+        foreach ($models as $model) {
+            $references[] = $this->createReference($relMeta, $model);
+        }
+        return empty($references) ? null : $references;
+    }
+
+    protected function createReference(RelationshipMetadata $relMeta, Model $model)
+    {
+        if (true === $relMeta->isPolymorphic()) {
+            $reference[$this->getIdentifierKey()] = $this->convertId($model->getId());
+            $reference[$this->getPolymorphicKey()] = $model->getType();
+            return $reference;
+        }
+        return $this->convertId($model->getId());
+    }
+
     /**
      * {@inheritDoc}
+     * @todo    Optimize the changeset to query generation.
      */
     public function update(Model $model)
     {
         $metadata = $model->getMetadata();
         $criteria = $this->getRetrieveCritiera($metadata, $model->getId());
+        $changeset = $model->getChangeSet();
 
-        $update = [];
-        foreach ($model->getChangeSet() as $key => $values) {
+        foreach ($changeset['attributes'] as $key => $values) {
             if (null === $values['new']) {
                 $op = '$unset';
                 $value = 1;
             } else {
                 $op = '$set';
-                $value = $values['new'];
+                $value = $this->prepareAttribute($metadata->getAttribute($key), $values['new']);
             }
-           $update[$op][$key] = $value;
+            $update[$op][$key] = $value;
         }
+
+        // @todo Must prevent inverse relationships from persisting
+        foreach ($changeset['hasOne'] as $key => $values) {
+            if (null === $values['new']) {
+                $op = '$unset';
+                $value = 1;
+            } else {
+                $op = '$set';
+                $value = $this->prepareHasOne($metadata->getRelationship($key), $values['new']);
+            }
+            $update[$op][$key] = $value;
+        }
+
+        foreach ($changeset['hasMany'] as $key => $values) {
+            if (null === $values['new']) {
+                $op = '$unset';
+                $value = 1;
+            } else {
+                $op = '$set';
+                $value = $this->prepareHasMany($metadata->getRelationship($key), $values['new']);
+            }
+            $update[$op][$key] = $value;
+        }
+
         $this->createQueryBuilder($metadata)
             ->update()
             ->setQueryArray($criteria)
@@ -191,7 +296,47 @@ class MongoDBPersister implements PersisterInterface
         $type = $this->extractType($metadata, $data);
         unset($data[$this->getPolymorphicKey()]);
 
+        foreach ($metadata->getRelationships() as $key => $relMeta) {
+            if (!isset($data[$key])) {
+                continue;
+            }
+            if (true === $relMeta->isMany() && !is_array($data[$key])) {
+                throw PersisterException::badRequest(sprintf('Relationship key "%s" is a reference many. Expected record data type of array, "%s" found on model "%s" for identifier "%s"', $key, gettype($data[$key]), $type, $identifier));
+            }
+            $references = $relMeta->isOne() ? [$data[$key]] : $data[$key];
+
+            $extracted = [];
+            foreach ($references as $reference) {
+                $extracted[] =  $this->extractRelationship($relMeta, $reference);
+            }
+            $data[$key] = $relMeta->isOne() ? reset($extracted) : $extracted;
+        }
         return new Record($type, $identifier, $data);
+    }
+
+    protected function extractRelationship(RelationshipMetadata $relMeta, $reference)
+    {
+        $simple = false === $relMeta->isPolymorphic();
+        $idKey = $this->getIdentifierKey();
+        $typeKey = $this->getPolymorphicKey();
+        if (true === $simple && is_array($reference) && isset($reference[$idKey])) {
+            return [
+                'id'    => $reference[$idKey],
+                'type'  => $relMeta->getEntityType(),
+            ];
+        } elseif (true === $simple && !is_array($reference)) {
+            return [
+                'id'    => $reference,
+                'type'  => $relMeta->getEntityType(),
+            ];
+        } elseif (false === $simple && is_array($reference) && isset($reference[$idKey]) && isset($reference[$typeKey])) {
+            return [
+                'id'    => $reference[$idKey],
+                'type'  => $reference[$typeKey],
+            ];
+        } else {
+            throw new RuntimeException('Unable to extract a reference id.');
+        }
     }
 
     /**
@@ -203,13 +348,15 @@ class MongoDBPersister implements PersisterInterface
      */
     protected function getRetrieveCritiera(EntityMetadata $metadata, $identifiers)
     {
-        $criteria = [$this->getIdentifierKey() => null];
-        if (is_array($identifiers) && !empty($identifiers)) {
+        $criteria = [];
+        if (is_array($identifiers)) {
             $ids = [];
             foreach ($identifiers as $id) {
                 $ids[] = $this->convertId($id);
             }
-            $criteria[$this->getIdentifierKey()] = ['$in' => $ids];
+            if (!empty($ids)) {
+                $criteria[$this->getIdentifierKey()] = ['$in' => $ids];
+            }
         } else {
             $criteria[$this->getIdentifierKey()] = $this->convertId($identifiers);
         }

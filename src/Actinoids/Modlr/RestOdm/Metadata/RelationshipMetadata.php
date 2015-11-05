@@ -34,6 +34,19 @@ class RelationshipMetadata extends FieldMetadata
     public $isInverse = false;
 
     /**
+     * Determines if the relationship related to a polymorphic entity.
+     *
+     * @var bool
+     */
+    public $polymorphic = false;
+
+    /**
+     * Child entity types the related entity owns.
+     * Only used for polymorphic relationships.
+     */
+    public $ownedTypes = [];
+
+    /**
      * Constructor.
      *
      * @param   string  $relType   The relationship type.
@@ -83,6 +96,17 @@ class RelationshipMetadata extends FieldMetadata
     public function isMany()
     {
         return 'many' === $this->getRelType();
+    }
+
+    public function isPolymorphic()
+    {
+        return $this->polymorphic;
+    }
+
+    public function setPolymorphic($bit = true)
+    {
+        $this->polymorphic = (Boolean) $bit;
+        return $this;
     }
 
     /**

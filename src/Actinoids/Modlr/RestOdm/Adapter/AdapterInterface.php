@@ -2,12 +2,13 @@
 
 namespace Actinoids\Modlr\RestOdm\Adapter;
 
-use Actinoids\Modlr\RestOdm\Store\StoreInterface;
+use Actinoids\Modlr\RestOdm\Models\Model;
+use Actinoids\Modlr\RestOdm\Models\Collection;
+use Actinoids\Modlr\RestOdm\Store\Store;
 use Actinoids\Modlr\RestOdm\Serializer\SerializerInterface;
 use Actinoids\Modlr\RestOdm\Normalizer\NormalizerInterface;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Rest;
-use Actinoids\Modlr\RestOdm\Struct;
 
 /**
  * Interface for handling API operations.
@@ -25,28 +26,50 @@ interface AdapterInterface
     public function processRequest(Rest\RestRequest $request);
 
     /**
-     * Finds a single entity by id.
+     * Finds a single model by id.
      *
-     * @param   EntityMetadata  $metadata
-     * @param   string          $identifier
-     * @param   array           $fields
-     * @param   array           $inclusions
-     * @return  Rest\RestPayload
+     * @param   string  $typeKey
+     * @param   string  $identifier
+     * @return  Rest\RestResponse
      */
-    public function findRecord(EntityMetadata $metadata, $identifier, array $fields = [], array $inclusions = []);
+    public function findRecord($typeKey, $identifier); //, array $fields = [], array $inclusions = []);
 
     /**
-     * Finds a multiple entities by type.
+     * Finds a multiple models by type.
      *
-     * @param   EntityMetadata  $metadata
-     * @param   array           $identifiers
-     * @param   array           $pagination
-     * @param   array           $fields
-     * @param   array           $inclusions
-     * @param   array           $sort
-     * @return  Rest\RestPayload
+     * @param   string  $typeKey
+     * @param   array   $identifiers
+     * @return  Rest\RestResponse
      */
-    public function findMany(EntityMetadata $metadata, array $identifiers = [], array $pagination = [], array $fields = [], array $inclusions = [], array $sort = []);
+    public function findAll($typeKey, array $identifiers = []); //, array $pagination = [], array $fields = [], array $inclusions = [], array $sort = []);
+
+    /**
+     * Creates a new model.
+     *
+     * @param   string              $typeKey
+     * @param   Rest\RestPayload    $payload
+     * @return  Rest\RestResponse
+     */
+    public function createRecord($typeKey, Rest\RestPayload $payload); //, array $fields = [], array $inclusions = []);
+
+    /**
+     * Updates an existing model.
+     *
+     * @param   string              $typeKey
+     * @param   string              $identifier
+     * @param   Rest\RestPayload    $payload
+     * @return  Rest\RestResponse
+     */
+    public function updateRecord($typeKey, $identifier, Rest\RestPayload $payload); // , array $fields = [], array $inclusions = []);
+
+    /**
+     * Deletes an existing model.
+     *
+     * @param   string              $typeKey
+     * @param   string              $identifier
+     * @return  Rest\RestResponse
+     */
+    public function deleteRecord($typeKey, $identifier);
 
     /**
      * Handles errors and returns an appropriate REST response.
@@ -57,33 +80,28 @@ interface AdapterInterface
     public function handleException(\Exception $e);
 
     /**
-     * Gets the internal Modlr entity type, based on this adapter's external type.
+     * Builds a URL for an entity, or an entity relationship.
      *
-     * @param   string  $externalType
+     * @param   EntityMetadata  $metadata
+     * @param   string          $identifier
+     * @param   string|null     $externalRelKey
+     * @param   bool            $isRelatedLink
      * @return  string
      */
-    public function getInternalEntityType($externalType);
+    public function buildUrl(EntityMetadata $metadata, $identifier, $externalRelKey = null, $isRelatedLink = false);
 
     /**
-     * Gets the external adapter entity type, based on the internal Modlr type.
+     * Gets the metadata for a model type.
      *
-     * @param   string  $internalType
-     * @return  string
+     * @param   string  $typeKey
+     * @return  EntityMetadata
      */
-    public function getExternalEntityType($internalType);
-
-    /**
-     * Gets the external adapter field key, based on the internal Modlr field key.
-     *
-     * @param   string  $internalKey
-     * @return  string
-     */
-    public function getExternalFieldKey($internalKey);
+    public function getEntityMetadata($typeKey);
 
     /**
      * Gets the Store for handling persistence operations.
      *
-     * @return  StoreInterface
+     * @return  Store
      */
     public function getStore();
 
@@ -102,39 +120,29 @@ interface AdapterInterface
     public function getNormalizer();
 
     /**
-     * Gets entity metadata, based on entity type.
-     *
-     * @param   string  $type
-     * @return  EntityMetadata
-     */
-    public function getEntityMetadata($type);
-
-    /**
-     * Builds a URL for an entity, or an entity relationship.
-     *
-     * @param   EntityMetadata  $metadata
-     * @param   string          $identifier
-     * @param   string|null     $externalRelKey
-     * @param   bool            $isRelatedLink
-     * @return  string
-     */
-    public function buildUrl(EntityMetadata $metadata, $identifier, $externalRelKey = null, $isRelatedLink = false);
-
-    /**
-     * Normalizes a Rest\RestPayload into a Struct\Resource object.
+     * Normalizes a Rest\RestPayload into an array record to apply to a Model.
      * Is used in conjunction with a SerializerInterface.
      *
      * @param   Rest\RestPayload    $payload
-     * @return  Struct\Resource
+     * @return  array
      */
     public function normalize(Rest\RestPayload $payload);
 
     /**
-     * Serializes a Struct\Resource into a Rest\RestPayload object.
+     * Serializes a Model into a Rest\RestPayload object.
      * Is used in conjunction with a SerializerInterface.
      *
-     * @param   Struct\Resource     $resource
+     * @param   Model   $model
      * @return  Rest\RestPayload
      */
-    public function serialize(Struct\Resource $resource);
+    public function serialize(Model $model);
+
+    /**
+     * Serializes a Collection into a Rest\RestPayload object.
+     * Is used in conjunction with a SerializerInterface.
+     *
+     * @param   Collection      $collection
+     * @return  Rest\RestPayload
+     */
+    public function serializeCollection(Collection $collection);
 }
