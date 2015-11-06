@@ -29,6 +29,9 @@ class JsonApiAdapter extends AbstractAdapter
                     if (false === $request->isRelationship() && false === $request->hasFilters()) {
                         return $this->findRecord($request->getEntityType(), $request->getIdentifier());
                     }
+                    if (true === $request->isRelationshipRetrieve()) {
+                        return $this->findRelationship($request->getEntityType(), $request->getIdentifier(), $request->getRelationshipFieldKey());
+                    }
                     throw AdapterException::badRequest('No GET handler found.');
                 } else {
                     return $this->findAll($request->getEntityType(), []); //, $request->getPagination(), $request->getFieldset(), $request->getInclusions(), $request->getSorting());

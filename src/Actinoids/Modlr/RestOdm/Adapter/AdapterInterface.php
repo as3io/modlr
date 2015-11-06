@@ -35,6 +35,17 @@ interface AdapterInterface
     public function findRecord($typeKey, $identifier); //, array $fields = [], array $inclusions = []);
 
     /**
+     * Finds a model (or models) for a model's related field.
+     *
+     * @param   string  $typeKey
+     * @param   string  $identifier
+     * @param   string  $fieldKey
+     * @return  Rest\RestResponse
+     * @throws  AdapterException    If the related field does not exist on the model.
+     */
+    public function findRelationship($typeKey, $identifier, $fieldKey);
+
+    /**
      * Finds a multiple models by type.
      *
      * @param   string  $typeKey
@@ -132,17 +143,26 @@ interface AdapterInterface
      * Serializes a Model into a Rest\RestPayload object.
      * Is used in conjunction with a SerializerInterface.
      *
-     * @param   Model   $model
+     * @param   Model|null  $model
      * @return  Rest\RestPayload
      */
-    public function serialize(Model $model);
+    public function serialize(Model $model = null);
 
     /**
      * Serializes a Collection into a Rest\RestPayload object.
      * Is used in conjunction with a SerializerInterface.
      *
-     * @param   Collection      $collection
+     * @param   Collection  $collection
      * @return  Rest\RestPayload
      */
     public function serializeCollection(Collection $collection);
+
+    /**
+     * Serializes an array of Models into a Rest\RestPayload object.
+     * Is used in conjunction with a SerializerInterface.
+     *
+     * @param   Model[]     $models
+     * @return  Rest\RestPayload
+     */
+    public function serializeArray(array $models);
 }

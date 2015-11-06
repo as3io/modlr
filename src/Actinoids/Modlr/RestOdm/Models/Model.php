@@ -178,6 +178,18 @@ class Model
     }
 
     /**
+     * Determines if a property key is a relationship (either has-one or has-many).
+     *
+     * @api
+     * @param   string  $key    The property key.
+     * @return  bool
+     */
+    public function isRelationship($key)
+    {
+        return $this->getMetadata()->hasRelationship($key);
+    }
+
+    /**
      * Determines if a property key is a has-one relationship.
      *
      * @api
@@ -186,11 +198,10 @@ class Model
      */
     public function isHasOne($key)
     {
-        $relMeta = $this->getMetadata()->getRelationship($key);
-        if (null === $relMeta) {
+        if (false === $this->isRelationship($key)) {
             return false;
         }
-        return $relMeta->isOne();
+        return $this->getMetadata()->getRelationship($key)->isOne();
     }
 
     /**
@@ -202,11 +213,10 @@ class Model
      */
     public function isHasMany($key)
     {
-        $relMeta = $this->getMetadata()->getRelationship($key);
-        if (null === $relMeta) {
+        if (false === $this->isRelationship($key)) {
             return false;
         }
-        return $relMeta->isMany();
+        return $this->getMetadata()->getRelationship($key)->isMany();
     }
 
     /**

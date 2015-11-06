@@ -90,6 +90,20 @@ abstract class AbstractAdapter implements AdapterInterface
     /**
      * {@inheritDoc}
      */
+    public function findRelationship($typeKey, $identifier, $fieldKey)
+    {
+        $model = $this->getStore()->find($typeKey, $identifier);
+        if (false === $model->isRelationship($fieldKey)) {
+            throw AdapterException::badRequest(sprintf('The relationship field "%s" does not exist on model "%s"', $fieldKey, $typeKey));
+        }
+        $rel = $model->get($fieldKey);
+        $payload = (true === $model->isHasOne($fieldKey)) ? $this->serialize($rel) : $this->serializeArray($rel);
+        return $this->createRestResponse(200, $payload);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function createRecord($typeKey, Rest\RestPayload $payload) //, array $fields = [], array $inclusions = [])
     {
         // @todo Do normalized payloads need to be wrapped in an object, similar to persistence Records?
@@ -216,9 +230,17 @@ abstract class AbstractAdapter implements AdapterInterface
     /**
      * {@inheritDoc}
      */
-    public function serialize(Model $model)
+    public function serialize(Model $model = null)
     {
         return new Rest\RestPayload($this->getSerializer()->serialize($model, $this));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function serializeArray(array $models)
+    {
+        return new Rest\RestPayload($this->getSerializer()->serializeArray($models, $this));
     }
 
     /**
