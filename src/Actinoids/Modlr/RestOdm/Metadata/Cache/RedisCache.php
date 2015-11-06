@@ -101,7 +101,7 @@ class RedisCache implements CacheInterface
     public function putMetadataInCache(EntityMetadata $metadata)
     {
         $value = $this->serialize($metadata);
-        $r = $this->redis->setex($this->getKey($metadata->type), $this->ttl, $value);
+        $this->redis->setex($this->getKey($metadata->type), $this->ttl, $value);
         return $this;
     }
 
@@ -128,7 +128,7 @@ class RedisCache implements CacheInterface
      * Unserializes the metadata object based on the selected serializer.
      *
      * @param   string  $value
-     * @return  string
+     * @return  EntityMetadata
      * @throws  RuntimeException
      */
     private function unserialize($value)

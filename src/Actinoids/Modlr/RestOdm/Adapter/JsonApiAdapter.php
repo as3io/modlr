@@ -62,10 +62,8 @@ class JsonApiAdapter extends AbstractAdapter
                 return $this->deleteRecord($request->getEntityType(), $request->getIdentifier());
                 throw AdapterException::badRequest('No DELETE request handler found.');
             default:
-                throw AdapterException::invalidRequestMethod($request->getMethod());
+                throw AdapterException::badRequest(sprintf('The request method "%s" is not supported.', $request->getMethod()));
         }
-        var_dump(__METHOD__, $request);
-        die();
     }
 
     /**

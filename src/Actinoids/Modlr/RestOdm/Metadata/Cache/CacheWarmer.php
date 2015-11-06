@@ -43,7 +43,7 @@ class CacheWarmer
 
         $this->clear();
         foreach ($this->mf->getAllTypeNames() as $type) {
-            $metadata = $this->mf->getMetadataForType($type);
+            $this->mf->getMetadataForType($type);
             $warmed[] = $type;
         }
         return $warmed;

@@ -137,7 +137,7 @@ abstract class AbstractAdapter implements AdapterInterface
      */
     public function deleteRecord($typeKey, $identifier)
     {
-        $model = $this->getStore()->delete($typeKey, $identifier);
+        $this->getStore()->delete($typeKey, $identifier);
         return $this->createRestResponse(204);
     }
 

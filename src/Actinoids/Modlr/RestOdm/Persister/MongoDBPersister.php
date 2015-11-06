@@ -201,6 +201,7 @@ class MongoDBPersister implements PersisterInterface
         $criteria = $this->getRetrieveCritiera($metadata, $model->getId());
         $changeset = $model->getChangeSet();
 
+        $update = [];
         foreach ($changeset['attributes'] as $key => $values) {
             if (null === $values['new']) {
                 $op = '$unset';
@@ -233,6 +234,10 @@ class MongoDBPersister implements PersisterInterface
                 $value = $this->prepareHasMany($metadata->getRelationship($key), $values['new']);
             }
             $update[$op][$key] = $value;
+        }
+
+        if (empty($update)) {
+            return $model;
         }
 
         $this->createQueryBuilder($metadata)

@@ -133,9 +133,14 @@ class JsonApiSerializer implements SerializerInterface
     protected function serializeRelationship(Model $owner, $relationship = null, RelationshipMetadata $relMeta, AdapterInterface $adapter)
     {
         if ($relMeta->isOne()) {
+            if (is_array($relationship)) {
+                throw SerializerException::badRequest('Invalid relationship value.');
+            }
             $serialized = $this->serializeHasOne($owner, $relationship, $adapter);
-        } else {
+        } elseif (is_array($relationship) || null === $relationship) {
             $serialized = $this->serializeHasMany($owner, $relationship, $adapter);
+        } else {
+            throw SerializerException::badRequest('Invalid relationship value.');
         }
 
         $ownerMeta = $owner->getMetadata();

@@ -105,7 +105,7 @@ class RestConfiguration
      */
     public function setEntityFormat($format)
     {
-        $this->validator->validateStringFormat($format);
+        $this->validator->isFormatValid($format);
         $this->entityFormat = $format;
         return $this;
     }
@@ -128,7 +128,7 @@ class RestConfiguration
      */
     public function setFieldKeyFormat($format)
     {
-        $this->validator->validateStringFormat($format);
+        $this->validator->isFormatValid($format);
         $this->fieldKeyFormat = $format;
         return $this;
     }

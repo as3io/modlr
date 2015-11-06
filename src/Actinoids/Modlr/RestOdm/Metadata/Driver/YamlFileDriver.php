@@ -76,8 +76,6 @@ class YamlFileDriver extends AbstractFileDriver
      */
     public function getOwnedTypes($type, array $types = [])
     {
-        $all = $this->getAllTypeNames();
-
         $path = $this->getFilePathForType($type);
         $superMapping = $this->getMapping($type, $path);
 
@@ -146,22 +144,23 @@ class YamlFileDriver extends AbstractFileDriver
                 $mapping['type'] = null;
             }
 
-            // $this->validator->validateDataType($mapping['type']);
-            switch ($mapping['type']) {
-                // case 'object':
-                //     $childMapping = (isset($mapping['attributes']) && is_array($mapping['attributes'])) ? $mapping['attributes'] : [];
-                //     $attribute = new Metadata\ObjectAttributeMetadata($key, $mapping['type']);
-                //     $this->setAttributes($attribute, $childMapping);
-                //     break;
-                // case 'array':
-                //     $valuesType = isset($mapping['valuesType']) ? $mapping['valuesType'] : 'string';
-                //     $this->validator->validateDataType($valuesType);
-                //     $attribute = new Metadata\ArrayAttributeMetadata($key, $mapping['type'], $valuesType);
-                //     break;
-                default:
-                    $attribute = new Metadata\AttributeMetadata($key, $mapping['type']);
-                    break;
-            }
+            $attribute = new Metadata\AttributeMetadata($key, $mapping['type']);
+
+            // @todo Handle complex attribute types.
+            // switch ($mapping['type']) {
+            //     case 'object':
+            //         $childMapping = (isset($mapping['attributes']) && is_array($mapping['attributes'])) ? $mapping['attributes'] : [];
+            //         $attribute = new Metadata\ObjectAttributeMetadata($key, $mapping['type']);
+            //         $this->setAttributes($attribute, $childMapping);
+            //         break;
+            //     case 'array':
+            //         $valuesType = isset($mapping['valuesType']) ? $mapping['valuesType'] : 'string';
+            //         $this->validator->validateDataType($valuesType);
+            //         $attribute = new Metadata\ArrayAttributeMetadata($key, $mapping['type'], $valuesType);
+            //         break;
+            //     default:
+            //         break;
+            // }
 
             if (isset($mapping['description'])) {
                 $attribute->description = $mapping['description'];

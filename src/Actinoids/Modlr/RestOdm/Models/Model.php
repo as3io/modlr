@@ -223,7 +223,7 @@ class Model
      * Gets a relationship value.
      *
      * @param   string  $key    The relationship key (field) name.
-     * @return  Model|\ArrayIterator|null
+     * @return  Model|array|null
      * @throws  \RuntimeException If hasMany relationships are accessed directly.
      */
     protected function getRelationship($key)
@@ -366,8 +366,8 @@ class Model
     /**
      * Sets a relationship value.
      *
-     * @param   string                  $key
-     * @param   Model|Collection|null   $value
+     * @param   string      $key
+     * @param   Model|null  $value
      * @return  self
      */
     protected function setRelationship($key, $value)
@@ -519,7 +519,6 @@ class Model
     {
         foreach ($properties as $key => $value) {
             if (true === $this->isAttribute($key)) {
-                $value = $value;
                 $this->set($key, $value);
                 continue;
             }
