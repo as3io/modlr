@@ -2,6 +2,7 @@
 
 namespace Actinoids\Modlr\RestOdm\Persister;
 
+use Actinoids\Modlr\RestOdm\Store\Store;
 use Actinoids\Modlr\RestOdm\Models\Model;
 use Actinoids\Modlr\RestOdm\Models\Collection;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
@@ -41,7 +42,7 @@ class MongoDBPersister implements PersisterInterface
      * {@inheritDoc}
      * @todo    Implement sorting and pagination (limit/skip).
      */
-    public function all(EntityMetadata $metadata, array $identifiers = [])
+    public function all(EntityMetadata $metadata, array $identifiers = [], Store $store)
     {
         $criteria = $this->getRetrieveCritiera($metadata, $identifiers);
         $cursor = $this->createQueryBuilder($metadata)
@@ -52,7 +53,7 @@ class MongoDBPersister implements PersisterInterface
         ;
         $records = [];
         foreach ($cursor as $result) {
-            $records[] = $this->hydrateRecord($metadata, $result);
+            $records[] = $this->hydrateRecord($metadata, $result, $store);
         }
         return $records;
     }
@@ -60,7 +61,7 @@ class MongoDBPersister implements PersisterInterface
     /**
      * {@inheritDoc}
      */
-    public function retrieve(EntityMetadata $metadata, $identifier)
+    public function retrieve(EntityMetadata $metadata, $identifier, Store $store)
     {
         $criteria = $this->getRetrieveCritiera($metadata, $identifier);
         $result = $this->createQueryBuilder($metadata)
@@ -73,7 +74,7 @@ class MongoDBPersister implements PersisterInterface
         if (null === $result) {
             return;
         }
-        return $this->hydrateRecord($metadata, $result);
+        return $this->hydrateRecord($metadata, $result, $store);
     }
 
     /**
@@ -321,9 +322,10 @@ class MongoDBPersister implements PersisterInterface
      *
      * @param   EntityMetadata  $metadata
      * @param   array           $data
+     * @param   Store           $store
      * @return  Record
      */
-    protected function hydrateRecord(EntityMetadata $metadata, array $data)
+    protected function hydrateRecord(EntityMetadata $metadata, array $data, Store $store)
     {
         $identifier = $data[$this->getIdentifierKey()];
         unset($data[$this->getIdentifierKey()]);
@@ -331,6 +333,7 @@ class MongoDBPersister implements PersisterInterface
         $type = $this->extractType($metadata, $data);
         unset($data[$this->getPolymorphicKey()]);
 
+        $metadata = $store->getMetadataForType($type);
         foreach ($metadata->getRelationships() as $key => $relMeta) {
             if (!isset($data[$key])) {
                 continue;

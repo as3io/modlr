@@ -2,6 +2,7 @@
 
 namespace Actinoids\Modlr\RestOdm\Persister;
 
+use Actinoids\Modlr\RestOdm\Store\Store;
 use Actinoids\Modlr\RestOdm\Models\Model;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 
@@ -20,7 +21,7 @@ interface PersisterInterface
      * @param   array           $identifiers
      * @return  Record[]
      */
-    public function all(EntityMetadata $metadata, array $identifiers = []);
+    public function all(EntityMetadata $metadata, array $identifiers = [], Store $store);
 
     /**
      * Retrieves a single model record from the database.
@@ -29,7 +30,7 @@ interface PersisterInterface
      * @param   string          $identifier The identifier for the record. Always a string. The persister must convert.
      * @return  Record|null
      */
-    public function retrieve(EntityMetadata $metadata, $identifier);
+    public function retrieve(EntityMetadata $metadata, $identifier, Store $store);
 
     /**
      * Creates a new database record from a model instance.
