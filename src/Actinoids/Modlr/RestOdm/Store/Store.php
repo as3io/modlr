@@ -141,7 +141,7 @@ class Store
     public function retrieveRecord($typeKey, $identifier)
     {
         $persister = $this->getPersisterFor($typeKey);
-        $record = $persister->retrieve($this->getMetadataForType($typeKey), $identifier);
+        $record = $persister->retrieve($this->getMetadataForType($typeKey), $identifier, $this);
         if (null === $record) {
             throw StoreException::recordNotFound($typeKey, $identifier);
         }
@@ -159,7 +159,7 @@ class Store
     public function retrieveRecords($typeKey, array $identifiers)
     {
         $persister = $this->getPersisterFor($typeKey);
-        return $persister->all($this->getMetadataForType($typeKey), $identifiers);
+        return $persister->all($this->getMetadataForType($typeKey), $identifiers, $this);
     }
 
     /**
