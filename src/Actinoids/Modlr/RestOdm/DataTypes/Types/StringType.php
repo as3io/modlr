@@ -12,18 +12,7 @@ class StringType implements TypeInterface
     /**
      * {@inheritDoc}
      */
-    public function convertToSerializedValue($value)
-    {
-        if (empty($value)) {
-            return null;
-        }
-        return (String) $value;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function convertToNormalizedValue($value)
+    public function convertToModlrValue($value)
     {
         if (empty($value)) {
             return null;

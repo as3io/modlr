@@ -59,9 +59,10 @@ class JsonApiNormalizer extends AbstractNormalizer
         if (!isset($data['attributes']) || !is_array($data['attributes'])) {
             return $flattened;
         }
+
+        $keyMap = array_flip(array_keys($data['attributes']));
         foreach ($metadata->getAttributes() as $key => $attrMeta) {
-            // @todo Can we use another method to avoid array_key_exists? Cannot use isset because null values are valid. Perhaps an array_keys/array_flip?
-            if (false === array_key_exists($key, $data['attributes'])) {
+            if (!isset($keyMap[$key])) {
                 continue;
             }
             $flattened[$key] = $data['attributes'][$key];
@@ -82,13 +83,13 @@ class JsonApiNormalizer extends AbstractNormalizer
         if (!isset($data['relationships']) || !is_array($data['relationships'])) {
             return $flattened;
         }
+
         foreach ($metadata->getRelationships() as $key => $relMeta) {
-            // @todo Can we use another method to avoid array_key_exists? Cannot use isset because null values are valid. Perhaps an array_keys/array_flip?
-            if (false === array_key_exists($key, $data['relationships'])) {
+            if (!isset($data['relationships'][$key])) {
                 continue;
             }
             $rel = $data['relationships'][$key];
-            // @todo Can we use another method to avoid array_key_exists? Cannot use isset because null values are valid. Perhaps an array_keys/array_flip?
+            // Need to use array_key_exists over isset because 'null' is valid. Creating a key map for each relationship is too costly since every relationship needs the data check.
             if (false === array_key_exists('data', $rel)) {
                 throw NormalizerException::badRequest(sprintf('The "data" member was missing from the payload for relationship "%s"', $key));
             }

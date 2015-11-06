@@ -107,7 +107,6 @@ class JsonApiSerializer implements SerializerInterface
     /**
      * Serializes an attribute value.
      *
-     * @todo    Need to handle serializer type conversion (e.g. dates to strings).
      * @todo    Need to handle complex data types, such as objects and arrays.
      * @param   mixed               $value
      * @param   AttributeMetadata   $attrMeta
@@ -115,6 +114,10 @@ class JsonApiSerializer implements SerializerInterface
      */
     protected function serializeAttribute($value, AttributeMetadata $attrMeta)
     {
+        if ('date' === $attrMeta->dataType) {
+            $milliseconds = sprintf('%03d', round($value->format('u') / 1000, 0));
+            return gmdate(sprintf('Y-m-d\TH:i:s.%s\Z', $milliseconds), $value->getTimestamp());
+        }
         return $value;
     }
 

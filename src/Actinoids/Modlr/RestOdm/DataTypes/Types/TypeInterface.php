@@ -10,18 +10,10 @@ namespace Actinoids\Modlr\RestOdm\DataTypes\Types;
 interface TypeInterface
 {
     /**
-     * Converts the value to the serialized (external) value.
+     * Converts the value to the internal, Modlr (PHP) value.
      *
      * @param   mixed   $value
      * @return  mixed
      */
-    public function convertToSerializedValue($value);
-
-    /**
-     * Converts the value to the normalized (internal) value.
-     *
-     * @param   mixed   $value
-     * @return  mixed
-     */
-    public function convertToNormalizedValue($value);
+    public function convertToModlrValue($value);
 }
