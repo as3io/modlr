@@ -203,6 +203,55 @@ class RestRequest
     }
 
     /**
+     * Gets the entity relationship request.
+     *
+     * @return  array
+     */
+    public function getRelationship()
+    {
+        return $this->relationship;
+    }
+
+    /**
+     * Gets the entity relationship field key.
+     *
+     * @return  string|null
+     */
+    public function getRelationshipFieldKey()
+    {
+        if (false === $this->isRelationship()) {
+            return null;
+        }
+        return $this->getRelationship()['field'];
+    }
+
+    /**
+     * Determines if this is an entity relationship retrieve request.
+     *
+     * @return  bool
+     */
+    public function isRelationshipRetrieve()
+    {
+        if (false === $this->isRelationship()) {
+            return false;
+        }
+        return 'self' === $this->getRelationship()['type'];
+    }
+
+    /**
+     * Determines if this is an entity relationship modify (create/update/delete) request.
+     *
+     * @return  bool
+     */
+    public function isRelationshipModify()
+    {
+        if (false === $this->isRelationship()) {
+            return false;
+        }
+        return 'related' === $this->getRelationship()['type'];
+    }
+
+    /**
      * Determines if specific sideloaded include fields were requested.
      *
      * @return  bool
