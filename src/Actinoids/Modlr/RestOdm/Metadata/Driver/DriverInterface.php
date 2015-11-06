@@ -16,7 +16,7 @@ interface DriverInterface
      * Loads the EntityMetadata for a type.
      *
      * @param   string  $type
-     * @return  \Zarathustra\Modlr\RestOdm\Metadata\EntityMetadata|null
+     * @return  \Actinoids\Modlr\RestOdm\Metadata\EntityMetadata|null
      */
     public function loadMetadataForType($type);
 

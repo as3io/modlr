@@ -232,7 +232,9 @@ abstract class AbstractAdapter implements AdapterInterface
      */
     public function serialize(Model $model = null)
     {
-        return new Rest\RestPayload($this->getSerializer()->serialize($model, $this));
+        $serialized = $this->getSerializer()->serialize($model, $this);
+        $this->validateSerialization($serialized);
+        return new Rest\RestPayload($serialized);
     }
 
     /**
@@ -240,7 +242,9 @@ abstract class AbstractAdapter implements AdapterInterface
      */
     public function serializeArray(array $models)
     {
-        return new Rest\RestPayload($this->getSerializer()->serializeArray($models, $this));
+        $serialized = $this->getSerializer()->serializeArray($models, $this);
+        $this->validateSerialization($serialized);
+        return new Rest\RestPayload($serialized);
     }
 
     /**
@@ -248,7 +252,24 @@ abstract class AbstractAdapter implements AdapterInterface
      */
     public function serializeCollection(Collection $collection)
     {
-        return new Rest\RestPayload($this->getSerializer()->serializeCollection($collection, $this));
+        $serialized = $this->getSerializer()->serializeCollection($collection, $this);
+        $this->validateSerialization($serialized);
+        return new Rest\RestPayload($serialized);
+    }
+
+    /**
+     * Validates that the serialized value is support by a RestPayload.
+     *
+     * @param   mixed   $serialized
+     * @return  bool
+     * @throws  AdapterException    On invalid serialized value.
+     */
+    protected function validateSerialization($serialized)
+    {
+        if (!is_string($serialized)) {
+            throw AdapterException::badRequest('Unable to create an API response payload. Invalid serialization occurred.');
+        }
+        return true;
     }
 
     /**

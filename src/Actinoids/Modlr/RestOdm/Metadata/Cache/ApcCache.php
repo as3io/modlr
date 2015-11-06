@@ -88,6 +88,6 @@ class ApcCache implements CacheInterface
     public function evictMetadataFromCache(EntityMetadata $metadata)
     {
         apc_delete($this->getKey($metadata->type));
-        return true
+        return true;
     }
 }
