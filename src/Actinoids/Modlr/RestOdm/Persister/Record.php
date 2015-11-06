@@ -5,7 +5,7 @@ namespace Actinoids\Modlr\RestOdm\Persister;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 
 /**
- * Persists and retrieves models to/from a MongoDB database.
+ * Represents a record from the persistence/data layer.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */

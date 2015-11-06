@@ -6,7 +6,7 @@ use Actinoids\Modlr\RestOdm\Models\Model;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 
 /**
- * Defines the persister service implementation for persisting modals to a database layer.
+ * Defines the persister service implementation for persisting models to a data layer.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */

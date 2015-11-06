@@ -14,26 +14,12 @@ class DateType implements TypeInterface
     /**
      * {@inheritDoc}
      */
-    public function convertToSerializedValue($value)
+    public function convertToModlrValue($value)
     {
         if (null === $value) {
             return null;
         }
-        return $this->createDateTime($value)->format(DateTime::RFC2822);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function convertToNormalizedValue($value)
-    {
-        if (null === $value) {
-            return null;
-        }
-        if ($value instanceof \MongoDate) {
-            return $value;
-        }
-        return new \MongoDate($this->createDateTime($value)->getTimestamp());
+        return $this->createDateTime($value);
     }
 
     /**
@@ -47,18 +33,17 @@ class DateType implements TypeInterface
         if ($value instanceof DateTime) {
             return $value;
         }
-        $date = new DateTime();
         if ($value instanceof \MongoDate) {
-            $date->setTimestamp($value->sec);
-        } elseif (is_object($value)) {
-            $value = (String) $value;
-            $timestamp = is_numeric($value) ? $value : strtotime($value);
-            $date->setTimestamp($timestamp);
-        } elseif (is_numeric($value)) {
-            $date->setTimestamp($value);
-        } else {
-            $date = new DateTime($value);
+            $dateStr = date('Y-m-d H:i:s.'.$value->usec, $value->sec);
+            return new DateTime($dateStr);
         }
-        return $date;
+        if (is_numeric($value)) {
+            // Supports microseconds
+            $value = (Float) $value;
+            $usec = round(($value - (Integer) $value) * 1000000, 0);
+            $dateStr = date('Y-m-d H:i:s.'.$usec, (Integer) $value);
+            return new DateTime($dateStr);
+        }
+        return new DateTime((String) $value);
     }
 }

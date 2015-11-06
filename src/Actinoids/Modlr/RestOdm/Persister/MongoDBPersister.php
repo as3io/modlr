@@ -119,12 +119,29 @@ class MongoDBPersister implements PersisterInterface
         return $model;
     }
 
+    /**
+     * Prepares and formats an attribute value for proper insertion into the database.
+     *
+     * @param   AttributeMetadata   $attrMeta
+     * @param   mixed               $value
+     * @return  mixed
+     */
     protected function prepareAttribute(AttributeMetadata $attrMeta, $value)
     {
-        // @todo Handle conversion, if needed.
+        // Handle data type conversion, if needed.
+        if ('date' === $attrMeta->dataType) {
+            return new \MongoDate($value->getTimestamp(), $value->format('u'));
+        }
         return $value;
     }
 
+    /**
+     * Prepares and formats a has-one relationship model for proper insertion into the database.
+     *
+     * @param   RelationshipMetadata    $relMeta
+     * @param   Model|null              $model
+     * @return  mixed
+     */
     protected function prepareHasOne(RelationshipMetadata $relMeta, Model $model = null)
     {
         if (null === $model) {
@@ -133,6 +150,13 @@ class MongoDBPersister implements PersisterInterface
         return $this->createReference($relMeta, $model);
     }
 
+    /**
+     * Prepares and formats a has-many relationship model set for proper insertion into the database.
+     *
+     * @param   RelationshipMetadata    $relMeta
+     * @param   Model[]|null            $models
+     * @return  mixed
+     */
     protected function prepareHasMany(RelationshipMetadata $relMeta, array $models = null)
     {
         if (null === $models) {
@@ -145,8 +169,19 @@ class MongoDBPersister implements PersisterInterface
         return empty($references) ? null : $references;
     }
 
+    /**
+     * Creates a reference for storage of a related model in the database
+     *
+     * @todo    Decide how to handle inverse relationships.
+     * @param   RelationshipMetadata    $relMeta
+     * @param   Model                   $model
+     * @return  mixed
+     */
     protected function createReference(RelationshipMetadata $relMeta, Model $model)
     {
+        if (true === $relMeta->isInverse) {
+            throw PersisterException::nyi('Inverse relationship storage. In fact, this may not be supported at all - but we still need to handle it.');
+        }
         if (true === $relMeta->isPolymorphic()) {
             $reference[$this->getIdentifierKey()] = $this->convertId($model->getId());
             $reference[$this->getPolymorphicKey()] = $model->getType();

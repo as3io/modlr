@@ -321,9 +321,9 @@ class Model
 
     /**
      * Sets an attribute value.
+     * Will convert the value to the proper, internal PHP/Modlr data type.
      * Will do a dirty check immediately after setting.
      *
-     * @todo    Handle data type conversion. Should this happen here?
      * @param   string  $key    The attribute key (field) name.
      * @param   mixed   $value  The value to apply.
      * @return  self
@@ -331,9 +331,26 @@ class Model
     protected function setAttribute($key, $value)
     {
         $this->touch();
+        $value = $this->convertAttributeValue($key, $value);
         $this->attributes->set($key, $value);
         $this->doDirtyCheck();
         return $this;
+    }
+
+    protected function convertAttributeValue($key, $value)
+    {
+        return $this->store->convertAttributeValue($this->getDataType($key), $value);
+    }
+
+    /**
+     * Gets a data type from an attribute key.
+     *
+     * @param   string  $key The attribute key.
+     * @return  string
+     */
+    protected function getDataType($key)
+    {
+        return $this->getMetadata()->getAttribute($key)->dataType;
     }
 
     /**
@@ -357,7 +374,6 @@ class Model
     /**
      * Sets a has-one relationship.
      *
-     * @todo    Validate the the model can be set, based on metadata.
      * @param   string      $key    The relationship key (field) name.
      * @param   Model|null  $model  The model to relate.
      * @return  self
@@ -369,25 +385,6 @@ class Model
         }
         $this->touch();
         $this->hasOneRelationships->set($key, $model);
-        $this->doDirtyCheck();
-        return $this;
-    }
-
-    /**
-     * Sets/replaces an entire has-many relationship Collection.
-     *
-     * @todo    Validate the the collection can be set, based on metadata.
-     * @param   string          $key        The relationship key (field) name.
-     * @param   Collection|null $collection The model to set/replace.
-     * @return  self
-     */
-    protected function setHasMany($key, Collection $collection = null)
-    {
-        if (null !== $collection) {
-            $this->validateRelSet($key, $collection->getType());
-        }
-        $this->touch();
-        $this->hasManyRelationships->set($key, $collection);
         $this->doDirtyCheck();
         return $this;
     }
@@ -564,7 +561,7 @@ class Model
             foreach ($record->getProperties() as $key => $value) {
                 if (true === $this->isAttribute($key)) {
                     // Load attribute.
-                    $attributes[$key] = $value;
+                    $attributes[$key] = $this->convertAttributeValue($key, $value);
                     continue;
                 }
                 if (true === $this->isHasOne($key)) {

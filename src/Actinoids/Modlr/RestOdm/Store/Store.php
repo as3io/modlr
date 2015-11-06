@@ -9,6 +9,7 @@ use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
 use Actinoids\Modlr\RestOdm\Persister\PersisterInterface;
 use Actinoids\Modlr\RestOdm\Persister\Record;
+use Actinoids\Modlr\RestOdm\DataTypes\TypeFactory;
 
 /**
  * Manages models and their persistence.
@@ -21,6 +22,11 @@ class Store
      * @var MetadataFactory
      */
     private $mf;
+
+    /**
+     * @var TypeFactory
+     */
+    private $typeFactory;
 
     /**
      * The persister for retrieve and saving records to the database layer.
@@ -44,10 +50,11 @@ class Store
      * @param   MetadataFactory     $mf
      * @param   PersisterInterface  $persister
      */
-    public function __construct(MetadataFactory $mf, PersisterInterface $persister)
+    public function __construct(MetadataFactory $mf, PersisterInterface $persister, TypeFactory $typeFactory)
     {
         $this->mf = $mf;
         $this->persister = $persister;
+        $this->typeFactory = $typeFactory;
     }
 
     /**
@@ -315,6 +322,11 @@ class Store
             throw StoreException::badRequest(sprintf('The model type "%s" cannot be added to "%s", as it is not supported.', $typeToAdd, $owningMeta->type));
         }
         return $this;
+    }
+
+    public function convertAttributeValue($dataType, $value)
+    {
+        return $this->typeFactory->convertToModlrValue($dataType, $value);
     }
 
     /**
