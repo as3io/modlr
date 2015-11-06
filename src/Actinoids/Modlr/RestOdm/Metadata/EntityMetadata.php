@@ -142,7 +142,7 @@ class EntityMetadata implements AttributeInterface
     public function setType($type)
     {
         if (!is_string($type) || empty($type)) {
-            throw MetadataException::invalidEntityType();
+            throw MetadataException::invalidEntityType($type);
         }
         $this->type = $type;
         return $this;

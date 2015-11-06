@@ -78,7 +78,7 @@ class ApcCache implements CacheInterface
      */
     public function putMetadataInCache(EntityMetadata $metadata)
     {
-        $r = apc_store($this->getKey($metadata->type), $metadata, $this->ttl);
+        apc_store($this->getKey($metadata->type), $metadata, $this->ttl);
         return $this;
     }
 
@@ -87,7 +87,7 @@ class ApcCache implements CacheInterface
      */
     public function evictMetadataFromCache(EntityMetadata $metadata)
     {
-        $r = apc_delete($this->getKey($metadata->type));
-        return $this;
+        apc_delete($this->getKey($metadata->type));
+        return true;
     }
 }

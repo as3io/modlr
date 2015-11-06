@@ -189,7 +189,7 @@ class EntityUtility
     public function validateMetadataAttributes(EntityMetadata $metadata, MetadataFactory $mf)
     {
         foreach ($metadata->getAttributes() as $key => $attribute) {
-            if ($key !== $attribute->key) {
+            if ($key != $attribute->key) {
                 throw MetadataException::invalidMetadata($metadata->type, sprintf('Attribute key mismtach. "%s" !== "%s"', $key, $attribute->key));
             }
 
@@ -228,7 +228,7 @@ class EntityUtility
     public function validateMetadataRelationships(EntityMetadata $metadata, MetadataFactory $mf)
     {
         foreach ($metadata->getRelationships() as $key => $relationship) {
-            if ($key !== $relationship->key) {
+            if ($key != $relationship->key) {
                 throw MetadataException::invalidMetadata($metadata->type, sprintf('Relationship key mismtach. "%s" !== "%s"', $key, $relationship->key));
             }
             if (false === $this->isFieldKeyValid($relationship->key)) {

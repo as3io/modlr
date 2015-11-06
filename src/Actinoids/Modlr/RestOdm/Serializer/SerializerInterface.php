@@ -19,7 +19,7 @@ interface SerializerInterface
      *
      * @param   Model|null          $model
      * @param   AdapterInterface    $adapter
-     * @return  string
+     * @return  string|array    Depending on depth
      */
     public function serialize(Model $model = null, AdapterInterface $adapter);
 
@@ -28,7 +28,7 @@ interface SerializerInterface
      *
      * @param   Collection          $collection
      * @param   AdapterInterface    $adapter
-     * @return  array
+     * @return  string|array    Depending on depth
      */
     public function serializeCollection(Collection $collection, AdapterInterface $adapter);
 
@@ -37,7 +37,7 @@ interface SerializerInterface
      *
      * @param   Model[]             $models
      * @param   AdapterInterface    $adapter
-     * @return  array
+     * @return  string|array    Depending on depth
      */
     public function serializeArray(array $models, AdapterInterface $adapter);
 

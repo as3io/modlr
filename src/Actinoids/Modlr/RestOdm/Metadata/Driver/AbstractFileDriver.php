@@ -57,7 +57,9 @@ abstract class AbstractFileDriver implements DriverInterface
         if (null === $path) {
             return null;
         }
-        return $this->arrayCache[$type] = $this->loadMetadataFromFile($type, $path);
+        $metadata = $this->loadMetadataFromFile($type, $path);
+        $this->arrayCache[$type] = $metadata;
+        return $this->arrayCache[$type];
     }
 
     /**
@@ -93,7 +95,7 @@ abstract class AbstractFileDriver implements DriverInterface
      * @param string    $type
      * @param string    $path
      *
-     * @return  \Zarathustra\JsonApiSerializer\Metadata\EntityMetadata|null
+     * @return  EntityMetadata|null
      */
     abstract protected function loadMetadataFromFile($type, $path);
 
