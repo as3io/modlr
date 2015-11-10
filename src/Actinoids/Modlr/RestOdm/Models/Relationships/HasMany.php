@@ -2,6 +2,7 @@
 
 namespace Actinoids\Modlr\RestOdm\Models\Relationships;
 
+use Actinoids\Modlr\RestOdm\Models\Collection;
 use Actinoids\Modlr\RestOdm\Models\Properties;
 
 /**
@@ -38,7 +39,9 @@ class HasMany extends Properties
     {
         parent::rollback();
         foreach ($this->getOriginalAll() as $collection) {
-            $collection->rollback();
+            if ($collection instanceof Collection) {
+                $collection->rollback();
+            }
         }
         return $this;
     }
