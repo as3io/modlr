@@ -2,32 +2,19 @@
 
 namespace Actinoids\Modlr\RestOdm\Models;
 
-use Actinoids\Modlr\RestOdm\Store\Store;
-use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
-use \Iterator;
-use \Countable;
-
 /**
  * Model collection that contains record representations from a persistence (database) layer.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class Collection implements Iterator, Countable
+class Collection extends AbstractCollection
 {
     /**
      * Original models assigned to this collection.
      *
      * @var Model[]
      */
-    private $original = [];
-
-    /**
-     * Current models assigned to this collection.
-     * Needed for iteration, access, and count purposes.
-     *
-     * @var Model[]
-     */
-    private $models = [];
+    protected $original = [];
 
     /**
      * Models added to this collection.
@@ -35,7 +22,7 @@ class Collection implements Iterator, Countable
      *
      * @var Model[]
      */
-    private $added = [];
+    protected $added = [];
 
     /**
      * Models removed from this collection.
@@ -43,77 +30,24 @@ class Collection implements Iterator, Countable
      *
      * @var Model[]
      */
-    private $removed = [];
+    protected $removed = [];
 
     /**
-     * The EntityMetadata that 'owns' this collection.
-     *
-     * @var EntityMetadata
+     * {@inheritDoc}
      */
-    private $metadata;
-
-    /**
-     * The store for handling storage operations.
-     *
-     * @var Store
-     */
-    private $store;
-
-    /**
-     * The array position.
-     *
-     * @var int
-     */
-    private $pos = 0;
-
-    /**
-     * Whether the collection has been loaded with data from the persistence layer
-     *
-     * @var bool
-     */
-    private $loaded = true;
-
-    public function __construct(EntityMetadata $metadata, Store $store, array $models = [])
+    public function getQueryField()
     {
-        $this->pos = 0;
-        $this->metadata = $metadata;
-        $this->store = $store;
-        foreach ($models as $model) {
-            $this->add($model);
-        }
+        return 'id';
     }
 
     /**
-     * Gets the model collection type.
-     *
-     * @return  string
+     * {@inheritDoc}
      */
-    public function getType()
-    {
-        return $this->metadata->type;
-    }
-
-    /**
-     * Gets the metadata for the model collection.
-     *
-     * @return  EntityMetadata
-     */
-    public function getMetadata()
-    {
-        return $this->metadata;
-    }
-
-    /**
-     * Gets all the identifiers of all models in this collection.
-     *
-     * @param   bool    $onlyEmpty  Flags whether to only include empty (non-loaded) model ids.
-     * @return  array
-     */
-    public function getIdentifiers($onlyEmpty = true)
+    public function getIdentifiers($onlyUnloaded = true)
     {
         $identifiers = [];
         foreach ($this->models as $model) {
-            if (true === $onlyEmpty && true === $model->getState()->is('empty')) {
+            if (true === $onlyUnloaded && true === $model->getState()->is('empty')) {
                 $identifiers[] = $model->getId();
             }
         }
@@ -129,12 +63,10 @@ class Collection implements Iterator, Countable
      */
     protected function add(Model $model)
     {
-        $this->validateAdd($model);
-        if (true === $model->getState()->is('empty')) {
-            $this->loaded = false;
+        parent::add($model);
+        if (false === $this->hasOriginal($model)) {
+            $this->original[] = $model;
         }
-        $this->original[] = $model;
-        $this->models[] = $model;
         return $this;
     }
 
@@ -215,15 +147,6 @@ class Collection implements Iterator, Countable
         return $this;
     }
 
-    /**
-     * Validates that the collection supports the incoming model.
-     *
-     * @param   Model   $model  The model to validate.
-     */
-    protected function validateAdd(Model $model)
-    {
-        $this->store->validateRelationshipSet($this->getMetadata(), $model->getType());
-    }
 
     /**
      * Determines if the Model is scheduled for removal from the collection.
@@ -247,16 +170,6 @@ class Collection implements Iterator, Countable
         return -1 !== $this->indexOf('added', $model);
     }
 
-    /**
-     * Determines if the Model is included in the collection.
-     *
-     * @param   Model   $model  The model to check.
-     * @return  bool
-     */
-    public function has(Model $model)
-    {
-        return -1 !== $this->indexOf('models', $model);
-    }
 
     /**
      * Determines if the Model is included in the original set.
@@ -301,53 +214,7 @@ class Collection implements Iterator, Countable
     }
 
     /**
-     * Gets the Model array index from a collection property (original, added, removed, models).
-     * Will return -1 if the model was not found.
-     *
-     * @param   string  $property   The property key
-     * @param   Model   $model      The model to check.
-     * @return  int
-     */
-    protected function indexOf($property, Model $model)
-    {
-        // @todo For performance, can we create a map using the model's composite key to avoid these loops?
-        foreach ($this->$property as $index => $loaded) {
-            if ($model->getType() === $loaded->getType() && $model->getId() === $loaded->getId()) {
-                return $index;
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Determines if models in this collection have been loaded from the persistence layer.
-     *
-     * @return  bool
-     */
-    public function isLoaded()
-    {
-        return $this->loaded;
-    }
-
-    /**
-     * Determines if any models in this collection are dirty (have changes).
-     *
-     * @return  bool
-     */
-    public function hasDirtyModels()
-    {
-        foreach ($this->models as $model) {
-            if (true === $model->getState()->is('dirty')) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Determines if this collection is dirty (has changes).
-     *
-     * @return  bool
+     * {@inheritDoc}
      */
     public function isDirty()
     {
@@ -368,78 +235,5 @@ class Collection implements Iterator, Countable
             'old' => empty($this->original) ? null : $this->original,
             'new' => empty($this->models) ? null : $this->models,
         ];
-    }
-
-    /**
-     * Determines if this collection is empty.
-     *
-     * @return  bool
-     */
-    public function isEmpty()
-    {
-        return 0 === $this->count();
-    }
-
-    /**
-     * Returns all models in this collection without triggering auto-loading.
-     *
-     * @return  Model[]
-     */
-    public function allWithoutLoad()
-    {
-        return $this->models;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function count()
-    {
-        return count($this->models);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function rewind()
-    {
-        if (false === $this->isLoaded()) {
-            // Loads collection from the database on iteration.
-            $this->store->loadCollection($this, $this->models);
-            $this->loaded = true;
-        }
-        $this->pos = 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function current()
-    {
-        return $this->models[$this->pos];
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function key()
-    {
-        return $this->pos;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function next()
-    {
-        ++$this->pos;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function valid()
-    {
-        return isset($this->models[$this->pos]);
     }
 }

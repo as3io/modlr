@@ -18,19 +18,33 @@ interface PersisterInterface
      *
      * @todo    Implement sorting and pagination (limit/skip).
      * @param   EntityMetadata  $metadata
+     * @param   Store           $store
      * @param   array           $identifiers
      * @return  Record[]
      */
-    public function all(EntityMetadata $metadata, array $identifiers = [], Store $store);
+    public function all(EntityMetadata $metadata, Store $store, array $identifiers = []);
 
     /**
      * Retrieves a single model record from the database.
      *
      * @param   EntityMetadata  $metadata   The metadata for the model/record.
      * @param   string          $identifier The identifier for the record. Always a string. The persister must convert.
+     * @param   Store           $store
      * @return  Record|null
      */
     public function retrieve(EntityMetadata $metadata, $identifier, Store $store);
+
+    /**
+     * Retrieves inverse record references for the provided owner, based on the related metadata, identifiers, and field.
+     *
+     * @param   EntityMetadata  $owner      The metadata for the owning model.
+     * @param   EntityMetadata  $rel        The metadata for the related model.
+     * @param   Store           $store
+     * @param   string          $inverseField   The field key to query.
+     * @param   array           $identifiers    The identifiers to query.
+     * @return  array
+     */
+    public function inverse(EntityMetadata $owner, EntityMetadata $rel, Store $store, array $identifiers, $inverseField);
 
     /**
      * Creates a new database record from a model instance.

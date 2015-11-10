@@ -185,6 +185,13 @@ class YamlFileDriver extends AbstractFileDriver
                 $relationship->description = $mapping['description'];
             }
 
+            if (isset($mapping['inverse'])) {
+                $relationship->isInverse = true;
+                if (isset($mapping['field'])) {
+                    $relationship->inverseField = $mapping['field'];
+                }
+            }
+
             $path = $this->getFilePathForType($mapping['entity']);
             $relatedEntityMapping = $this->getMapping($mapping['entity'], $path);
 

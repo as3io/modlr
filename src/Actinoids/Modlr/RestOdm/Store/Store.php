@@ -4,6 +4,8 @@ namespace Actinoids\Modlr\RestOdm\Store;
 
 use Actinoids\Modlr\RestOdm\Models\Model;
 use Actinoids\Modlr\RestOdm\Models\Collection;
+use Actinoids\Modlr\RestOdm\Models\AbstractCollection;
+use Actinoids\Modlr\RestOdm\Models\InverseCollection;
 use Actinoids\Modlr\RestOdm\Metadata\MetadataFactory;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
@@ -37,12 +39,11 @@ class Store
     private $persister;
 
     /**
-     * The identity map.
      * Contains all models currently loaded in memory.
      *
-     * @var array
+     * @var Cache
      */
-    private $identityMap = [];
+    private $cache;
 
     /**
      * Constructor.
@@ -55,6 +56,7 @@ class Store
         $this->mf = $mf;
         $this->persister = $persister;
         $this->typeFactory = $typeFactory;
+        $this->cache = new Cache();
     }
 
     /**
@@ -68,8 +70,8 @@ class Store
      */
     public function find($typeKey, $identifier)
     {
-        if (true === $this->inIdentityMap($typeKey, $identifier)) {
-            return $this->getFromIdentityMap($typeKey, $identifier);
+        if (true === $this->cache->has($typeKey, $identifier)) {
+            return $this->cache->get($typeKey, $identifier);
         }
         $record = $this->retrieveRecord($typeKey, $identifier);
         return $this->loadModel($typeKey, $record);
@@ -87,7 +89,6 @@ class Store
     public function findAll($typeKey, array $identifiers = [])
     {
         $metadata = $this->getMetadataForType($typeKey);
-
         if (!empty($identifiers)) {
             throw StoreException::nyi('Finding multiple records with specified identifiers is not yet supported.');
         }
@@ -95,7 +96,8 @@ class Store
         foreach ($this->retrieveRecords($typeKey, $identifiers) as $record) {
             $models[] = $this->loadModel($typeKey, $record);
         }
-        return new Collection($metadata, $this, $models);
+        $collection = new Collection($metadata, $this, $models);
+        return $collection;
     }
 
     /**
@@ -148,7 +150,7 @@ class Store
         return $record;
     }
 
-     /**
+    /**
      * Retrieves multiple Record objects from the persistence layer.
      *
      * @todo    Implement sorting and pagination (limit/skip).
@@ -159,7 +161,29 @@ class Store
     public function retrieveRecords($typeKey, array $identifiers)
     {
         $persister = $this->getPersisterFor($typeKey);
-        return $persister->all($this->getMetadataForType($typeKey), $identifiers, $this);
+        return $persister->all($this->getMetadataForType($typeKey), $this, $identifiers);
+    }
+
+    /**
+     * Retrieves multiple Record objects from the persistence layer for an inverse relationship.
+     *
+     * @todo    Need to find a way to query all inverse at the same time for a findAll query, as it's queried multiple times.
+     * @param   string  $ownerTypeKey
+     * @param   string  $relTypeKey
+     * @param   array   $identifiers
+     * @param   string  $inverseField
+     * @return  Record[]
+     */
+    public function retrieveInverseRecords($ownerTypeKey, $relTypeKey, array $identifiers, $inverseField)
+    {
+        $persister = $this->getPersisterFor($relTypeKey);
+        return $persister->inverse(
+            $this->getMetadataForType($ownerTypeKey),
+            $this->getMetadataForType($relTypeKey),
+            $this,
+            $identifiers,
+            $inverseField
+        );
     }
 
     /**
@@ -177,7 +201,7 @@ class Store
 
         $model = new Model($metadata, $record->getId(), $this, $record);
         $model->getState()->setLoaded();
-        $this->pushIdentityMap($model);
+        $this->cache->push($model);
         return $model;
     }
 
@@ -191,7 +215,7 @@ class Store
      */
     protected function createModel($typeKey, $identifier)
     {
-        if (true === $this->inIdentityMap($typeKey, $identifier)) {
+        if (true === $this->cache->has($typeKey, $identifier)) {
             throw new \RuntimeException(sprintf('A model is already loaded for type "%s" using identifier "%s"', $typeKey, $identifier));
         }
         $metadata = $this->getMetadataForType($typeKey);
@@ -200,7 +224,7 @@ class Store
         }
         $model = new Model($metadata, $identifier, $this);
         $model->getState()->setNew();
-        $this->pushIdentityMap($model);
+        $this->cache->push($model);
         return $model;
     }
 
@@ -211,30 +235,43 @@ class Store
      * @param   string  $identifier
      * @return  Model
      */
-    public function loadHasOne($relatedTypeKey, $identifier)
+    public function loadProxyModel($relatedTypeKey, $identifier)
     {
         $identifier = $this->convertId($identifier);
-        if (true === $this->inIdentityMap($relatedTypeKey, $identifier)) {
-            return $this->getFromIdentityMap($relatedTypeKey, $identifier);
+        if (true === $this->cache->has($relatedTypeKey, $identifier)) {
+            return $this->cache->get($relatedTypeKey, $identifier);
         }
 
         $metadata = $this->getMetadataForType($relatedTypeKey);
         $model = new Model($metadata, $identifier, $this);
-        $this->pushIdentityMap($model);
+        $this->cache->push($model);
         return $model;
+    }
+
+    /**
+     * Loads a has-many inverse model collection.
+     *
+     * @param   RelationshipMetadata    $relMeta
+     * @param   Model                   $owner
+     * @return  InverseCollection
+     */
+    public function createInverseCollection(RelationshipMetadata $relMeta, Model $owner)
+    {
+        $metadata = $this->getMetadataForType($relMeta->getEntityType());
+        return new InverseCollection($metadata, $this, $owner, $relMeta->inverseField);
     }
 
     /**
      * Loads a has-many model collection.
      *
-     * @param   string  $relatedTypeKey
-     * @param   array   $references
+     * @param   RelationshipMetadata    $relMeta
+     * @param   array|null              $references
      * @return  Collection
      */
-    public function loadHasMany($relatedTypeKey, array $references = null)
+    public function createCollection(RelationshipMetadata $relMeta, array $references = null)
     {
-        $metadata = $this->getMetadataForType($relatedTypeKey);
-        if (null === $references) {
+        $metadata = $this->getMetadataForType($relMeta->getEntityType());
+        if (empty($references)) {
             $references = [];
         }
         if (false === $this->isSequentialArray($references)) {
@@ -242,32 +279,39 @@ class Store
         }
         $models = [];
         foreach ($references as $reference) {
-            $models[] = $this->loadHasOne($reference['type'], $reference['id']);
+            $models[] = $this->loadProxyModel($reference['type'], $reference['id']);
         }
-        $collection = new Collection($metadata, $this, $models);
-        return $collection;
+        return new Collection($metadata, $this, $models);
     }
 
     /**
      * Loads/fills a collection of empty (unloaded) models with data from the persistence layer.
      *
-     * @param   Collection  $collection
-     * @return  Collection
+     * @param   AbstractCollection  $collection
+     * @return  Model[]
      */
-    public function loadCollection(Collection $collection)
+    public function loadCollection(AbstractCollection $collection)
     {
-        if (count($collection) === 0) {
+        $identifiers = $collection->getIdentifiers();
+        if (empty($identifiers)) {
+            // Nothing to query.
             return $collection;
         }
-        $records = $this->retrieveRecords($collection->getType(), $collection->getIdentifiers());
-        foreach ($records as $record) {
-            $model = $this->find($record->getType(), $record->getId());
-            if (false === $model->getState()->is('loaded')) {
-                $model->initialize($record);
-                $model->getState()->setLoaded();
-            }
+        if ($collection instanceof InverseCollection) {
+            $records = $this->retrieveInverseRecords($collection->getOwner()->getType(), $collection->getType(), $collection->getIdentifiers(), $collection->getQueryField());
+        } else {
+            $records = $this->retrieveRecords($collection->getType(), $collection->getIdentifiers());
         }
-        return $collection;
+
+        $models = [];
+        foreach ($records as $record) {
+            if (true === $this->cache->has($record->getType(), $record->getId())) {
+                $models[] = $this->cache->get($record->getType(), $record->getId());
+                continue;
+            }
+            $models[] = $this->loadModel($collection->getType(), $record);
+        }
+        return $models;
     }
 
     /**
@@ -324,6 +368,13 @@ class Store
         return $this;
     }
 
+    /**
+     * Converts an attribute value to the proper Modlr data type.
+     *
+     * @param   string  $dataType   The data type, such as string, integer, boolean, etc.
+     * @param   mixed   $value      The value to convert.
+     * @return  mixed
+     */
     public function convertAttributeValue($dataType, $value)
     {
         return $this->typeFactory->convertToModlrValue($dataType, $value);
@@ -412,42 +463,5 @@ class Store
             return true;
         }
         return (range(0, count($arr) - 1) === array_keys($arr));
-    }
-
-
-    protected function getIdentityMapForType($typeKey)
-    {
-        if (isset($this->identityMap[$typeKey])) {
-            return $this->identityMap[$typeKey];
-        }
-        return [];
-    }
-
-    protected function removeFromIdentityMap($typeKey, $identifier)
-    {
-        if (isset($this->identityMap[$typeKey][$identifier])) {
-            unset($this->identityMap[$typeKey][$identifier]);
-        }
-        return $this;
-    }
-
-    protected function getFromIdentityMap($typeKey, $identifier)
-    {
-        $map = $this->getIdentityMapForType($typeKey);
-        if (isset($map[$identifier])) {
-            return $map[$identifier];
-        }
-        return null;
-    }
-
-    protected function pushIdentityMap(Model $model)
-    {
-        $this->identityMap[$model->getType()][$model->getId()] = $model;
-        return $this;
-    }
-
-    public function inIdentityMap($typeKey, $identifier)
-    {
-        return null !== $this->getFromIdentityMap($typeKey, $identifier);
     }
 }

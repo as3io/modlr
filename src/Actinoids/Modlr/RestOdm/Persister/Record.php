@@ -38,4 +38,13 @@ class Record
     {
         return $this->properties;
     }
+
+    public function toArray()
+    {
+        return [
+            'id'    => $this->getId(),
+            'type'  => $this->getType(),
+            'properties' => $this->getProperties(),
+        ];
+    }
 }

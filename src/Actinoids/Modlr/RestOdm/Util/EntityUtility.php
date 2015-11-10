@@ -246,6 +246,26 @@ class EntityUtility
             if (false === $mf->metadataExists($relationship->entityType)) {
                 throw MetadataException::invalidMetadata($metadata->type, sprintf('The related model "%s" for relationship "%s" does not exist.', $relationship->entityType, $relationship->key));
             }
+            if (true === $relationship->isInverse) {
+                if ('one' === $relationship->relType) {
+                    throw MetadataException::invalidMetadata($metadata->type, 'The relationship is inverse and one, which is currently not supported.');
+                }
+                if (empty($relationship->inverseField)) {
+                    throw MetadataException::invalidMetadata($metadata->type, 'The relationship is inverse, but no inverse field was specified.');
+                }
+                $related = ($relationship->entityType === $metadata->type) ? $metadata : $mf->getMetadataForType($relationship->entityType);
+                if (false === $related->hasRelationship($relationship->inverseField)) {
+                    throw MetadataException::invalidMetadata($metadata->type, 'The relationship is inverse, but the related model does not contain the specified inverse field.');
+                }
+                $relatedRel = $related->getRelationship($relationship->inverseField);
+                if (true === $relatedRel->isInverse) {
+                    throw MetadataException::invalidMetadata($metadata->type, 'The relationship is inverse, but the relationship it references is also inverse.');
+                }
+                if ('one' !== $relatedRel->relType) {
+                    throw MetadataException::invalidMetadata($metadata->type, 'The relationship is inverse and many, but it\'s reference is not a type of one.');
+                }
+
+            }
         }
         return true;
     }
