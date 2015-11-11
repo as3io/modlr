@@ -10,3 +10,4 @@ services: mongodb
 
 before_script:
     - yes '' | pecl -q install -f mongo
+    - composer self-update
