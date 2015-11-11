@@ -34,6 +34,13 @@ class RelationshipMetadata extends FieldMetadata
     public $isInverse = false;
 
     /**
+     * The inverse field.
+     *
+     * @var bool
+     */
+    public $inverseField;
+
+    /**
      * Determines if the relationship related to a polymorphic entity.
      *
      * @var bool

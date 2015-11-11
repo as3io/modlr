@@ -31,7 +31,7 @@ class PersisterException extends AbstractHttpException
                 'Oops! We were unable to handle database operations for this record. %s',
                 $message
             ),
-            500,
+            400,
             __FUNCTION__
         );
     }

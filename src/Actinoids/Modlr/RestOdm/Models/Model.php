@@ -190,6 +190,21 @@ class Model
     }
 
     /**
+     * Determines if a property key is a an inverse relationship.
+     *
+     * @api
+     * @param   string  $key    The property key.
+     * @return  bool
+     */
+    public function isInverse($key)
+    {
+        if (false === $this->isRelationship($key)) {
+            return false;
+        }
+        return $this->getMetadata()->getRelationship($key)->isInverse;
+    }
+
+    /**
      * Determines if a property key is a has-one relationship.
      *
      * @api
@@ -245,7 +260,8 @@ class Model
 
     /**
      * Pushes a Model into a has-many relationship collection.
-     * This method must be used for has-many relationships. Set will not work, as it expects an entire Collection.
+     * This method must be used for has-many relationships. Direct set is not supported.
+     * To completely replace a has-many, call clear() first and then push() the new Models.
      *
      * @api
      * @param   string  $key
@@ -260,6 +276,9 @@ class Model
         if (false === $this->isHasMany($key)) {
             return $this;
         }
+        if (true === $this->isInverse($key)) {
+            throw ModelException::cannotModifyInverse($this, $key);
+        }
         $this->touch();
         $collection = $this->hasManyRelationships->get($key);
         $collection->push($model);
@@ -268,7 +287,7 @@ class Model
     }
 
     /**
-     * Clears a has-many relationship collection, set an attribute to null, or sets a has-one relationship to null.
+     * Clears a has-many relationship collection, sets an attribute to null, or sets a has-one relationship to null.
      *
      * @api
      * @param   string  $key    The property key.
@@ -281,6 +300,9 @@ class Model
         }
         if (true === $this->isHasOne($key)) {
             return $this->setHasOne($key, null);
+        }
+        if (true === $this->isInverse($key)) {
+            throw ModelException::cannotModifyInverse($this, $key);
         }
         if (true === $this->isHasMany($key)) {
             $collection = $this->hasManyRelationships->get($key);
@@ -303,6 +325,9 @@ class Model
     {
         if (false === $this->isHasMany($key)) {
             return $this;
+        }
+        if (true === $this->isInverse($key)) {
+            throw ModelException::cannotModifyInverse($this, $key);
         }
         $this->touch();
         $collection = $this->hasManyRelationships->get($key);
@@ -390,6 +415,9 @@ class Model
      */
     protected function setHasOne($key, Model $model = null)
     {
+        if (true === $this->isInverse($key)) {
+            throw ModelException::cannotModifyInverse($this, $key);
+        }
         if (null !== $model) {
             $this->validateRelSet($key, $model->getType());
         }
@@ -527,7 +555,7 @@ class Model
                     $this->clear($key);
                     continue;
                 }
-                $value = $this->store->loadHasOne($value['type'], $value['id']);
+                $value = $this->store->loadProxyModel($value['type'], $value['id']);
                 $this->set($key, $value);
                 continue;
             }
@@ -539,12 +567,12 @@ class Model
                 continue;
             }
             // Array key exists must exist to determine if the
-            if (!isset($properties[$key])) {
+            if (!isset($properties[$key]) || true === $relMeta->isInverse) {
                 continue;
             }
 
             $this->clear($key);
-            $collection = $this->store->loadHasMany($relMeta->getEntityType(), $properties[$key]);
+            $collection = $this->store->createCollection($relMeta, $properties[$key]);
             foreach ($collection->allWithoutLoad() as $value) {
                 $this->push($key, $value);
             }
@@ -575,7 +603,7 @@ class Model
                 }
                 if (true === $this->isHasOne($key)) {
                     // Load hasOne relationship.
-                    $hasOne[$key] = $this->store->loadHasOne($value['type'], $value['id']);
+                    $hasOne[$key] = $this->store->loadProxyModel($value['type'], $value['id']);
                     continue;
                 }
             }
@@ -585,14 +613,12 @@ class Model
             if (true === $relMeta->isOne()) {
                 continue;
             }
-            if (null === $record || !isset($record->getProperties()[$key])) {
-                // Fill with empty collection.
-                $value = [];
+            if (true === $relMeta->isInverse) {
+                $hasMany[$key] = $this->store->createInverseCollection($relMeta, $this);
             } else {
-                // Load hasMany relationship.
-                $value = $record->getProperties()[$key];
+                $references = (null === $record || !isset($record->getProperties()[$key])) ? [] : $record->getProperties()[$key];
+                $hasMany[$key] = $this->store->createCollection($relMeta, $references);
             }
-            $hasMany[$key] = $this->store->loadHasMany($relMeta->getEntityType(), $value);
         }
 
         $this->attributes           = (null === $this->attributes) ? new Attributes($attributes) : $this->attributes->replace($attributes);

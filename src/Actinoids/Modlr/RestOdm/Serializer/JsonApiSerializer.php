@@ -92,10 +92,6 @@ class JsonApiSerializer implements SerializerInterface
         $model->enableCollectionAutoInit(false);
         $this->increaseDepth();
         foreach ($metadata->getRelationships() as $key => $relMeta) {
-            if (true === $relMeta->isInverse) {
-                // Need to determine how to handle inverse relationships.
-                continue;
-            }
             $relationship = $model->get($key);
             $serialized['relationships'][$key] = $this->serializeRelationship($model, $relationship, $relMeta, $adapter);
         }

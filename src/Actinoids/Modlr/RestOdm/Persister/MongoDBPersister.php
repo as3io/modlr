@@ -42,20 +42,21 @@ class MongoDBPersister implements PersisterInterface
      * {@inheritDoc}
      * @todo    Implement sorting and pagination (limit/skip).
      */
-    public function all(EntityMetadata $metadata, array $identifiers = [], Store $store)
+    public function all(EntityMetadata $metadata, Store $store, array $identifiers = [])
     {
         $criteria = $this->getRetrieveCritiera($metadata, $identifiers);
-        $cursor = $this->createQueryBuilder($metadata)
-            ->find()
-            ->setQueryArray($criteria)
-            ->getQuery()
-            ->execute()
-        ;
-        $records = [];
-        foreach ($cursor as $result) {
-            $records[] = $this->hydrateRecord($metadata, $result, $store);
-        }
-        return $records;
+        $cursor = $this->findFromDatabase($metadata, $criteria);
+        return $this->hydrateRecords($metadata, $cursor->toArray(), $store);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function inverse(EntityMetadata $owner, EntityMetadata $rel, Store $store, array $identifiers, $inverseField)
+    {
+        $criteria = $this->getInverseCriteria($owner, $rel, $identifiers, $inverseField);
+        $cursor = $this->findFromDatabase($rel, $criteria);
+        return $this->hydrateRecords($rel, $cursor->toArray(), $store);
     }
 
     /**
@@ -64,13 +65,7 @@ class MongoDBPersister implements PersisterInterface
     public function retrieve(EntityMetadata $metadata, $identifier, Store $store)
     {
         $criteria = $this->getRetrieveCritiera($metadata, $identifier);
-        $result = $this->createQueryBuilder($metadata)
-            ->find()
-            ->setQueryArray($criteria)
-            ->getQuery()
-            ->execute()
-            ->getSingleResult()
-        ;
+        $result = $this->findFromDatabase($metadata, $criteria)->getSingleResult();
         if (null === $result) {
             return;
         }
@@ -145,7 +140,7 @@ class MongoDBPersister implements PersisterInterface
      */
     protected function prepareHasOne(RelationshipMetadata $relMeta, Model $model = null)
     {
-        if (null === $model) {
+        if (null === $model || true === $relMeta->isInverse) {
             return null;
         }
         return $this->createReference($relMeta, $model);
@@ -160,7 +155,7 @@ class MongoDBPersister implements PersisterInterface
      */
     protected function prepareHasMany(RelationshipMetadata $relMeta, array $models = null)
     {
-        if (null === $models) {
+        if (null === $models || true === $relMeta->isInverse) {
             return null;
         }
         $references = [];
@@ -173,16 +168,12 @@ class MongoDBPersister implements PersisterInterface
     /**
      * Creates a reference for storage of a related model in the database
      *
-     * @todo    Decide how to handle inverse relationships.
      * @param   RelationshipMetadata    $relMeta
      * @param   Model                   $model
      * @return  mixed
      */
     protected function createReference(RelationshipMetadata $relMeta, Model $model)
     {
-        if (true === $relMeta->isInverse) {
-            throw PersisterException::nyi('Inverse relationship storage. In fact, this may not be supported at all - but we still need to handle it.');
-        }
         if (true === $relMeta->isPolymorphic()) {
             $reference[$this->getIdentifierKey()] = $this->convertId($model->getId());
             $reference[$this->getPolymorphicKey()] = $model->getType();
@@ -323,6 +314,40 @@ class MongoDBPersister implements PersisterInterface
     }
 
     /**
+     * Finds records from the database based on the provided metadata and criteria.
+     *
+     * @param   EntityMetadata  $metadata   The model metadata that the database should query against.
+     * @param   array           $criteria   The query criteria.
+     * @return  \Doctrine\MongoDB\Cursor
+     */
+    protected function findFromDatabase(EntityMetadata $metadata, array $criteria)
+    {
+        return $this->createQueryBuilder($metadata)
+            ->find()
+            ->setQueryArray($criteria)
+            ->getQuery()
+            ->execute()
+        ;
+    }
+
+    /**
+     * Processes multiple, raw MongoDB results an converts them into an array of standardized Record objects.
+     *
+     * @param   EntityMetadata  $metadata
+     * @param   array           $results
+     * @param   Store           $store
+     * @return  Record[]
+     */
+    protected function hydrateRecords(EntityMetadata $metadata, array $results, Store $store)
+    {
+        $records = [];
+        foreach ($results as $data) {
+            $records[] = $this->hydrateRecord($metadata, $data, $store);
+        }
+        return $records;
+    }
+
+    /**
      * Processes raw MongoDB data an converts it into a standardized Record object.
      *
      * @param   EntityMetadata  $metadata
@@ -357,6 +382,14 @@ class MongoDBPersister implements PersisterInterface
         return new Record($type, $identifier, $data);
     }
 
+    /**
+     * Extracts a standard relationship array that the store expects from a raw MongoDB reference value.
+     *
+     * @param   RelationshipMetadata    $relMeta
+     * @param   mixed                   $reference
+     * @return  array
+     * @throws  \RuntimeException   If the relationship could not be extracted.
+     */
     protected function extractRelationship(RelationshipMetadata $relMeta, $reference)
     {
         $simple = false === $relMeta->isPolymorphic();
@@ -383,6 +416,30 @@ class MongoDBPersister implements PersisterInterface
     }
 
     /**
+     * Gets standard database retrieval criteria for an inverse relationship.
+     *
+     * @param   EntityMetadata  $metadata       The entity to retrieve database records for.
+     * @param   string|array    $identifiers    The IDs to query.
+     * @return  array
+     */
+    protected function getInverseCriteria(EntityMetadata $owner, EntityMetadata $related, $identifiers, $inverseField)
+    {
+        $criteria[$inverseField] = $this->getIdentifierCriteria($identifiers);
+        if (true === $owner->isChildEntity()) {
+            // The owner is owned by a polymorphic model. Must include the type with the inverse field criteria.
+            $criteria[$inverseField] = [
+                $this->getIdentifierKey()   => $criteria[$inverseField],
+                $this->getPolymorphicKey()  => $owner->type,
+            ];
+        }
+        if (true === $related->isChildEntity()) {
+            // The relationship is owned by a polymorphic model. Must include the type in the root criteria.
+            $criteria[$this->getPolymorphicKey()] = $related->type;
+        }
+        return $criteria;
+    }
+
+    /**
      * Gets standard database retrieval criteria for an entity and the provided identifiers.
      *
      * @param   EntityMetadata  $metadata       The entity to retrieve database records for.
@@ -391,20 +448,38 @@ class MongoDBPersister implements PersisterInterface
      */
     protected function getRetrieveCritiera(EntityMetadata $metadata, $identifiers)
     {
+        $idKey = $this->getIdentifierKey();
+        $criteria[$idKey] = $this->getIdentifierCriteria($identifiers);
+        if (empty($criteria[$idKey])) {
+            unset($criteria[$idKey]);
+        }
+        if (true === $metadata->isChildEntity()) {
+            $criteria[$this->getPolymorphicKey()] = $metadata->type;
+        }
+        return $criteria;
+    }
+
+    /**
+     * Creates/formats the MongoDB identifier critiera based on a provided set of ids.
+     *
+     * @param   string|array    $identifiers
+     * @return  array
+     */
+    protected function getIdentifierCriteria($identifiers)
+    {
         $criteria = [];
         if (is_array($identifiers)) {
             $ids = [];
             foreach ($identifiers as $id) {
                 $ids[] = $this->convertId($id);
             }
-            if (!empty($ids)) {
-                $criteria[$this->getIdentifierKey()] = ['$in' => $ids];
+            if (1 === count($ids)) {
+                $criteria = $ids[0];
+            } elseif (!empty($ids)) {
+                $criteria = ['$in' => $ids];
             }
         } else {
-            $criteria[$this->getIdentifierKey()] = $this->convertId($identifiers);
-        }
-        if (true === $metadata->isChildEntity()) {
-            $criteria[$this->getPolymorphicKey()] = $metadata->type;
+            $criteria = $this->convertId($identifiers);
         }
         return $criteria;
     }
