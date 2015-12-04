@@ -351,26 +351,82 @@ class Store
      */
     public function commit(Model $model)
     {
+        $this->dispatchLifecycleEvent(Events::preCommit, $model);
+
         if (false === $this->shouldCommit($model)) {
             return $model;
         }
-        $persister = $this->getPersisterFor($model->getType());
+
         if (true === $model->getState()->is('new')) {
-            $persister->create($model);
-            $model->getState()->setNew(false);
-            // Should the model always reload? Or should the commit be assumed correct and just clear the new/dirty state?
-            $model->reload();
+            $this->doCommitCreate($model);
+
         } elseif (true === $model->getState()->is('deleting')) {
             // Deletes must execute before updates to prevent an update then a delete.
-            $persister->delete($model);
-            $model->getState()->setDeleted();
+            $this->doCommitDelete($model);
+
         } elseif (true === $model->getState()->is('dirty')) {
-            $persister->update($model);
-            // Should the model always reload? Or should the commit be assumed correct and just clear the new/dirty state?
-            $model->reload();
+            $this->doCommitUpdate($model);
+
         } else {
             throw new \RuntimeException('Unable to commit model.');
         }
+
+        $this->dispatchLifecycleEvent(Events::postCommit, $model);
+
+        return $model;
+    }
+
+    /**
+     * Performs a Model creation commit and persists to the database.
+     *
+     * @param   Model   $model
+     * @return  Model
+     */
+    private function doCommitCreate(Model $model)
+    {
+        $this->dispatchLifecycleEvent(Events::preCreate, $model);
+
+        $this->getPersisterFor($model->getType())->create($model);
+        $model->getState()->setNew(false);
+        // Should the model always reload? Or should the commit be assumed correct and just clear the new/dirty state?
+        $model->reload();
+
+        $this->dispatchLifecycleEvent(Events::postCreate, $model);
+        return $model;
+    }
+
+    /**
+     * Performs a Model delete commit and persists to the database.
+     *
+     * @param   Model   $model
+     * @return  Model
+     */
+    private function doCommitDelete(Model $model)
+    {
+        $this->dispatchLifecycleEvent(Events::preDelete, $model);
+
+        $this->getPersisterFor($model->getType())->delete($model);
+        $model->getState()->setDeleted();
+
+        $this->dispatchLifecycleEvent(Events::postDelete, $model);
+        return $model;
+    }
+
+    /**
+     * Performs a Model update commit and persists to the database.
+     *
+     * @param   Model   $model
+     * @return  Model
+     */
+    private function doCommitUpdate(Model $model)
+    {
+        $this->dispatchLifecycleEvent(Events::preUpdate, $model);
+
+        $this->getPersisterFor($model->getType())->update($model);
+        // Should the model always reload? Or should the commit be assumed correct and just clear the new/dirty state?
+        $model->reload();
+
+        $this->dispatchLifecycleEvent(Events::postUpdate, $model);
         return $model;
     }
 
