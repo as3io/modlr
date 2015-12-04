@@ -12,6 +12,8 @@ use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
 use Actinoids\Modlr\RestOdm\Persister\PersisterInterface;
 use Actinoids\Modlr\RestOdm\Persister\Record;
 use Actinoids\Modlr\RestOdm\DataTypes\TypeFactory;
+use Actinoids\Modlr\RestOdm\Events\EventDispatcher;
+use Actinoids\Modlr\RestOdm\Store\Events\ModelLifecycleArguments;
 
 /**
  * Manages models and their persistence.
@@ -46,16 +48,24 @@ class Store
     private $cache;
 
     /**
+     * The event dispatcher for firing model lifecycle events.
+     *
+     * @var EventDispatcher
+     */
+    private $dispatcher;
+
+    /**
      * Constructor.
      *
      * @param   MetadataFactory     $mf
      * @param   PersisterInterface  $persister
      */
-    public function __construct(MetadataFactory $mf, PersisterInterface $persister, TypeFactory $typeFactory)
+    public function __construct(MetadataFactory $mf, PersisterInterface $persister, TypeFactory $typeFactory, EventDispatcher $dispatcher)
     {
         $this->mf = $mf;
         $this->persister = $persister;
         $this->typeFactory = $typeFactory;
+        $this->dispatcher = $dispatcher;
         $this->cache = new Cache();
     }
 
@@ -201,8 +211,25 @@ class Store
 
         $model = new Model($metadata, $record->getId(), $this, $record);
         $model->getState()->setLoaded();
+
+        $this->dispatchLifecycleEvent(Events::postLoad, $model);
+
         $this->cache->push($model);
         return $model;
+    }
+
+    /**
+     * Dispatches a model lifecycle event via the event dispatcher.
+     *
+     * @param   string  $eventName
+     * @param   Model   $model
+     * @return  self
+     */
+    protected function dispatchLifecycleEvent($eventName, Model $model)
+    {
+        $args = new ModelLifecycleArguments($model);
+        $this->dispatcher->dispatch($eventName, $args);
+        return $this;
     }
 
     /**
