@@ -532,6 +532,7 @@ class Model
             $record = $this->store->retrieveRecord($this->getType(), $this->getId());
             $this->initialize($record);
             $this->state->setLoaded();
+            // @todo Should this trigger a postReload event? Likely not.
         }
         return $this;
     }
