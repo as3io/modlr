@@ -129,11 +129,11 @@ class YamlFileDriver extends AbstractFileDriver
      *
      * @todo    Inject type manager and validate data type. Or should this happen later???
      * @todo    Add support for complex attributes, like arrays and objects.
-     * @param   Metadata\AttributeInterface $metadata
+     * @param   Metadata\Interfaces\AttributeInterface $metadata
      * @param   array                       $attrMapping
      * @return  Metadata\EntityMetadata
      */
-    protected function setAttributes(Metadata\AttributeInterface $metadata, array $attrMapping)
+    protected function setAttributes(Metadata\Interfaces\AttributeInterface $metadata, array $attrMapping)
     {
         foreach ($attrMapping as $key => $mapping) {
             if (!is_array($mapping)) {

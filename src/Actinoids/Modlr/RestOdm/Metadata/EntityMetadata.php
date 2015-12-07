@@ -3,6 +3,8 @@
 namespace Actinoids\Modlr\RestOdm\Metadata;
 
 use Actinoids\Modlr\RestOdm\Exception\MetadataException;
+use Actinoids\Modlr\RestOdm\Metadata\Interfaces\AttributeInterface;
+use Actinoids\Modlr\RestOdm\Metadata\Interfaces\MergeableInterface;
 
 /**
  * Defines the metadata for an entity (e.g. a database object).
@@ -10,7 +12,7 @@ use Actinoids\Modlr\RestOdm\Exception\MetadataException;
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class EntityMetadata implements AttributeInterface
+class EntityMetadata implements AttributeInterface, MergeableInterface
 {
     /**
      * The id key name and type.
@@ -110,14 +112,9 @@ class EntityMetadata implements AttributeInterface
     }
 
     /**
-     * Merges an EntityMetadata instance with this instance.
-     * For use with entity class extension.
-     * Only merge items where you want the child class to override the parent!
-     *
-     * @param   EntityMetadata  $metadata
-     * @return  self
+     * {@inheritDoc}
      */
-    public function merge(EntityMetadata $metadata)
+    public function merge(MergeableInterface $metadata)
     {
         $this->setType($metadata->type);
         // @todo Remove these if necessary.
