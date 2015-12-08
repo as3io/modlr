@@ -20,6 +20,23 @@ class MongoDBPersister implements PersisterInterface
 {
     const IDENTIFIER_KEY    = '_id';
     const POLYMORPHIC_KEY   = '_type';
+    const PERSISTER_KEY     = 'mongodb';
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getPersisterKey()
+    {
+        return self::PERSISTER_KEY;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getPersistenceMetadataClass()
+    {
+        return 'Actinoids\Modlr\RestOdm\Persister\MongoDb\PersistenceMetadata';
+    }
 
     /**
      * The Doctine MongoDB connection.

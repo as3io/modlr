@@ -14,6 +14,22 @@ use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 interface PersisterInterface
 {
     /**
+     * Gets the key name for this persister.
+     * Is used to uniquely indentify this persistence type by the persister manager.
+     * Is also the type key for the persistence metadata layer.
+     *
+     * @return  string
+     */
+    public function getPersisterKey();
+
+    /**
+     * Gets the persistence metadata class name for creating PersistenceInterface instances.
+     *
+     * @return  string
+     */
+    public function getPersistenceMetadataClass();
+
+    /**
      * Gets all records for the specified type, optinally filtered by a set of identifiers.
      *
      * @todo    Implement sorting and pagination (limit/skip).

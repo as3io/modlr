@@ -36,6 +36,18 @@ class PersisterException extends AbstractHttpException
         );
     }
 
+    public static function persisterNotFound($key)
+    {
+        return new self(
+            sprintf(
+                'Unable to handle database operations. No persister found for type "%s"',
+                $key
+            ),
+            500,
+            __FUNCTION__
+        );
+    }
+
     public static function nyi($featureDescription)
     {
         return new self(
