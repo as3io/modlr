@@ -1,14 +1,16 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Persister;
+namespace Actinoids\Modlr\RestOdm\Persister\MongoDb;
 
-use Actinoids\Modlr\RestOdm\Persister\MongoDb\PersistenceMetadataFactory;
 use Actinoids\Modlr\RestOdm\Store\Store;
 use Actinoids\Modlr\RestOdm\Models\Model;
 use Actinoids\Modlr\RestOdm\Models\Collection;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\AttributeMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
+use Actinoids\Modlr\RestOdm\Persister\PersisterInterface;
+use Actinoids\Modlr\RestOdm\Persister\PersisterException;
+use Actinoids\Modlr\RestOdm\Persister\Record;
 use Doctrine\MongoDB\Connection;
 use \MongoId;
 
@@ -17,7 +19,7 @@ use \MongoId;
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class MongoDBPersister implements PersisterInterface
+class Persister implements PersisterInterface
 {
     const IDENTIFIER_KEY    = '_id';
     const POLYMORPHIC_KEY   = '_type';
