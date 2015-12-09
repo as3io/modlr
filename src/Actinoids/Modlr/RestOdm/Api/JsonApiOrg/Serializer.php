@@ -16,7 +16,7 @@ use Actinoids\Modlr\RestOdm\Models\Model;
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class Serializer implements SerializerInterface
+final class Serializer implements SerializerInterface
 {
     /**
      * Denotes the current object depth of the serializer.
@@ -78,7 +78,7 @@ class Serializer implements SerializerInterface
      * @param   AdapterInterface    $adapter
      * @return  array
      */
-    public function serializeModel(Model $model, AdapterInterface $adapter)
+    protected function serializeModel(Model $model, AdapterInterface $adapter)
     {
         $metadata = $model->getMetadata();
         $serialized = [

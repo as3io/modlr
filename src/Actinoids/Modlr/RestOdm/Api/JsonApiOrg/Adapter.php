@@ -16,7 +16,7 @@ use Actinoids\Modlr\RestOdm\Store\Store;
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class Adapter extends AbstractAdapter
+final class Adapter extends AbstractAdapter
 {
     /**
      * {@inheritDoc}

@@ -12,7 +12,7 @@ use Actinoids\Modlr\RestOdm\Rest\RestPayload;
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class Normalizer extends AbstractNormalizer
+final class Normalizer extends AbstractNormalizer
 {
     /**
      * {@inheritDoc}
