@@ -2,9 +2,9 @@
 
 namespace Actinoids\Modlr\RestOdm\Rest;
 
+use Actinoids\Modlr\RestOdm\Api\AdapterInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Actinoids\Modlr\RestOdm\Adapter\AdapterInterface;
 
 /**
  * REST Kernel.

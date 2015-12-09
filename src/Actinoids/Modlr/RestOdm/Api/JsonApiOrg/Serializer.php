@@ -1,14 +1,22 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Serializer;
+namespace Actinoids\Modlr\RestOdm\Api\JsonApiOrg;
 
-use Actinoids\Modlr\RestOdm\Models\Model;
-use Actinoids\Modlr\RestOdm\Models\Collection;
-use Actinoids\Modlr\RestOdm\Adapter\AdapterInterface;
+use Actinoids\Modlr\RestOdm\Api\AdapterInterface;
+use Actinoids\Modlr\RestOdm\Api\SerializerException;
+use Actinoids\Modlr\RestOdm\Api\SerializerInterface;
 use Actinoids\Modlr\RestOdm\Metadata\AttributeMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
+use Actinoids\Modlr\RestOdm\Models\Collection;
+use Actinoids\Modlr\RestOdm\Models\Model;
 
-class JsonApiSerializer implements SerializerInterface
+/**
+ * Serializes Models into the JSON API spec.
+ * www.jsonapi.org
+ *
+ * @author Jacob Bare <jacob.bare@gmail.com>
+ */
+class Serializer implements SerializerInterface
 {
     /**
      * Denotes the current object depth of the serializer.

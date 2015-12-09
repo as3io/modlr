@@ -1,17 +1,18 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Normalizer;
+namespace Actinoids\Modlr\RestOdm\Api\JsonApiOrg;
 
-use Actinoids\Modlr\RestOdm\Rest\RestPayload;
+use Actinoids\Modlr\RestOdm\Api\AbstractNormalizer;
+use Actinoids\Modlr\RestOdm\Api\NormalizerException;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
-use Actinoids\Modlr\RestOdm\Adapter\AdapterInterface;
+use Actinoids\Modlr\RestOdm\Rest\RestPayload;
 
 /**
  * Normalizes REST payloads into standard arrays based on the JSON API spec.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class JsonApiNormalizer extends AbstractNormalizer
+class Normalizer extends AbstractNormalizer
 {
     /**
      * {@inheritDoc}

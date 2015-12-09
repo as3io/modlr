@@ -1,10 +1,9 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Normalizer;
+namespace Actinoids\Modlr\RestOdm\Api;
 
-use Actinoids\Modlr\RestOdm\Rest\RestPayload;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
-use Actinoids\Modlr\RestOdm\Adapter\AdapterInterface;
+use Actinoids\Modlr\RestOdm\Rest\RestPayload;
 
 /**
  * Abstract implementation of normalizing REST payloads into arrays that can be applied to a Model.

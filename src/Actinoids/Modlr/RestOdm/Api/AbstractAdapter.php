@@ -1,15 +1,13 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Adapter;
+namespace Actinoids\Modlr\RestOdm\Api;
 
-use Actinoids\Modlr\RestOdm\Models\Model;
-use Actinoids\Modlr\RestOdm\Models\Collection;
-use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
-use Actinoids\Modlr\RestOdm\Store\Store;
-use Actinoids\Modlr\RestOdm\Serializer\SerializerInterface;
-use Actinoids\Modlr\RestOdm\Normalizer\NormalizerInterface;
-use Actinoids\Modlr\RestOdm\Rest;
 use Actinoids\Modlr\RestOdm\Exception\HttpExceptionInterface;
+use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
+use Actinoids\Modlr\RestOdm\Models\Collection;
+use Actinoids\Modlr\RestOdm\Models\Model;
+use Actinoids\Modlr\RestOdm\Rest;
+use Actinoids\Modlr\RestOdm\Store\Store;
 
 /**
  * Abstract Adapter implementation for handling API operations.

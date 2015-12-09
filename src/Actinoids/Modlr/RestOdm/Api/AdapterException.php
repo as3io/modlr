@@ -1,6 +1,6 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Adapter;
+namespace Actinoids\Modlr\RestOdm\Api;
 
 use Actinoids\Modlr\RestOdm\Exception\AbstractHttpException;
 
