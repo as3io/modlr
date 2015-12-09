@@ -28,6 +28,14 @@ interface DriverInterface
     public function getAllTypeNames();
 
     /**
+     * Gets the persistence metadata factory service, based on a persister key.
+     *
+     * @param   string  $persisterKey
+     * @return  \Actinoids\Modlr\RestOdm\Metadata\Interfaces\PersistenceMetadataFactoryInterface
+     */
+    public function getPersistenceMetadataFactory($persisterKey);
+
+    /**
      * Gets the type hierarchy (via extension) for an entity type.
      * Is recursive.
      *

@@ -1,6 +1,6 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Store;
+namespace Actinoids\Modlr\RestOdm\Persister;
 
 use Actinoids\Modlr\RestOdm\Exception\AbstractHttpException;
 
@@ -32,6 +32,18 @@ class PersisterException extends AbstractHttpException
                 $message
             ),
             400,
+            __FUNCTION__
+        );
+    }
+
+    public static function persisterNotFound($key)
+    {
+        return new self(
+            sprintf(
+                'Unable to handle database operations. No persister found for type "%s"',
+                $key
+            ),
+            500,
             __FUNCTION__
         );
     }

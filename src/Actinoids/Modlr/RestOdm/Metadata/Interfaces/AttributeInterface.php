@@ -1,6 +1,8 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Metadata;
+namespace Actinoids\Modlr\RestOdm\Metadata\Interfaces;
+
+use Actinoids\Modlr\RestOdm\Metadata\AttributeMetadata;
 
 /**
  * Interface for Metadata objects containing attributes.

@@ -30,14 +30,6 @@ class YamlFileDriver extends AbstractFileDriver
 
         $metadata = new Metadata\EntityMetadata($type);
 
-        if (isset($mapping['entity']['db'])) {
-            $metadata->db = $mapping['entity']['db'];
-        }
-
-        if (isset($mapping['entity']['collection'])) {
-            $metadata->collection = $mapping['entity']['collection'];
-        }
-
         if (isset($mapping['entity']['abstract'])) {
             $metadata->setAbstract(true);
         }
@@ -51,6 +43,7 @@ class YamlFileDriver extends AbstractFileDriver
             $metadata->extends = $mapping['entity']['extends'];
         }
 
+        $this->setPersistence($metadata, $mapping['entity']['persistence']);
         $this->setAttributes($metadata, $mapping['attributes']);
         $this->setRelationships($metadata, $mapping['relationships']);
         return $metadata;
@@ -125,15 +118,42 @@ class YamlFileDriver extends AbstractFileDriver
     }
 
     /**
+     * Sets the entity persistence metadata from the metadata mapping.
+     *
+     * @param   Metadata\EntityMetadata     $metadata
+     * @param   array                       $mapping
+     * @return  Metadata\EntityMetadata
+     */
+    protected function setPersistence(Metadata\EntityMetadata $metadata, array $mapping)
+    {
+        $persisterKey = isset($mapping['key']) ? $mapping['key'] : null;
+        $factory = $this->getPersistenceMetadataFactory($persisterKey);
+
+        $persistence = $factory->getNewInstance();
+        $persistence->persisterKey = $persisterKey;
+
+        if (isset($mapping['db'])) {
+            $persistence->db = $mapping['db'];
+        }
+
+        if (isset($mapping['collection'])) {
+            $persistence->collection = $mapping['collection'];
+        }
+
+        $metadata->setPersistence($persistence);
+        return $metadata;
+    }
+
+    /**
      * Sets the entity attribute metadata from the metadata mapping.
      *
      * @todo    Inject type manager and validate data type. Or should this happen later???
      * @todo    Add support for complex attributes, like arrays and objects.
-     * @param   Metadata\AttributeInterface $metadata
+     * @param   Metadata\Interfaces\AttributeInterface $metadata
      * @param   array                       $attrMapping
      * @return  Metadata\EntityMetadata
      */
-    protected function setAttributes(Metadata\AttributeInterface $metadata, array $attrMapping)
+    protected function setAttributes(Metadata\Interfaces\AttributeInterface $metadata, array $attrMapping)
     {
         foreach ($attrMapping as $key => $mapping) {
             if (!is_array($mapping)) {
@@ -221,6 +241,16 @@ class YamlFileDriver extends AbstractFileDriver
                 $mapping[$key] = [];
             }
         }
+
+        if (!isset($mapping['entity']['persistence'])) {
+            $mapping['entity']['persistence'] = [];
+        }
+
+        if (!isset($mapping['entity']['persistence']['key'])) {
+            // @todo Should this be defaulted here, or handled differently?
+            $mapping['entity']['persistence']['key'] = 'mongodb';
+        }
+
         return $mapping;
     }
 

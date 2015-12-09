@@ -1,6 +1,6 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Persister;
+namespace Actinoids\Modlr\RestOdm\Persister\MongoDb;
 
 use Actinoids\Modlr\RestOdm\Store\Store;
 use Actinoids\Modlr\RestOdm\Models\Model;
@@ -8,6 +8,9 @@ use Actinoids\Modlr\RestOdm\Models\Collection;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\AttributeMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
+use Actinoids\Modlr\RestOdm\Persister\PersisterInterface;
+use Actinoids\Modlr\RestOdm\Persister\PersisterException;
+use Actinoids\Modlr\RestOdm\Persister\Record;
 use Doctrine\MongoDB\Connection;
 use \MongoId;
 
@@ -16,10 +19,11 @@ use \MongoId;
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class MongoDBPersister implements PersisterInterface
+class Persister implements PersisterInterface
 {
     const IDENTIFIER_KEY    = '_id';
     const POLYMORPHIC_KEY   = '_type';
+    const PERSISTER_KEY     = 'mongodb';
 
     /**
      * The Doctine MongoDB connection.
@@ -29,13 +33,35 @@ class MongoDBPersister implements PersisterInterface
     private $connection;
 
     /**
+     * @var PersistenceMetadataFactory
+     */
+    private $pmf;
+
+    /**
      * Constructor.
      *
      * @param   Connection          $connection
      */
-    public function __construct(Connection $connection)
+    public function __construct(Connection $connection, PersistenceMetadataFactory $pmf)
     {
         $this->connection = $connection;
+        $this->pmf = $pmf;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getPersisterKey()
+    {
+        return self::PERSISTER_KEY;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getPersistenceMetadataFactory()
+    {
+        return $this->pmf;
     }
 
     /**
@@ -487,15 +513,23 @@ class MongoDBPersister implements PersisterInterface
     /**
      * Creates a builder object for querying MongoDB based on the provided metadata.
      *
-     * @todo    The database and collection names should not exist on the root of the metadata.
-     * @todo    Eventually, a persiter metadata object should be used, that's db specific, to provide this.
      * @param   EntityMetadata  $metadata
      * @return  \Doctrine\MongoDB\Query\Builder
      */
-    protected function createQueryBuilder(EntityMetadata $metadata)
+    public function createQueryBuilder(EntityMetadata $metadata)
     {
-        $collection = $this->connection->selectCollection($metadata->db, $metadata->collection);
-        return $collection->createQueryBuilder();
+        return $this->getModelCollection($metadata)->createQueryBuilder();
+    }
+
+    /**
+     * Gets the MongoDB Collection object for a Model.
+     *
+     * @param   EntityMetadata  $metadata
+     * @return  \Doctrine\MongoDB\Collection
+     */
+    public function getModelCollection(EntityMetadata $metadata)
+    {
+        return $this->connection->selectCollection($metadata->persistence->db, $metadata->persistence->collection);
     }
 
     /**
