@@ -5,6 +5,7 @@ namespace Actinoids\Modlr\RestOdm\Metadata;
 use Actinoids\Modlr\RestOdm\Exception\MetadataException;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\AttributeInterface;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\MergeableInterface;
+use Actinoids\Modlr\RestOdm\Metadata\Interfaces\PersistenceInterface;
 
 /**
  * Defines the metadata for an entity (e.g. a database object).
@@ -26,29 +27,6 @@ class EntityMetadata implements AttributeInterface, MergeableInterface
      * @var string
      */
     public $type;
-
-    /**
-     * The database name.
-     *
-     * @var string
-     */
-    public $db;
-
-    /**
-     * The collection name.
-     *
-     * @var string
-     */
-    public $collection;
-
-    /**
-     * The ID strategy to use.
-     * Currently object is the only valid choice.
-     *
-     * @todo Implement an auto-increment integer id strategy.
-     * @var string
-     */
-    public $idStrategy = 'object';
 
     /**
      * Whether this class is considered polymorphic.
@@ -76,6 +54,13 @@ class EntityMetadata implements AttributeInterface, MergeableInterface
      * @var bool
      */
     public $abstract = false;
+
+    /**
+     * The persistence metadata for this entity.
+     *
+     * @param PersistenceInterface
+     */
+    public $persistence;
 
     /**
      * All attribute fields assigned to this entity.
@@ -117,13 +102,15 @@ class EntityMetadata implements AttributeInterface, MergeableInterface
     public function merge(MergeableInterface $metadata)
     {
         $this->setType($metadata->type);
-        // @todo Remove these if necessary.
         $this->setPolymorphic($metadata->isPolymorphic());
         $this->setAbstract($metadata->isAbstract());
         $this->extends = $metadata->extends;
         $this->ownedTypes = $metadata->ownedTypes;
+
+        $this->persistence->merge($metadata->persistence);
         $this->mergeAttributes($metadata->getAttributes());
         $this->mergeRelationships($metadata->getRelationships());
+
         // @todo Implement this.
         // $this->mergeMixins($metadata->getMixins());
         return $this;
@@ -299,6 +286,18 @@ class EntityMetadata implements AttributeInterface, MergeableInterface
             return null;
         }
         return $this->attributes[$key];
+    }
+
+    /**
+     * Sets the persistence metadata for this entity.
+     *
+     * @param   PersisterInterface  $persistence
+     * @return  self
+     */
+    public function setPersistence(PersistenceInterface $persistence)
+    {
+        $this->persistence = $persistence;
+        return $this;
     }
 
     /**

@@ -41,7 +41,7 @@ class PersisterManager
      */
     public function getPersister($key)
     {
-        if (false === $this->hasPersister($key)) {
+        if (empty($key) || false === $this->hasPersister($key)) {
             throw PersisterException::persisterNotFound($key);
         }
         return $this->persisters[$key];

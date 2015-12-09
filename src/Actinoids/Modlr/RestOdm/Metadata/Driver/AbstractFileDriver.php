@@ -4,6 +4,7 @@ namespace Actinoids\Modlr\RestOdm\Metadata\Driver;
 
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Exception\MetadataException;
+use Actinoids\Modlr\RestOdm\Persister\PersisterManager;
 
 /**
  * Abstract metadata file driver.
@@ -34,14 +35,23 @@ abstract class AbstractFileDriver implements DriverInterface
     private $allEntityTypes;
 
     /**
+     * The Persister Manager service.
+     * Used to determine the Persistence Metadata to use for the model.
+     *
+     * @var PersisterManager
+     */
+    private $persisterManager;
+
+    /**
      * Constructor.
      *
      * @param   FileLocatorInterface    $fileLocator
      * @param   Validator               $validator
      */
-    public function __construct(FileLocatorInterface $fileLocator)
+    public function __construct(FileLocatorInterface $fileLocator, PersisterManager $persisterManager)
     {
         $this->fileLocator = $fileLocator;
+        $this->persisterManager = $persisterManager;
     }
 
     /**
@@ -76,6 +86,14 @@ abstract class AbstractFileDriver implements DriverInterface
             throw MetadataException::fatalDriverError($type, sprintf('No mapping file was found.', $path));
         }
         return $path;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getPersistenceMetadataFactory($persisterKey)
+    {
+        return $this->persisterManager->getPersister($persisterKey)->getPersistenceMetadataFactory();
     }
 
     /**

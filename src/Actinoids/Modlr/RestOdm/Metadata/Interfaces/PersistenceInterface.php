@@ -12,4 +12,10 @@ namespace Actinoids\Modlr\RestOdm\Metadata\Interfaces;
  */
 interface PersistenceInterface extends MergeableInterface
 {
+    /**
+     * Returns the persister key for this persistence metadata.
+     *
+     * @return  string
+     */
+    public function getPersisterKey();
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Store;
+namespace Actinoids\Modlr\RestOdm\Persister;
 
 use Actinoids\Modlr\RestOdm\Exception\AbstractHttpException;
 

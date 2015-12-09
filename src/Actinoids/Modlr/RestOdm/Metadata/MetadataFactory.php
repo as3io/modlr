@@ -129,9 +129,6 @@ class MetadataFactory implements MetadataFactoryInterface
 
             // Load from driver source
             $loaded = $this->driver->loadMetadataForType($hierType);
-            if (null === $loaded->collection) {
-                $loaded->collection = $loaded->type;
-            }
 
             if (null === $loaded) {
                 throw MetadataException::mappingNotFound($type);
@@ -139,6 +136,13 @@ class MetadataFactory implements MetadataFactoryInterface
 
             // Validate the metadata object.
             $this->entityUtil->validateMetadata($hierType, $loaded, $this);
+
+            // Handle persistence specific loading and validation.
+            $persisterKey = $loaded->persistence->getPersisterKey();
+            $persistenceFactory = $this->driver->getPersistenceMetadataFactory($persisterKey);
+
+            $persistenceFactory->handleLoad($loaded);
+            $persistenceFactory->handleValidate($loaded);
 
             $this->mergeMetadata($metadata, $loaded);
             $this->doPutMetadata($loaded);

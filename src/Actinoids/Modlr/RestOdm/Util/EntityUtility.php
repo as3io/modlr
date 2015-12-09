@@ -54,6 +54,16 @@ class EntityUtility
     }
 
     /**
+     * Gets the REST configuration object.
+     *
+     * @return  RestConfiguration
+     */
+    public function getRestConfig()
+    {
+        return $this->config;
+    }
+
+    /**
      * Determines if a field key is valid, based on configuration.
      *
      * @param   string  $value
@@ -91,13 +101,8 @@ class EntityUtility
         }
         $this->validateMetadataType($metadata);
 
-        $validIdStrategies = ['object'];
-        if (!in_array($metadata->idStrategy, $validIdStrategies)) {
-            throw MetadataException::invalidMetadata($requestedType, sprintf('The id strategy "%s" is invalid. Valid types are "%s"', $metadata->idStrategy, implode('", "', $validIdStrategies)));
-        }
-
-        if (false === $metadata->isChildEntity() && (empty($metadata->db) || empty($metadata->collection))) {
-            throw MetadataException::invalidMetadata($requestedType, 'The database and collection names cannot be empty.');
+        if (null === $metadata->persistence) {
+            throw MetadataException::invalidMetadata($requestedType, 'No persistence metadata was found. All models must use a persistence layer.');
         }
 
         $this->validateMetadataInheritance($metadata, $mf);
@@ -123,9 +128,6 @@ class EntityUtility
         }
         if (false === $this->isEntityTypeValid($metadata->type)) {
             throw MetadataException::invalidMetadata($metadata->type, sprintf('The entity type is invalid based on the configured name format "%s"', $this->config->getEntityFormat()));
-        }
-        if (false === $this->isEntityTypeValid($metadata->collection)) {
-            throw MetadataException::invalidMetadata($metadata->type, sprintf('The entity collection "%s" is invalid based on the configured name format "%s"', $metadata->collection, $this->config->getEntityFormat()));
         }
         return true;
     }

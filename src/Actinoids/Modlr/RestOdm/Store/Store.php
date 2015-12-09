@@ -10,6 +10,7 @@ use Actinoids\Modlr\RestOdm\Metadata\MetadataFactory;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
 use Actinoids\Modlr\RestOdm\Persister\PersisterInterface;
+use Actinoids\Modlr\RestOdm\Persister\PersisterManager;
 use Actinoids\Modlr\RestOdm\Persister\Record;
 use Actinoids\Modlr\RestOdm\DataTypes\TypeFactory;
 use Actinoids\Modlr\RestOdm\Events\EventDispatcher;
@@ -33,12 +34,12 @@ class Store
     private $typeFactory;
 
     /**
-     * The persister for retrieve and saving records to the database layer.
+     * The persister manager.
+     * Retrieves the appropriate persister for saving records to the database layer.
      *
-     * @todo Eventually this should be replaced by a persister manager and not injected directly.
-     * @var  PersisterInterface
+     * @var  PersisterManager
      */
-    private $persister;
+    private $persisterManager;
 
     /**
      * Contains all models currently loaded in memory.
@@ -58,12 +59,12 @@ class Store
      * Constructor.
      *
      * @param   MetadataFactory     $mf
-     * @param   PersisterInterface  $persister
+     * @param   PersisterManager    $persisterManager
      */
-    public function __construct(MetadataFactory $mf, PersisterInterface $persister, TypeFactory $typeFactory, EventDispatcher $dispatcher)
+    public function __construct(MetadataFactory $mf, PersisterManager $persisterManager, TypeFactory $typeFactory, EventDispatcher $dispatcher)
     {
         $this->mf = $mf;
-        $this->persister = $persister;
+        $this->persisterManager = $persisterManager;
         $this->typeFactory = $typeFactory;
         $this->dispatcher = $dispatcher;
         $this->cache = new Cache();
@@ -479,15 +480,13 @@ class Store
     /**
      * Determines the persister to use for the provided model key.
      *
-     * @todo    The persister should NOT be injected directly, but should have a persister manager service.
-     * @todo    Instead, a persister should be chosen based on the metadata for the provided type.
-     * @todo    Should throw an exception if persister metadata was unable to be found, or the service doesn't exist.
      * @param   string  $typeKey    The model type key.
      * @return  PersisterInterface
      */
     protected function getPersisterFor($typeKey)
     {
-        return $this->persister;
+        $metadata = $this->getMetadataForType($typeKey);
+        return $this->persisterManager->getPersister($metadata->persistence->getPersisterKey());
     }
 
     /**

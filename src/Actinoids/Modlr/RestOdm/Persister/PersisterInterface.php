@@ -5,6 +5,7 @@ namespace Actinoids\Modlr\RestOdm\Persister;
 use Actinoids\Modlr\RestOdm\Store\Store;
 use Actinoids\Modlr\RestOdm\Models\Model;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
+use Actinoids\Modlr\RestOdm\Metadata\Interfaces\PersistenceMetadataFactoryInterface;
 
 /**
  * Defines the persister service implementation for persisting models to a data layer.
@@ -23,11 +24,11 @@ interface PersisterInterface
     public function getPersisterKey();
 
     /**
-     * Gets the persistence metadata class name for creating PersistenceInterface instances.
+     * Gets the persistence metadata factory for creating PersistenceInterface instances.
      *
-     * @return  string
+     * @return  PersistenceMetadataFactoryInterface
      */
-    public function getPersistenceMetadataClass();
+    public function getPersistenceMetadataFactory();
 
     /**
      * Gets all records for the specified type, optinally filtered by a set of identifiers.
