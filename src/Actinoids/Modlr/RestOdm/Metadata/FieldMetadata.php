@@ -27,13 +27,22 @@ abstract class FieldMetadata
     public $description;
 
     /**
+     * Determines if this field came from a mixin.
+     *
+     * @var bool
+     */
+    public $mixin;
+
+    /**
      * Constructor.
      *
      * @param   string  $key
+     * @param   bool    $mixin
      */
-    public function __construct($key)
+    public function __construct($key, $mixin = false)
     {
         $this->validateKey($key);
+        $this->mixin = (Boolean) $mixin;
         $this->key = $key;
     }
 

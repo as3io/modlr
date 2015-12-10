@@ -9,7 +9,7 @@ use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-interface RelationshipInterface
+interface RelationshipInterface extends PropertyInterface
 {
     /**
      * Adds a relationship field to the implementing metadata object.

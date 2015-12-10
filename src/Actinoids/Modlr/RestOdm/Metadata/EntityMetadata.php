@@ -12,7 +12,8 @@ use Actinoids\Modlr\RestOdm\Metadata\Interfaces\RelationshipInterface;
  * Defines the metadata for an entity (e.g. a database object).
  * Should be loaded using the MetadataFactory, not instantiated directly.
  *
- * @author Jacob Bare <jacob.bare@gmail.com>
+ * @author  Jacob Bare <jacob.bare@gmail.com>
+ * @todo    This should be renamed to ModelMetadata, which extends an abstract EntityMetadata class, which MixinMetadata also extends?
  */
 class EntityMetadata implements AttributeInterface, RelationshipInterface, MergeableInterface
 {
@@ -84,6 +85,44 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     }
 
     /**
+     * Adds a mixin (and its attributes and relationships) to this entity.
+     *
+     * @param   MixinMetadata   $mixin
+     * @return  self
+     */
+    public function addMixin(MixinMetadata $mixin)
+    {
+        if (isset($this->mixins[$mixin->name])) {
+            return $this;
+        }
+        foreach ($mixin->getAttributes() as $attribute) {
+            if (true === $this->hasAttribute($attribute->key)) {
+                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'attribute', $attribute->key);
+            }
+            $this->addAttribute($attribute);
+        }
+        foreach ($mixin->getRelationships() as $relationship) {
+            if (true === $this->hasRelationship($relationship->key)) {
+                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'relationship', $relationship->key);
+            }
+            $this->addRelationship($relationship);
+        }
+        $this->mixins[$mixin->name] = $mixin;
+        return $this;
+    }
+
+    /**
+     * Determines if a mixin exists.
+     *
+     * @param   string  $mixinName
+     * @return  bool
+     */
+    public function hasMixin($mixinName)
+    {
+        return isset($this->mixins[$mixinName]);
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function merge(MergeableInterface $metadata)
@@ -97,9 +136,8 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
         $this->persistence->merge($metadata->persistence);
         $this->mergeAttributes($metadata->getAttributes());
         $this->mergeRelationships($metadata->getRelationships());
+        $this->mergeMixins($metadata->mixins);
 
-        // @todo Implement this.
-        // $this->mergeMixins($metadata->getMixins());
         return $this;
     }
 
@@ -116,6 +154,22 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
             throw MetadataException::invalidEntityType($type);
         }
         $this->type = $type;
+        return $this;
+    }
+
+    /**
+     * Merges mixins with this instance's mixins.
+     *
+     * @param   array   $toAdd
+     * @return  self
+     */
+    private function mergeMixins(array $toAdd)
+    {
+        foreach ($toAdd as $mixin) {
+            if (!isset($this->mixins[$mixin->name])) {
+                $this->mixins[$mixin->name] = $mixin;
+            }
+        }
         return $this;
     }
 

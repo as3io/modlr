@@ -20,11 +20,13 @@ class AttributeMetadata extends FieldMetadata
     /**
      * Constructor.
      *
+     * @param   string  $key        The attribute field key.
      * @param   string  $dataType   The attribute data type.
+     * @param   bool    $mixin
      */
-    public function __construct($key, $dataType)
+    public function __construct($key, $dataType, $mixin = false)
     {
-        parent::__construct($key);
+        parent::__construct($key, $mixin);
         $this->dataType = $dataType;
     }
 }

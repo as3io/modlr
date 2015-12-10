@@ -9,7 +9,7 @@ use Actinoids\Modlr\RestOdm\Metadata\AttributeMetadata;
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-interface AttributeInterface
+interface AttributeInterface extends PropertyInterface
 {
     /**
      * Adds an attribute field to the implementing metadata object.
