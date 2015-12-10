@@ -6,6 +6,7 @@ use Actinoids\Modlr\RestOdm\Exception\MetadataException;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\AttributeInterface;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\MergeableInterface;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\PersistenceInterface;
+use Actinoids\Modlr\RestOdm\Metadata\Interfaces\RelationshipInterface;
 
 /**
  * Defines the metadata for an entity (e.g. a database object).
@@ -13,7 +14,7 @@ use Actinoids\Modlr\RestOdm\Metadata\Interfaces\PersistenceInterface;
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class EntityMetadata implements AttributeInterface, MergeableInterface
+class EntityMetadata implements AttributeInterface, RelationshipInterface, MergeableInterface
 {
     use Traits\AttributeTrait;
 
