@@ -16,7 +16,7 @@ use Actinoids\Modlr\RestOdm\Metadata\Interfaces\RelationshipInterface;
  */
 class EntityMetadata implements AttributeInterface, RelationshipInterface, MergeableInterface
 {
-    use Traits\AttributeTrait;
+    use Traits\PropertiesTrait;
 
     /**
      * The id key name and type.
@@ -64,14 +64,6 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
      * @param PersistenceInterface
      */
     public $persistence;
-
-    /**
-     * All relationship fields assigned to this entity.
-     * A relationship is a field that relates to another entity.
-     *
-     * @var RelationshipMetadata[]
-     */
-    public $relationships = [];
 
     /**
      * All mixins assigned to this entity.
@@ -230,58 +222,5 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     {
         $this->persistence = $persistence;
         return $this;
-    }
-
-    /**
-     * Adds a relationship field to this entity.
-     *
-     * @param   RelationshipMetadata    $relationship
-     * @return  self
-     * @throws  MetadataException       If the relationship key already exists as an attribute.
-     */
-    public function addRelationship(RelationshipMetadata $relationship)
-    {
-        if (isset($this->attributes[$relationship->getKey()])) {
-            throw MetadataException::fieldKeyInUse('relationship', 'attribute', $relationship->getKey(), $this->type);
-        }
-        $this->relationships[$relationship->getKey()] = $relationship;
-        ksort($this->relationships);
-        return $this;
-    }
-
-    /**
-     * Gets all relationship fields for this entity.
-     *
-     * @return  RelationshipMetadata[]
-     */
-    public function getRelationships()
-    {
-        return $this->relationships;
-    }
-
-    /**
-     * Determines if a relationship field exists on this entity.
-     *
-     * @param   string  $key
-     * @return  bool
-     */
-    public function hasRelationship($key)
-    {
-        return null !== $this->getRelationship($key);
-    }
-
-    /**
-     * Gets a relationship field from this entity.
-     * Returns null if the relationship does not exist.
-     *
-     * @param   string  $key
-     * @return  RelationshipMetadata|null
-     */
-    public function getRelationship($key)
-    {
-        if (!isset($this->relationships[$key])) {
-            return null;
-        }
-        return $this->relationships[$key];
     }
 }
