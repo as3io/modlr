@@ -7,42 +7,69 @@ namespace Actinoids\Modlr\RestOdm\Metadata\Driver;
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class FileLocator implements FileLocatorInterface
+final class FileLocator implements FileLocatorInterface
 {
     /**
      * Directories to search in.
      *
      * @var array
      */
-    private $directories = [];
+    private $directories = [
+        'model'     => [],
+        'mixin'     => [],
+    ];
 
     /**
      * Constructor.
      *
-     * @param   string|array   $directories
+     * @param   string|array   $modelDirs
+     * @param   string|array   $mixinDirs
      */
-    public function __construct($directories)
+    public function __construct($modelDirs, $mixinDirs = [])
     {
-        $this->directories = (Array) $directories;
+        $this->directories['model'] = (Array) $modelDirs;
+        $this->directories['mixin'] = (Array) $mixinDirs;
     }
 
     /**
      * Gets the directories to search in.
      *
+     * @param   string  $type   The directory type, either model or mixin.
      * @return  array
      */
-    public function getDirectories()
+    protected function getDirectories($type)
     {
-        return $this->directories;
+        return $this->directories[$type];
     }
 
     /**
      * {@inheritDoc}
      */
-    public function findFileForType($type, $extension)
+    public function findFileForMixin($mixinName, $extension)
     {
-        foreach ($this->getDirectories() as $dir) {
-            $path = sprintf('%s/%s', $dir, $this->getFilenameForType($type, $extension));
+        return $this->findFile('mixin', $mixinName, $extension);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function findFileForType($modelType, $extension)
+    {
+        return $this->findFile('model', $modelType, $extension);
+    }
+
+    /**
+     * Finds a file based on a directory type (model or mixin) and a key.
+     *
+     * @param   string  $dirType
+     * @param   string  $key
+     * @param   string  $extension
+     * @return  string|null
+     */
+    protected function findFile($dirType, $key, $extension)
+    {
+        foreach ($this->getDirectories($dirType) as $dir) {
+            $path = sprintf('%s/%s', $dir, $this->getFilename($key, $extension));
             if (file_exists($path)) {
                 return $path;
             }
@@ -58,7 +85,7 @@ class FileLocator implements FileLocatorInterface
         $types = [];
         $extension = sprintf('.%s', $extension);
 
-        foreach ($this->getDirectories() as $dir) {
+        foreach ($this->getDirectories('model') as $dir) {
             $iterator = new \RecursiveIteratorIterator(
                 new \RecursiveDirectoryIterator($dir),
                 \RecursiveIteratorIterator::LEAVES_ONLY
@@ -74,14 +101,14 @@ class FileLocator implements FileLocatorInterface
     }
 
     /**
-     * Gets the filename for a metadata entity type.
+     * Gets the filename for a metadata entity or mixin.
      *
-     * @param   string      $type
+     * @param   string      $key
      * @param   string      $extension
      * @return  string
      */
-    public function getFilenameForType($type, $extension)
+    protected function getFilename($key, $extension)
     {
-        return sprintf('%s.%s', $type, $extension);
+        return sprintf('%s.%s', $key, $extension);
     }
 }

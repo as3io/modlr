@@ -20,6 +20,16 @@ interface FileLocatorInterface
     public function findFileForType($type, $extension);
 
     /**
+     * Finds the file location for a metadata mixin file.
+     *
+     * @param   string  $mixinName
+     * @param   string  $extension
+     *
+     * @return  string|null
+     */
+    public function findFileForMixin($mixinName, $extension);
+
+    /**
      * Finds all possible metadata files.
      *
      * @param   string  $extension
