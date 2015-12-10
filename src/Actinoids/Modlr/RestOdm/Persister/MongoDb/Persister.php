@@ -19,7 +19,7 @@ use \MongoId;
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class Persister implements PersisterInterface
+final class Persister implements PersisterInterface
 {
     const IDENTIFIER_KEY    = '_id';
     const POLYMORPHIC_KEY   = '_type';
@@ -516,7 +516,7 @@ class Persister implements PersisterInterface
      * @param   EntityMetadata  $metadata
      * @return  \Doctrine\MongoDB\Query\Builder
      */
-    public function createQueryBuilder(EntityMetadata $metadata)
+    protected function createQueryBuilder(EntityMetadata $metadata)
     {
         return $this->getModelCollection($metadata)->createQueryBuilder();
     }
@@ -527,7 +527,7 @@ class Persister implements PersisterInterface
      * @param   EntityMetadata  $metadata
      * @return  \Doctrine\MongoDB\Collection
      */
-    public function getModelCollection(EntityMetadata $metadata)
+    protected function getModelCollection(EntityMetadata $metadata)
     {
         return $this->connection->selectCollection($metadata->persistence->db, $metadata->persistence->collection);
     }

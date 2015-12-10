@@ -1,11 +1,10 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Serializer;
+namespace Actinoids\Modlr\RestOdm\Api;
 
-use Actinoids\Modlr\RestOdm\Models\Model;
-use Actinoids\Modlr\RestOdm\Models\Collection;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
-use Actinoids\Modlr\RestOdm\Adapter\AdapterInterface;
+use Actinoids\Modlr\RestOdm\Models\Collection;
+use Actinoids\Modlr\RestOdm\Models\Model;
 
 /**
  * Interface for serializing models in the implementing format.

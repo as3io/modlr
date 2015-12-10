@@ -1,22 +1,22 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Adapter;
+namespace Actinoids\Modlr\RestOdm\Api\JsonApiOrg;
 
-use Actinoids\Modlr\RestOdm\Models\Model;
-use Actinoids\Modlr\RestOdm\Models\Collection;
-use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
-use Actinoids\Modlr\RestOdm\Store\Store;
-use Actinoids\Modlr\RestOdm\Serializer\JsonApiSerializer;
-use Actinoids\Modlr\RestOdm\Normalizer\JsonApiNormalizer;
-use Actinoids\Modlr\RestOdm\Rest;
+use Actinoids\Modlr\RestOdm\Api\AbstractAdapter;
+use Actinoids\Modlr\RestOdm\Api\AdapterException;
 use Actinoids\Modlr\RestOdm\Exception\HttpExceptionInterface;
+use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
+use Actinoids\Modlr\RestOdm\Models\Collection;
+use Actinoids\Modlr\RestOdm\Models\Model;
+use Actinoids\Modlr\RestOdm\Rest;
+use Actinoids\Modlr\RestOdm\Store\Store;
 
 /**
  * Adapter for handling API operations using the JSON API specification.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class JsonApiAdapter extends AbstractAdapter
+final class Adapter extends AbstractAdapter
 {
     /**
      * {@inheritDoc}

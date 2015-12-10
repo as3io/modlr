@@ -13,7 +13,7 @@ use Actinoids\Modlr\RestOdm\Metadata\Interfaces\PersistenceMetadataFactoryInterf
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class PersistenceMetadataFactory implements PersistenceMetadataFactoryInterface
+final class PersistenceMetadataFactory implements PersistenceMetadataFactoryInterface
 {
     /**
      * @var EntityUtility
