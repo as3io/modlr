@@ -71,9 +71,16 @@ final class Adapter extends AbstractAdapter
      */
     protected function validateCreatePayload($typeKey, array $normalized)
     {
-        // @todo Does the type still need to be validated here? Yes, most likely - need to compare the endpoint versus the type.
         if (isset($normalized['id'])) {
             throw AdapterException::badRequest('An "id" member was found in the payload. Client-side ID generation is currently not supported.');
+        }
+
+        if (!isset($normalized['type'])) {
+            throw AdapterException::badRequest('An "type" member was found in the payload. All creation payloads must contain the model type.');
+        }
+
+        if ($normalized['type'] !== $typeKey) {
+            throw AdapterException::badRequest(sprintf('The payload "type" member does not match the API endpoint. Expected "%s" but received "%s"', $typeKey, $normalized['type']));
         }
         return $normalized;
     }
