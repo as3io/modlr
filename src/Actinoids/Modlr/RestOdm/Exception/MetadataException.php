@@ -42,6 +42,17 @@ class MetadataException extends \Exception implements ExceptionInterface
         ));
     }
 
+    public static function mixinPropertyExists($modelTypeKey, $mixinName, $propertyType, $propertyKey)
+    {
+        throw new self(sprintf(
+            'Unable to add %s key "%s" from mixin "%s" to model "%s" -- the property already exists on the model.',
+            $propertyType,
+            $propertyKey,
+            $mixinName,
+            $modelTypeKey
+        ));
+    }
+
     public static function reservedFieldKey($key, array $reserved)
     {
         throw new self(sprintf('The field key "%s" is reserved and cannot be used. Reserved keys are "%s"', $key, implode(', ', $reserved)));

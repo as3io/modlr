@@ -21,6 +21,14 @@ interface DriverInterface
     public function loadMetadataForType($type);
 
     /**
+     * Loads the MixinMetadata for a mixin definition.
+     *
+     * @param   string  $mixinName
+     * @return  \Actinoids\Modlr\RestOdm\Metadata\MixinMetadata|null
+     */
+    public function loadMetadataForMixin($mixinName);
+
+    /**
      * Gets all type names.
      *
      * @return  array

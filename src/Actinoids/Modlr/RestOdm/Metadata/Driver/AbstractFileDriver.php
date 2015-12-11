@@ -2,8 +2,9 @@
 
 namespace Actinoids\Modlr\RestOdm\Metadata\Driver;
 
-use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Exception\MetadataException;
+use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
+use Actinoids\Modlr\RestOdm\Metadata\MixinMetadata;
 use Actinoids\Modlr\RestOdm\Persister\PersisterManager;
 
 /**
@@ -23,9 +24,12 @@ abstract class AbstractFileDriver implements DriverInterface
     /**
      * Array cache for in-memory loaded metadata objects.
      *
-     * @var EntityMetadata[]
+     * @var EntityMetadata[]|MixinMetadata[]
      */
-    private $arrayCache = [];
+    private $arrayCache = [
+        'model' => [],
+        'mixin' => [],
+    ];
 
     /**
      * Array cache of all entity types.
@@ -57,33 +61,57 @@ abstract class AbstractFileDriver implements DriverInterface
     /**
      * {@inheritDoc}
      */
-    public function loadMetadataForType($type)
+    public function loadMetadataForType($modelType)
     {
-        if (isset($this->arrayCache[$type])) {
-            return $this->arrayCache[$type];
+        return $this->doLoadMetadata('model', $modelType);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function loadMetadataForMixin($mixinName)
+    {
+        return $this->doLoadMetadata('mixin', $mixinName);
+    }
+
+    /**
+     * Loads the metadata instance for a model or a mixin.
+     *
+     * @param   string  $metaType   The metadata type, either model or mixin.
+     * @param   string  $key        The metadat key name, either a model type or a mixin name.
+     * @return  EntityMetadata|MixinMetadata|null
+     */
+    protected function doLoadMetadata($metaType, $key)
+    {
+        if (isset($this->arrayCache[$metaType][$key])) {
+            return $this->arrayCache[$metaType][$key];
         }
-        $path = $this->getFilePathForType($type);
+        $path = $this->getFilePath($metaType, $key);
 
         if (null === $path) {
             return null;
         }
-        $metadata = $this->loadMetadataFromFile($type, $path);
-        $this->arrayCache[$type] = $metadata;
-        return $this->arrayCache[$type];
+
+        $loadMethod = ('mixin' === $metaType) ? 'loadMixinFromFile' : 'loadMetadataFromFile';
+        $metadata = $this->$loadMethod($key, $path);
+        $this->arrayCache[$metaType][$key] = $metadata;
+        return $this->arrayCache[$metaType][$key];
     }
 
     /**
-     * Returns the file path for an entity type.
+     * Returns the file path for an entity type or mixin name.
      *
-     * @param   string  $type
+     * @param   string  $metaType   The type of metadata, either model or mixin.
+     * @param   string  $key        The file key name, either the model type or the mixin name.
      * @return  string
      * @throws  MetadataException
      */
-    protected function getFilePathForType($type)
+    protected function getFilePath($metaType, $key)
     {
-        $path = $this->fileLocator->findFileForType($type, $this->getExtension());
+        $method = ('mixin' === $metaType) ? 'findFileForMixin' : 'findFileForType';
+        $path = $this->fileLocator->$method($key, $this->getExtension());
         if (null === $path) {
-            throw MetadataException::fatalDriverError($type, sprintf('No mapping file was found.', $path));
+            throw MetadataException::fatalDriverError($key, sprintf('No mapping file was found.', $path));
         }
         return $path;
     }
@@ -116,6 +144,16 @@ abstract class AbstractFileDriver implements DriverInterface
      * @return  EntityMetadata|null
      */
     abstract protected function loadMetadataFromFile($type, $path);
+
+    /**
+     * Reads the content of the file and loads it as a MixinMetadata instance.
+     *
+     * @param string    $mixinName
+     * @param string    $path
+     *
+     * @return  MixinMetadata|null
+     */
+    abstract protected function loadMixinFromFile($mixinName, $path);
 
     /**
      * Returns the extension of the file.

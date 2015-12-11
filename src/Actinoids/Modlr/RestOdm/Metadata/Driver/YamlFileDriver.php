@@ -12,21 +12,24 @@ use Symfony\Component\Yaml\Yaml;
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class YamlFileDriver extends AbstractFileDriver
+final class YamlFileDriver extends AbstractFileDriver
 {
     /**
      * An in-memory cache of parsed metadata mappings (from file).
      *
      * @var array
      */
-    private $mappings = [];
+    private $mappings = [
+        'model' => [],
+        'mixin' => [],
+    ];
 
     /**
      * {@inheritDoc}
      */
     protected function loadMetadataFromFile($type, $file)
     {
-        $mapping = $this->getMapping($type, $file);
+        $mapping = $this->getMapping('model', $type, $file);
 
         $metadata = new Metadata\EntityMetadata($type);
 
@@ -46,7 +49,22 @@ class YamlFileDriver extends AbstractFileDriver
         $this->setPersistence($metadata, $mapping['entity']['persistence']);
         $this->setAttributes($metadata, $mapping['attributes']);
         $this->setRelationships($metadata, $mapping['relationships']);
+        $this->setMixins($metadata, $mapping['mixins']);
         return $metadata;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function loadMixinFromFile($mixinName, $file)
+    {
+        $mapping = $this->getMapping('mixin', $mixinName, $file);
+
+        $mixin = new Metadata\MixinMetadata($mixinName);
+
+        $this->setAttributes($mixin, $mapping['attributes']);
+        $this->setRelationships($mixin, $mapping['relationships']);
+        return $mixin;
     }
 
     /**
@@ -54,8 +72,8 @@ class YamlFileDriver extends AbstractFileDriver
      */
     public function getTypeHierarchy($type, array $types = [])
     {
-        $path = $this->getFilePathForType($type);
-        $mapping = $this->getMapping($type, $path);
+        $path = $this->getFilePath('model', $type);
+        $mapping = $this->getMapping('model', $type, $path);
 
         $types[] = $type;
         if (isset($mapping['entity']['extends']) && $mapping['entity']['extends'] !== $type) {
@@ -69,8 +87,8 @@ class YamlFileDriver extends AbstractFileDriver
      */
     public function getOwnedTypes($type, array $types = [])
     {
-        $path = $this->getFilePathForType($type);
-        $superMapping = $this->getMapping($type, $path);
+        $path = $this->getFilePath('model', $type);
+        $superMapping = $this->getMapping('model', $type, $path);
 
         $abstract = isset($superMapping['entity']['abstract']) && true === $superMapping['entity']['abstract'];
 
@@ -84,8 +102,8 @@ class YamlFileDriver extends AbstractFileDriver
                 continue;
             }
 
-            $path = $this->getFilePathForType($searchType);
-            $mapping = $this->getMapping($searchType, $path);
+            $path = $this->getFilePath('model', $searchType);
+            $mapping = $this->getMapping('model', $searchType, $path);
 
             if (!isset($mapping['entity']['extends']) || $mapping['entity']['extends'] !== $type) {
                 continue;
@@ -98,23 +116,24 @@ class YamlFileDriver extends AbstractFileDriver
     /**
      * Gets the metadata mapping information from the YAML file.
      *
-     * @param   string  $type
-     * @param   string  $file
+     * @param   string  $metaType   The metadata type, either mixin or model.
+     * @param   string  $key        The metadata key name, either the mixin name or model type.
+     * @param   string  $file       The YAML file location.
      * @return  array
      * @throws  MetadataException
      */
-    private function getMapping($type, $file)
+    private function getMapping($metaType, $key, $file)
     {
-        if (isset($this->mappings[$type])) {
+        if (isset($this->mappings[$metaType][$key])) {
             // Set to array cache to prevent multiple gets/parses.
-            return $this->mappings[$type];
+            return $this->mappings[$metaType][$key];
         }
 
         $contents = Yaml::parse(file_get_contents($file));
-        if (!isset($contents[$type])) {
-            throw MetadataException::fatalDriverError($type, sprintf('No type key was found at the beginning of the YAML file. Expected "%s"', $type));
+        if (!isset($contents[$key])) {
+            throw MetadataException::fatalDriverError($key, sprintf('No mapping key was found at the beginning of the YAML file. Expected "%s"', $key));
         }
-        return $this->mappings[$type] = $this->setDefaults($contents[$type]);
+        return $this->mappings[$metaType][$key] = $this->setDefaults($metaType, $contents[$key]);
     }
 
     /**
@@ -164,7 +183,7 @@ class YamlFileDriver extends AbstractFileDriver
                 $mapping['type'] = null;
             }
 
-            $attribute = new Metadata\AttributeMetadata($key, $mapping['type']);
+            $attribute = new Metadata\AttributeMetadata($key, $mapping['type'], $this->isMixin($metadata));
 
             // @todo Handle complex attribute types.
             if (isset($mapping['description'])) {
@@ -176,15 +195,24 @@ class YamlFileDriver extends AbstractFileDriver
         return $metadata;
     }
 
+    protected function setMixins(Metadata\EntityMetadata $metadata, array $mixins)
+    {
+        foreach ($mixins as $mixinName) {
+            $mixinMeta = $this->loadMetadataForMixin($mixinName);
+            $metadata->addMixin($mixinMeta);
+        }
+        return $metadata;
+    }
+
     /**
      * Sets the entity relationship metadata from the metadata mapping.
      *
-     * @param   Metadata\EntityMetadata $metadata
-     * @param   array                   $relMapping
-     * @return  Metadata\EntityMetadata
+     * @param   Metadata\Interfaces\RelationshipInterface   $metadata
+     * @param   array                                       $relMapping
+     * @return  Metadata\Interfaces\RelationshipInterface
      * @throws  RuntimeException If the related entity type was not found.
      */
-    protected function setRelationships(Metadata\EntityMetadata $metadata, array $relMapping)
+    protected function setRelationships(Metadata\Interfaces\RelationshipInterface $metadata, array $relMapping)
     {
         foreach ($relMapping as $key => $mapping) {
             if (!is_array($mapping)) {
@@ -199,7 +227,7 @@ class YamlFileDriver extends AbstractFileDriver
                 $mapping['entity'] = null;
             }
 
-            $relationship = new Metadata\RelationshipMetadata($key, $mapping['type'], $mapping['entity']);
+            $relationship = new Metadata\RelationshipMetadata($key, $mapping['type'], $mapping['entity'], $this->isMixin($metadata));
 
             if (isset($mapping['description'])) {
                 $relationship->description = $mapping['description'];
@@ -212,8 +240,8 @@ class YamlFileDriver extends AbstractFileDriver
                 }
             }
 
-            $path = $this->getFilePathForType($mapping['entity']);
-            $relatedEntityMapping = $this->getMapping($mapping['entity'], $path);
+            $path = $this->getFilePath('model', $mapping['entity']);
+            $relatedEntityMapping = $this->getMapping('model', $mapping['entity'], $path);
 
             if (isset($relatedEntityMapping['entity']['polymorphic'])) {
                 $relationship->setPolymorphic(true);
@@ -226,23 +254,46 @@ class YamlFileDriver extends AbstractFileDriver
     }
 
     /**
+     * Determines if a metadata instance is a mixin.
+     *
+     * @param   Metadata\Interfaces\PropertyInterface   $metadata
+     * @return  bool
+     */
+    protected function isMixin(Metadata\Interfaces\PropertyInterface $metadata)
+    {
+        return $metadata instanceof Metadata\MixinMetadata;
+    }
+
+    /**
      * Sets default values to the metadata mapping array.
      *
-     * @param   mixed   $mapping
+     * @param   string  $metaType   The metadata type, either model or mixin.
+     * @param   mixed   $mapping    The parsed mapping data.
      * @return  array
      */
-    protected function setDefaults($mapping)
+    protected function setDefaults($metaType, $mapping)
     {
         if (!is_array($mapping)) {
             $mapping = [];
         }
-        foreach (['entity', 'attributes', 'relationships'] as $key) {
+
+        foreach (['attributes', 'relationships'] as $key) {
             if (!isset($mapping[$key]) || !is_array($mapping[$key])) {
                 $mapping[$key] = [];
             }
         }
 
-        if (!isset($mapping['entity']['persistence'])) {
+        if ('mixin' === $metaType) {
+            return $mapping;
+        }
+
+        foreach (['entity', 'mixins'] as $key) {
+            if (!isset($mapping[$key]) || !is_array($mapping[$key])) {
+                $mapping[$key] = [];
+            }
+        }
+
+        if (!isset($mapping['entity']['persistence']) || !is_array($mapping['entity']['persistence'])) {
             $mapping['entity']['persistence'] = [];
         }
 

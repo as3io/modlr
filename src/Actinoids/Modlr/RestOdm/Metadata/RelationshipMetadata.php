@@ -56,11 +56,14 @@ class RelationshipMetadata extends FieldMetadata
     /**
      * Constructor.
      *
-     * @param   string  $relType   The relationship type.
+     * @param   string  $key        The relationship field key.
+     * @param   string  $relType    The relationship type.
+     * @param   string  $entityType The entity type key.
+     * @param   bool    $mixin
      */
-    public function __construct($key, $relType, $entityType)
+    public function __construct($key, $relType, $entityType, $mixin = false)
     {
-        parent::__construct($key);
+        parent::__construct($key, $mixin);
         $this->setRelType($relType);
         $this->entityType = $entityType;
     }

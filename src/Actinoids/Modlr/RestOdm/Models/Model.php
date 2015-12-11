@@ -443,6 +443,18 @@ class Model
     }
 
     /**
+     * Determines if the model uses a particlar mixin.
+     *
+     * @api
+     * @param   string  $name
+     * @return  bool
+     */
+    public function usesMixin($name)
+    {
+        return $this->metadata->hasMixin($name);
+    }
+
+    /**
      * Saves the model.
      *
      * @api

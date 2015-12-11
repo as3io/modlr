@@ -6,15 +6,19 @@ use Actinoids\Modlr\RestOdm\Exception\MetadataException;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\AttributeInterface;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\MergeableInterface;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\PersistenceInterface;
+use Actinoids\Modlr\RestOdm\Metadata\Interfaces\RelationshipInterface;
 
 /**
  * Defines the metadata for an entity (e.g. a database object).
  * Should be loaded using the MetadataFactory, not instantiated directly.
  *
- * @author Jacob Bare <jacob.bare@gmail.com>
+ * @author  Jacob Bare <jacob.bare@gmail.com>
+ * @todo    This should be renamed to ModelMetadata, which extends an abstract EntityMetadata class, which MixinMetadata also extends?
  */
-class EntityMetadata implements AttributeInterface, MergeableInterface
+class EntityMetadata implements AttributeInterface, RelationshipInterface, MergeableInterface
 {
+    use Traits\PropertiesTrait;
+
     /**
      * The id key name and type.
      */
@@ -63,22 +67,6 @@ class EntityMetadata implements AttributeInterface, MergeableInterface
     public $persistence;
 
     /**
-     * All attribute fields assigned to this entity.
-     * An attribute is a "standard" field, such as a string, integer, array, etc.
-     *
-     * @var AttributeMetadata[]
-     */
-    public $attributes = [];
-
-    /**
-     * All relationship fields assigned to this entity.
-     * A relationship is a field that relates to another entity.
-     *
-     * @var RelationshipMetadata[]
-     */
-    public $relationships = [];
-
-    /**
      * All mixins assigned to this entity.
      *
      * @todo    Implement this.
@@ -97,6 +85,44 @@ class EntityMetadata implements AttributeInterface, MergeableInterface
     }
 
     /**
+     * Adds a mixin (and its attributes and relationships) to this entity.
+     *
+     * @param   MixinMetadata   $mixin
+     * @return  self
+     */
+    public function addMixin(MixinMetadata $mixin)
+    {
+        if (isset($this->mixins[$mixin->name])) {
+            return $this;
+        }
+        foreach ($mixin->getAttributes() as $attribute) {
+            if (true === $this->hasAttribute($attribute->key)) {
+                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'attribute', $attribute->key);
+            }
+            $this->addAttribute($attribute);
+        }
+        foreach ($mixin->getRelationships() as $relationship) {
+            if (true === $this->hasRelationship($relationship->key)) {
+                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'relationship', $relationship->key);
+            }
+            $this->addRelationship($relationship);
+        }
+        $this->mixins[$mixin->name] = $mixin;
+        return $this;
+    }
+
+    /**
+     * Determines if a mixin exists.
+     *
+     * @param   string  $mixinName
+     * @return  bool
+     */
+    public function hasMixin($mixinName)
+    {
+        return isset($this->mixins[$mixinName]);
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function merge(MergeableInterface $metadata)
@@ -110,9 +136,8 @@ class EntityMetadata implements AttributeInterface, MergeableInterface
         $this->persistence->merge($metadata->persistence);
         $this->mergeAttributes($metadata->getAttributes());
         $this->mergeRelationships($metadata->getRelationships());
+        $this->mergeMixins($metadata->mixins);
 
-        // @todo Implement this.
-        // $this->mergeMixins($metadata->getMixins());
         return $this;
     }
 
@@ -129,6 +154,22 @@ class EntityMetadata implements AttributeInterface, MergeableInterface
             throw MetadataException::invalidEntityType($type);
         }
         $this->type = $type;
+        return $this;
+    }
+
+    /**
+     * Merges mixins with this instance's mixins.
+     *
+     * @param   array   $toAdd
+     * @return  self
+     */
+    private function mergeMixins(array $toAdd)
+    {
+        foreach ($toAdd as $mixin) {
+            if (!isset($this->mixins[$mixin->name])) {
+                $this->mixins[$mixin->name] = $mixin;
+            }
+        }
         return $this;
     }
 
@@ -226,69 +267,6 @@ class EntityMetadata implements AttributeInterface, MergeableInterface
     }
 
     /**
-     * Adds an attribute field to this entity.
-     *
-     * @param   AttributeMetadata   $attribute
-     * @return  self
-     * @throws  MetadataException   If the attribute key already exists as a relationship.
-     */
-    public function addAttribute(AttributeMetadata $attribute)
-    {
-        if (isset($this->relationships[$attribute->getKey()])) {
-            throw MetadataException::fieldKeyInUse('attribute', 'relationship', $attribute->getKey(), $this->type);
-        }
-        $this->attributes[$attribute->getKey()] = $attribute;
-        ksort($this->attributes);
-        return $this;
-    }
-
-    /**
-     * Gets all attribute fields for this entity.
-     *
-     * @return  AttributeMetadata[]
-     */
-    public function getAttributes()
-    {
-        return $this->attributes;
-    }
-
-    /**
-     * Determines any attribute fields exist on this entity.
-     *
-     * @return  bool
-     */
-    public function hasAttributes()
-    {
-        return !empty($this->attributes);
-    }
-
-    /**
-     * Determines if an attribute field exists on this entity.
-     *
-     * @param   string  $key
-     * @return  bool
-     */
-    public function hasAttribute($key)
-    {
-        return null !== $this->getAttribute($key);
-    }
-
-    /**
-     * Gets an attribute field from this entity.
-     * Returns null if the attribute does not exist.
-     *
-     * @param   string  $key
-     * @return  AttributeMetadata|null
-     */
-    public function getAttribute($key)
-    {
-        if (!isset($this->attributes[$key])) {
-            return null;
-        }
-        return $this->attributes[$key];
-    }
-
-    /**
      * Sets the persistence metadata for this entity.
      *
      * @param   PersisterInterface  $persistence
@@ -298,58 +276,5 @@ class EntityMetadata implements AttributeInterface, MergeableInterface
     {
         $this->persistence = $persistence;
         return $this;
-    }
-
-    /**
-     * Adds a relationship field to this entity.
-     *
-     * @param   RelationshipMetadata    $relationship
-     * @return  self
-     * @throws  MetadataException       If the relationship key already exists as an attribute.
-     */
-    public function addRelationship(RelationshipMetadata $relationship)
-    {
-        if (isset($this->attributes[$relationship->getKey()])) {
-            throw MetadataException::fieldKeyInUse('relationship', 'attribute', $relationship->getKey(), $this->type);
-        }
-        $this->relationships[$relationship->getKey()] = $relationship;
-        ksort($this->relationships);
-        return $this;
-    }
-
-    /**
-     * Gets all relationship fields for this entity.
-     *
-     * @return  RelationshipMetadata[]
-     */
-    public function getRelationships()
-    {
-        return $this->relationships;
-    }
-
-    /**
-     * Determines if a relationship field exists on this entity.
-     *
-     * @param   string  $key
-     * @return  bool
-     */
-    public function hasRelationship($key)
-    {
-        return null !== $this->getRelationship($key);
-    }
-
-    /**
-     * Gets a relationship field from this entity.
-     * Returns null if the relationship does not exist.
-     *
-     * @param   string  $key
-     * @return  RelationshipMetadata|null
-     */
-    public function getRelationship($key)
-    {
-        if (!isset($this->relationships[$key])) {
-            return null;
-        }
-        return $this->relationships[$key];
     }
 }
