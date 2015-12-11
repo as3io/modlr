@@ -118,7 +118,7 @@ final class Serializer implements SerializerInterface
      */
     protected function serializeAttribute($value, AttributeMetadata $attrMeta)
     {
-        if ('date' === $attrMeta->dataType) {
+        if ('date' === $attrMeta->dataType && $value instanceof \DateTime) {
             $milliseconds = sprintf('%03d', round($value->format('u') / 1000, 0));
             return gmdate(sprintf('Y-m-d\TH:i:s.%s\Z', $milliseconds), $value->getTimestamp());
         }
