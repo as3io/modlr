@@ -166,6 +166,20 @@ class Model
     }
 
     /**
+     * Determines if an attribute key is calculated.
+     *
+     * @param   string  $key    The attribute key.
+     * @return  bool
+     */
+    protected function isCalculatedAttribute($key)
+    {
+        if (false === $this->isAttribute($key)) {
+            return false;
+        }
+        return $this->getMetadata()->getAttribute($key)->isCalculated();
+    }
+
+    /**
      * Gets an attribute value.
      *
      * @param   string  $key    The attribute key (field) name.
@@ -173,8 +187,27 @@ class Model
      */
     protected function getAttribute($key)
     {
+        if (true === $this->isCalculatedAttribute($key)) {
+            return $this->getCalculatedAttribute($key);
+        }
         $this->touch();
         return $this->attributes->get($key);
+    }
+
+    /**
+     * Gets a calculated attribute value.
+     *
+     * @param   string  $key    The attribute key (field) name.
+     * @return  mixed
+     */
+    protected function getCalculatedAttribute($key)
+    {
+        $attrMeta = $this->getMetadata()->getAttribute($key);
+        $class  = $attrMeta->calculated['class'];
+        $method = $attrMeta->calculated['method'];
+
+        $value = $class::$method($this);
+        return $this->convertAttributeValue($key, $value);
     }
 
     /**
@@ -365,6 +398,9 @@ class Model
      */
     protected function setAttribute($key, $value)
     {
+        if (true === $this->isCalculatedAttribute($key)) {
+            return $this;
+        }
         $this->touch();
         $value = $this->convertAttributeValue($key, $value);
         $this->attributes->set($key, $value);
