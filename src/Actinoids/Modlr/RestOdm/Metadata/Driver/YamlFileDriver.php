@@ -46,6 +46,10 @@ final class YamlFileDriver extends AbstractFileDriver
             $metadata->extends = $mapping['entity']['extends'];
         }
 
+        if (isset($mapping['entity']['defaultValues']) && is_array($mapping['entity']['defaultValues'])) {
+            $metadata->defaultValues = $mapping['entity']['defaultValues'];
+        }
+
         $this->setPersistence($metadata, $mapping['entity']['persistence']);
         $this->setAttributes($metadata, $mapping['attributes']);
         $this->setRelationships($metadata, $mapping['relationships']);
@@ -188,6 +192,10 @@ final class YamlFileDriver extends AbstractFileDriver
             // @todo Handle complex attribute types.
             if (isset($mapping['description'])) {
                 $attribute->description = $mapping['description'];
+            }
+
+            if (isset($mapping['defaultValue'])) {
+                $attribute->defaultValue = $mapping['defaultValue'];
             }
 
             $metadata->addAttribute($attribute);

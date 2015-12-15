@@ -18,6 +18,13 @@ class AttributeMetadata extends FieldMetadata
     public $dataType;
 
     /**
+     * The attribute's default value, if set.
+     *
+     * @var mixed
+     */
+    public $defaultValue;
+
+    /**
      * Constructor.
      *
      * @param   string  $key        The attribute field key.
@@ -28,5 +35,15 @@ class AttributeMetadata extends FieldMetadata
     {
         parent::__construct($key, $mixin);
         $this->dataType = $dataType;
+    }
+
+    /**
+     * Determines if this attribute has a default value.
+     *
+     * @return  bool
+     */
+    public function hasDefaultValue()
+    {
+        null !== $this->defaultValue;
     }
 }
