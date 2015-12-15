@@ -558,6 +558,7 @@ class Model
      */
     public function apply(array $properties)
     {
+        $properties = $this->applyDefaultAttrValues($properties);
         foreach ($properties as $key => $value) {
             if (true === $this->isAttribute($key)) {
                 $this->set($key, $value);
@@ -608,6 +609,7 @@ class Model
         $attributes = [];
 
         if (null !== $record) {
+            $attributes = $this->applyDefaultAttrValues($attributes);
             foreach ($record->getProperties() as $key => $value) {
                 if (true === $this->isAttribute($key)) {
                     // Load attribute.
@@ -639,6 +641,29 @@ class Model
         $this->hasManyRelationships = (null === $this->hasManyRelationships) ? new Relationships\HasMany($hasMany) : $this->hasManyRelationships->replace($hasMany);
         $this->doDirtyCheck();
         return $this;
+    }
+
+    /**
+     * Applies default attribute values from metadata, if set.
+     *
+     * @param   array   $attributes     The attributes to apply the defaults to.
+     * @return  array
+     */
+    protected function applyDefaultAttrValues(array $attributes = [])
+    {
+        // Set defaults for each attribute.
+        foreach ($this->getMetadata()->getAttributes() as $key => $attrMeta) {
+            if (!isset($attrMeta->defaultValue)) {
+                continue;
+            }
+            $attributes[$key] = $this->convertAttributeValue($key, $attrMeta->defaultValue);
+        }
+
+        // Set defaults for the entire entity.
+        foreach ($this->getMetadata()->defaultValues as $key => $value) {
+            $attributes[$key] = $this->convertAttributeValue($key, $value);
+        }
+        return $attributes;
     }
 
     /**

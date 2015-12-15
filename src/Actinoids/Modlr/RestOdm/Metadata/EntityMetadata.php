@@ -42,6 +42,8 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     /**
      * Child entity types this entity owns.
      * Only used for polymorphic entities.
+     *
+     * @var array
      */
     public $ownedTypes = [];
 
@@ -52,7 +54,7 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
      */
     public $extends;
 
-     /**
+    /**
      * Whether this class is abstract.
      *
      * @var bool
@@ -60,16 +62,23 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     public $abstract = false;
 
     /**
+     * An array of attribute default values for this model.
+     * Keyed by field name.
+     *
+     * @var array
+     */
+    public $defaultValues = [];
+
+    /**
      * The persistence metadata for this entity.
      *
-     * @param PersistenceInterface
+     * @var PersistenceInterface
      */
     public $persistence;
 
     /**
      * All mixins assigned to this entity.
      *
-     * @todo    Implement this.
      * @var     MixinMetadata[]
      */
     public $mixins = [];
@@ -132,6 +141,7 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
         $this->setAbstract($metadata->isAbstract());
         $this->extends = $metadata->extends;
         $this->ownedTypes = $metadata->ownedTypes;
+        $this->defaultValues = array_merge($this->defaultValues, $metadata->defaultValues);
 
         $this->persistence->merge($metadata->persistence);
         $this->mergeAttributes($metadata->getAttributes());
