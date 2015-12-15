@@ -79,9 +79,7 @@ final class Adapter extends AbstractAdapter
             throw AdapterException::badRequest('An "type" member was found in the payload. All creation payloads must contain the model type.');
         }
 
-        if ($normalized['type'] !== $typeKey) {
-            throw AdapterException::badRequest(sprintf('The payload "type" member does not match the API endpoint. Expected "%s" but received "%s"', $typeKey, $normalized['type']));
-        }
+        $this->validatePayloadType($normalized['type'], $typeKey);
         return $normalized;
     }
 
@@ -97,7 +95,35 @@ final class Adapter extends AbstractAdapter
         if ($identifier !== $normalized['id']) {
             throw AdapterException::badRequest('The request URI id does not match the payload id.');
         }
+        if (!isset($normalized['type'])) {
+            throw AdapterException::badRequest('An "type" member was found in the payload. All creation payloads must contain the model type.');
+        }
+        $this->validatePayloadType($normalized['type'], $typeKey);
+
         return $normalized;
+    }
+
+    /**
+     * Validates that the payload type key matches the endpoint type key.
+     * Also handles proper type keys for polymorphic endpoints.
+     *
+     * @param   string  $payloadTypeKey
+     * @param   string  $endpointTypeKey
+     * @throws  AdpaterException
+     */
+    protected function validatePayloadType($payloadTypeKey, $endpointTypeKey)
+    {
+        $metadata = $this->getStore()->getMetadataForType($endpointTypeKey);
+
+        if (false === $metadata->isPolymorphic() && $payloadTypeKey === $endpointTypeKey) {
+            return;
+        }
+
+        if (true === $metadata->isPolymorphic() && in_array($payloadTypeKey, $metadata->ownedTypes)) {
+            return;
+        }
+        $expected = (true === $metadata->isPolymorphic()) ? implode(', ', $metadata->ownedTypes) : $endpointTypeKey;
+        throw AdapterException::badRequest(sprintf('The payload "type" member does not match the API endpoint. Expected one of "%s" but received "%s"', $expected, $payloadTypeKey));
     }
 
     /**
