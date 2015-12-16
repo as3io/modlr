@@ -170,10 +170,9 @@ final class YamlFileDriver extends AbstractFileDriver
     /**
      * Sets the entity attribute metadata from the metadata mapping.
      *
-     * @todo    Inject type manager and validate data type. Or should this happen later???
      * @todo    Add support for complex attributes, like arrays and objects.
-     * @param   Metadata\Interfaces\AttributeInterface $metadata
-     * @param   array                       $attrMapping
+     * @param   Metadata\Interfaces\AttributeInterface  $metadata
+     * @param   array                                   $attrMapping
      * @return  Metadata\EntityMetadata
      */
     protected function setAttributes(Metadata\Interfaces\AttributeInterface $metadata, array $attrMapping)
@@ -196,6 +195,14 @@ final class YamlFileDriver extends AbstractFileDriver
 
             if (isset($mapping['defaultValue'])) {
                 $attribute->defaultValue = $mapping['defaultValue'];
+            }
+
+            if (isset($mapping['calculated']) && is_array($mapping['calculated'])) {
+                $calculated = $mapping['calculated'];
+                if (isset($calculated['class']) && isset($calculated['method'])) {
+                    $attribute->calculated['class']  =  $calculated['class'];
+                    $attribute->calculated['method'] =  $calculated['method'];
+                }
             }
 
             $metadata->addAttribute($attribute);

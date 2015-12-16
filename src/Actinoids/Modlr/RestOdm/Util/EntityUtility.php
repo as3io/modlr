@@ -215,6 +215,12 @@ class EntityUtility
             if (in_array($attribute->dataType, $todo)) {
                 throw MetadataException::invalidMetadata($metadata->type, 'NYI: Object and array attribute types still need expanding!!');
             }
+
+            if (true === $attribute->isCalculated()) {
+                if (false === class_exists($attribute->calculated['class']) || false === method_exists($attribute->calculated['class'], $attribute->calculated['method'])) {
+                    throw MetadataException::invalidMetadata($metadata->type, sprintf('The attribute field "%s" is calculated, but was unable to find method "%s:%s"', $attribute->key, $attribute->calculated['class'], $attribute->calculated['method']));
+                }
+            }
         }
         return true;
     }

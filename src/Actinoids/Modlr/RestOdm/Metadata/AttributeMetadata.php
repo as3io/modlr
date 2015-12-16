@@ -25,6 +25,16 @@ class AttributeMetadata extends FieldMetadata
     public $defaultValue;
 
     /**
+     * Contains the caculated field parameters.
+     *
+     * @var array
+     */
+    public $calculated = [
+        'class'     => null,
+        'method'    => null,
+    ];
+
+    /**
      * Constructor.
      *
      * @param   string  $key        The attribute field key.
@@ -45,5 +55,15 @@ class AttributeMetadata extends FieldMetadata
     public function hasDefaultValue()
     {
         null !== $this->defaultValue;
+    }
+
+    /**
+     * Determines if this attribute is calculated.
+     *
+     * @return  bool
+     */
+    public function isCalculated()
+    {
+        return null !== $this->calculated['class'] && null !== $this->calculated['method'];
     }
 }
