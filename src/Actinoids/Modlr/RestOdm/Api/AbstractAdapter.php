@@ -142,6 +142,16 @@ abstract class AbstractAdapter implements AdapterInterface
     /**
      * {@inheritDoc}
      */
+    public function autocomplete($typeKey, $attributeKey, $searchValue, array $pagination = [])
+    {
+        $collection = $this->getStore()->searchAutocomplete($typeKey, $attributeKey, $searchValue);
+        $payload = $this->serializeCollection($collection);
+        return $this->createRestResponse(200, $payload);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     abstract public function buildUrl(EntityMetadata $metadata, $identifier, $relFieldKey = null, $isRelatedLink = false);
 
     /**

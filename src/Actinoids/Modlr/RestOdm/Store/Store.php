@@ -112,6 +112,26 @@ class Store
     }
 
     /**
+     * Searches for records (via the search layer) for a specific type, attribute, and value.
+     * Uses the autocomplete logic to fullfill the request.
+     *
+     * @todo    Validate that search is enabled for the model and its attribute.
+     * @todo    Determine if full models should be return, or only specific fields.
+     *          Autocompleters needs to be fast. If only specific fields are returned, do we need to exclude nulls in serialization?
+     *
+     * @param   string  $typeKey
+     * @param   string  $attributeKey
+     * @param   string  $searchValue
+     * @return  Collection
+     */
+    public function searchAutocomplete($typeKey, $attributeKey, $searchValue)
+    {
+        $metadata = $this->getMetadataForType($typeKey);
+        $models = [];
+        return new Collection($metadata, $this, $models);
+    }
+
+    /**
      * Creates a new record.
      * The model will not be comitted to the persistence layer until $model->save() is called.
      *

@@ -81,6 +81,17 @@ interface AdapterInterface
     public function deleteRecord($typeKey, $identifier);
 
     /**
+     * Returns a set of autocomplete results for a model type, attribute, and search value.
+     *
+     * @param   string  $typeKey
+     * @param   string  $attributeKey
+     * @param   string  $searchValue
+     * @param   array   $pagination
+     * @return  Rest\RestResponse
+     */
+    public function autocomplete($typeKey, $attributeKey, $searchValue, array $pagination = []);
+
+    /**
      * Handles errors and returns an appropriate REST response.
      *
      * @param   \Exception  $e
