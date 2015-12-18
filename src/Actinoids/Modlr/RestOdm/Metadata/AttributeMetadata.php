@@ -35,6 +35,13 @@ class AttributeMetadata extends FieldMetadata
     ];
 
     /**
+     * Whether this attribute is flagged to be stored as an autocomplete field in search.
+     *
+     * @var bool
+     */
+    public $autocomplete = false;
+
+    /**
      * Constructor.
      *
      * @param   string  $key        The attribute field key.
@@ -65,5 +72,28 @@ class AttributeMetadata extends FieldMetadata
     public function isCalculated()
     {
         return null !== $this->calculated['class'] && null !== $this->calculated['method'];
+    }
+
+    /**
+     * Determines whether this attribute is flagged to be stored as an autocomplete field in search.
+     *
+     * @return  bool
+     */
+    public function hasAutocomplete()
+    {
+        return $this->autocomplete;
+    }
+
+    /**
+     * Sets whether this attribute will be set as an autocomplete field in search.
+     *
+     * @param   bool    $bit
+     * @return  self
+     */
+    public function setAutocomplete($bit = true)
+    {
+        $this->autocomplete = (Boolean) $bit;
+        $this->setSearchField($bit);
+        return $this;
     }
 }

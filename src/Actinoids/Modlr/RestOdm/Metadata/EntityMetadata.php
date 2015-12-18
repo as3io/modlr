@@ -7,6 +7,7 @@ use Actinoids\Modlr\RestOdm\Metadata\Interfaces\AttributeInterface;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\MergeableInterface;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\PersistenceInterface;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\RelationshipInterface;
+use Actinoids\Modlr\RestOdm\Metadata\Interfaces\SearchInterface;
 
 /**
  * Defines the metadata for an entity (e.g. a database object).
@@ -77,6 +78,13 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     public $persistence;
 
     /**
+     * The search metadata for this entity.
+     *
+     * @var SearchInterface
+     */
+    public $search;
+
+    /**
      * All mixins assigned to this entity.
      *
      * @var     MixinMetadata[]
@@ -144,6 +152,8 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
         $this->defaultValues = array_merge($this->defaultValues, $metadata->defaultValues);
 
         $this->persistence->merge($metadata->persistence);
+        $this->search->merge($metadata->search);
+
         $this->mergeAttributes($metadata->getAttributes());
         $this->mergeRelationships($metadata->getRelationships());
         $this->mergeMixins($metadata->mixins);
@@ -285,6 +295,18 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     public function setPersistence(PersistenceInterface $persistence)
     {
         $this->persistence = $persistence;
+        return $this;
+    }
+
+    /**
+     * Sets the search metadata for this entity.
+     *
+     * @param   SearchInterface  $search
+     * @return  self
+     */
+    public function setSearch(SearchInterface $search)
+    {
+        $this->search = $search;
         return $this;
     }
 }
