@@ -5,9 +5,8 @@ namespace Actinoids\Modlr\RestOdm\Metadata;
 use Actinoids\Modlr\RestOdm\Exception\MetadataException;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\AttributeInterface;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\MergeableInterface;
-use Actinoids\Modlr\RestOdm\Metadata\Interfaces\PersistenceInterface;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\RelationshipInterface;
-use Actinoids\Modlr\RestOdm\Metadata\Interfaces\SearchInterface;
+use Actinoids\Modlr\RestOdm\Metadata\Interfaces\StorageLayerInterface;
 
 /**
  * Defines the metadata for an entity (e.g. a database object).
@@ -73,14 +72,14 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     /**
      * The persistence metadata for this entity.
      *
-     * @var PersistenceInterface
+     * @var StorageLayerInterface
      */
     public $persistence;
 
     /**
      * The search metadata for this entity.
      *
-     * @var SearchInterface
+     * @var StorageLayerInterface
      */
     public $search;
 
@@ -289,10 +288,10 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     /**
      * Sets the persistence metadata for this entity.
      *
-     * @param   PersisterInterface  $persistence
+     * @param   StorageLayerInterface   $persistence
      * @return  self
      */
-    public function setPersistence(PersistenceInterface $persistence)
+    public function setPersistence(StorageLayerInterface $persistence)
     {
         $this->persistence = $persistence;
         return $this;
@@ -301,10 +300,10 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     /**
      * Sets the search metadata for this entity.
      *
-     * @param   SearchInterface  $search
+     * @param   StorageLayerInterface   $search
      * @return  self
      */
-    public function setSearch(SearchInterface $search)
+    public function setSearch(StorageLayerInterface $search)
     {
         $this->search = $search;
         return $this;

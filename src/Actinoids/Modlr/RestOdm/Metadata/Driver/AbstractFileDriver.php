@@ -5,7 +5,7 @@ namespace Actinoids\Modlr\RestOdm\Metadata\Driver;
 use Actinoids\Modlr\RestOdm\Exception\MetadataException;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\MixinMetadata;
-use Actinoids\Modlr\RestOdm\Persister\PersisterManager;
+use Actinoids\Modlr\RestOdm\StorageLayerManager;
 
 /**
  * Abstract metadata file driver.
@@ -39,23 +39,24 @@ abstract class AbstractFileDriver implements DriverInterface
     private $allEntityTypes;
 
     /**
-     * The Persister Manager service.
-     * Used to determine the Persistence Metadata to use for the model.
+     * The Storage Layer Manager service.
+     * Used to determine the Persistence and Search Metadata to use for the model.
      *
-     * @var PersisterManager
+     * @var StorageLayerManager
      */
-    private $persisterManager;
+    private $storageManager;
 
     /**
      * Constructor.
      *
      * @param   FileLocatorInterface    $fileLocator
      * @param   Validator               $validator
+     * @param   StorageLayerManager     $storageManager
      */
-    public function __construct(FileLocatorInterface $fileLocator, PersisterManager $persisterManager)
+    public function __construct(FileLocatorInterface $fileLocator, StorageLayerManager $storageManager)
     {
         $this->fileLocator = $fileLocator;
-        $this->persisterManager = $persisterManager;
+        $this->storageManager = $storageManager;
     }
 
     /**
@@ -119,9 +120,17 @@ abstract class AbstractFileDriver implements DriverInterface
     /**
      * {@inheritDoc}
      */
-    public function getPersistenceMetadataFactory($persisterKey)
+    public function getPersistenceMetadataFactory($key)
     {
-        return $this->persisterManager->getPersister($persisterKey)->getPersistenceMetadataFactory();
+        return $this->storageManager->getPersister($key)->getPersistenceMetadataFactory();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getSearchMetadataFactory($key)
+    {
+        return $this->storageManager->getSearchClient($key)->getSearchMetadataFactory();
     }
 
     /**

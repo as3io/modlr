@@ -33,19 +33,20 @@ final class Persister implements PersisterInterface
     private $connection;
 
     /**
-     * @var PersistenceMetadataFactory
+     * @var StorageMetadataFactory
      */
-    private $pmf;
+    private $smf;
 
     /**
      * Constructor.
      *
-     * @param   Connection          $connection
+     * @param   Connection              $connection
+     * @param   StorageMetadataFactory  $smf
      */
-    public function __construct(Connection $connection, PersistenceMetadataFactory $pmf)
+    public function __construct(Connection $connection, StorageMetadataFactory $smf)
     {
         $this->connection = $connection;
-        $this->pmf = $pmf;
+        $this->smf = $smf;
     }
 
     /**
@@ -61,7 +62,7 @@ final class Persister implements PersisterInterface
      */
     public function getPersistenceMetadataFactory()
     {
-        return $this->pmf;
+        return $this->smf;
     }
 
     /**

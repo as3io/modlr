@@ -5,15 +5,15 @@ namespace Actinoids\Modlr\RestOdm\Persister\MongoDb;
 use Actinoids\Modlr\RestOdm\Util\EntityUtility;
 use Actinoids\Modlr\RestOdm\Exception\MetadataException;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
-use Actinoids\Modlr\RestOdm\Metadata\Interfaces\PersistenceMetadataFactoryInterface;
+use Actinoids\Modlr\RestOdm\Metadata\Interfaces\StorageMetadataFactoryInterface;
 
 /**
- * Creates MongoDb Persistence Metadata instances for use with metadata drivers.
- * Is also responsible for validating persistence object.
+ * Creates MongoDb storage Metadata instances for use with metadata drivers.
+ * Is also responsible for validating storage objects.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-final class PersistenceMetadataFactory implements PersistenceMetadataFactoryInterface
+final class StorageMetadataFactory implements StorageMetadataFactoryInterface
 {
     /**
      * @var EntityUtility
@@ -35,7 +35,7 @@ final class PersistenceMetadataFactory implements PersistenceMetadataFactoryInte
      */
     public function getNewInstance()
     {
-        return new PersistenceMetadata();
+        return new StorageMetadata();
     }
 
     /**

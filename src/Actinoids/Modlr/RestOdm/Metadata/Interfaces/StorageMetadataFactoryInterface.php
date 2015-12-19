@@ -5,17 +5,17 @@ namespace Actinoids\Modlr\RestOdm\Metadata\Interfaces;
 use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
 
 /**
- * Creates Persistence Metadata instances in the implementing format.
+ * Creates Storage Layer Metadata (persistence/search) instances in the implementing format.
  * Is used by the metadata driver and/or factory for creating new instances and validation.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-interface PersistenceMetadataFactoryInterface
+interface StorageMetadataFactoryInterface
 {
     /**
-     * Gets a new and empty Persistence Metadata object.
+     * Gets a new and empty Storage Layer Metadata object.
      *
-     * @return  PersistenceInterface
+     * @return  StorageLayerInterface
      */
     public function getNewInstance();
 
@@ -27,7 +27,7 @@ interface PersistenceMetadataFactoryInterface
     public function handleLoad(EntityMetadata $metadata);
 
     /**
-     * Handles additional validation specific to this persister.
+     * Handles additional validation specific to this storage layaer.
      *
      * @param   EntityMetadata
      * @throws  \Actinoids\Modlr\RestOdm\Exception\MetadataException On invalid metadata.

@@ -3,18 +3,18 @@
 namespace Actinoids\Modlr\RestOdm\Persister\MongoDb;
 
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\MergeableInterface;
-use Actinoids\Modlr\RestOdm\Metadata\Interfaces\PersistenceInterface;
+use Actinoids\Modlr\RestOdm\Metadata\Interfaces\StorageLayerInterface;
 
 /**
- * Defines the MongoDB persistence metadata for an entity (e.g. a database object).
+ * Defines the MongoDB storage metadata for an entity (e.g. a database object).
  * Should be loaded using the MetadataFactory, not instantiated directly.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class PersistenceMetadata implements PersistenceInterface
+class StorageMetadata implements StorageLayerInterface
 {
     /**
-     * The persister key.
+     * The storage layer key.
      *
      * @var string
      */
@@ -46,7 +46,7 @@ class PersistenceMetadata implements PersistenceInterface
     /**
      * {@inheritDoc}
      */
-    public function getPersisterKey()
+    public function getKey()
     {
         return $this->persisterKey;
     }

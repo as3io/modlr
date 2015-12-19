@@ -138,11 +138,18 @@ class MetadataFactory implements MetadataFactoryInterface
             $this->entityUtil->validateMetadata($hierType, $loaded, $this);
 
             // Handle persistence specific loading and validation.
-            $persisterKey = $loaded->persistence->getPersisterKey();
+            $persisterKey = $loaded->persistence->getKey();
             $persistenceFactory = $this->driver->getPersistenceMetadataFactory($persisterKey);
 
             $persistenceFactory->handleLoad($loaded);
             $persistenceFactory->handleValidate($loaded);
+
+            // Handle search specific loading and validation.
+            $clientKey = $loaded->search->getKey();
+            $searchFactory = $this->driver->getSearchMetadataFactory($clientKey);
+
+            $searchFactory->handleLoad($loaded);
+            $searchFactory->handleValidate($loaded);
 
             $this->mergeMetadata($metadata, $loaded);
             $this->doPutMetadata($loaded);

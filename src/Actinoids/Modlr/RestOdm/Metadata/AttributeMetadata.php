@@ -93,7 +93,7 @@ class AttributeMetadata extends FieldMetadata
     public function setAutocomplete($bit = true)
     {
         $this->autocomplete = (Boolean) $bit;
-        $this->setSearchField($bit);
+        $this->setSearchProperty($bit);
         return $this;
     }
 }

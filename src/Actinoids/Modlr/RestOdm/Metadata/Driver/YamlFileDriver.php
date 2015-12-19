@@ -51,6 +51,7 @@ final class YamlFileDriver extends AbstractFileDriver
         }
 
         $this->setPersistence($metadata, $mapping['entity']['persistence']);
+        $this->setSearch($metadata, $mapping['entity']['search']);
         $this->setAttributes($metadata, $mapping['attributes']);
         $this->setRelationships($metadata, $mapping['relationships']);
         $this->setMixins($metadata, $mapping['mixins']);
@@ -153,6 +154,8 @@ final class YamlFileDriver extends AbstractFileDriver
         $factory = $this->getPersistenceMetadataFactory($persisterKey);
 
         $persistence = $factory->getNewInstance();
+
+        // @todo Everything here must be done in the MongoDB factory!!!
         $persistence->persisterKey = $persisterKey;
 
         if (isset($mapping['db'])) {
@@ -164,6 +167,35 @@ final class YamlFileDriver extends AbstractFileDriver
         }
 
         $metadata->setPersistence($persistence);
+        return $metadata;
+    }
+
+    /**
+     * Sets the entity search metadata from the metadata mapping.
+     *
+     * @param   Metadata\EntityMetadata     $metadata
+     * @param   array                       $mapping
+     * @return  Metadata\EntityMetadata
+     */
+    protected function setSearch(Metadata\EntityMetadata $metadata, array $mapping)
+    {
+        $clientKey = isset($mapping['key']) ? $mapping['key'] : null;
+        $factory = $this->getSearchMetadataFactory($clientKey);
+
+        $search = $factory->getNewInstance();
+
+        // @todo Everything here must be done in the Elastic factory!!!
+        $search->clientKey = $clientKey;
+
+        if (isset($mapping['index'])) {
+            $search->index = $mapping['index'];
+        }
+
+        if (isset($mapping['type'])) {
+            $search->type = $mapping['type'];
+        }
+
+        $metadata->setSearch($search);
         return $metadata;
     }
 
@@ -186,6 +218,10 @@ final class YamlFileDriver extends AbstractFileDriver
                 $mapping['type'] = null;
             }
 
+            if (!isset($mapping['search'])) {
+                $mapping['search'] = [];
+            }
+
             $attribute = new Metadata\AttributeMetadata($key, $mapping['type'], $this->isMixin($metadata));
 
             // @todo Handle complex attribute types.
@@ -203,6 +239,12 @@ final class YamlFileDriver extends AbstractFileDriver
                     $attribute->calculated['class']  =  $calculated['class'];
                     $attribute->calculated['method'] =  $calculated['method'];
                 }
+            }
+
+            if (isset($mapping['search']['autocomplete'])) {
+                $attribute->setAutocomplete(true);
+            } else if (isset($mapping['search']['store'])) {
+                $attribute->setSearchProperty(true);
             }
 
             $metadata->addAttribute($attribute);
@@ -242,6 +284,10 @@ final class YamlFileDriver extends AbstractFileDriver
                 $mapping['entity'] = null;
             }
 
+            if (!isset($mapping['search'])) {
+                $mapping['search'] = [];
+            }
+
             $relationship = new Metadata\RelationshipMetadata($key, $mapping['type'], $mapping['entity'], $this->isMixin($metadata));
 
             if (isset($mapping['description'])) {
@@ -261,6 +307,10 @@ final class YamlFileDriver extends AbstractFileDriver
             if (isset($relatedEntityMapping['entity']['polymorphic'])) {
                 $relationship->setPolymorphic(true);
                 $relationship->ownedTypes = $this->getOwnedTypes($mapping['entity']);
+            }
+
+            if (isset($mapping['search']['store'])) {
+                $relationship->setSearchProperty(true);
             }
 
             $metadata->addRelationship($relationship);
@@ -315,6 +365,16 @@ final class YamlFileDriver extends AbstractFileDriver
         if (!isset($mapping['entity']['persistence']['key'])) {
             // @todo Should this be defaulted here, or handled differently?
             $mapping['entity']['persistence']['key'] = 'mongodb';
+        }
+
+        if (!isset($mapping['entity']['search']) || !is_array($mapping['entity']['search'])) {
+            $mapping['entity']['search'] = [];
+        }
+
+        if (!isset($mapping['entity']['search']['key'])) {
+            // @todo Should this be defaulted here, or handled differently?
+            // @todo Is it ever possible to not have a search client, but still specify search on a property?
+            $mapping['entity']['search']['key'] = 'elastic';
         }
 
         return $mapping;

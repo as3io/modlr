@@ -2,18 +2,18 @@
 
 namespace Actinoids\Modlr\RestOdm\Store;
 
-use Actinoids\Modlr\RestOdm\Models\Model;
-use Actinoids\Modlr\RestOdm\Models\Collection;
-use Actinoids\Modlr\RestOdm\Models\AbstractCollection;
-use Actinoids\Modlr\RestOdm\Models\InverseCollection;
-use Actinoids\Modlr\RestOdm\Metadata\MetadataFactory;
-use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
-use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
-use Actinoids\Modlr\RestOdm\Persister\PersisterInterface;
-use Actinoids\Modlr\RestOdm\Persister\PersisterManager;
-use Actinoids\Modlr\RestOdm\Persister\Record;
 use Actinoids\Modlr\RestOdm\DataTypes\TypeFactory;
 use Actinoids\Modlr\RestOdm\Events\EventDispatcher;
+use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
+use Actinoids\Modlr\RestOdm\Metadata\MetadataFactory;
+use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
+use Actinoids\Modlr\RestOdm\Models\AbstractCollection;
+use Actinoids\Modlr\RestOdm\Models\Collection;
+use Actinoids\Modlr\RestOdm\Models\InverseCollection;
+use Actinoids\Modlr\RestOdm\Models\Model;
+use Actinoids\Modlr\RestOdm\Persister\PersisterInterface;
+use Actinoids\Modlr\RestOdm\Persister\Record;
+use Actinoids\Modlr\RestOdm\StorageLayerManager;
 use Actinoids\Modlr\RestOdm\Store\Events\ModelLifecycleArguments;
 
 /**
@@ -34,12 +34,12 @@ class Store
     private $typeFactory;
 
     /**
-     * The persister manager.
-     * Retrieves the appropriate persister for saving records to the database layer.
+     * The storage layer  manager.
+     * Retrieves the appropriate persister and search client for handling records.
      *
-     * @var  PersisterManager
+     * @var  StorageLayerManager
      */
-    private $persisterManager;
+    private $storageManager;
 
     /**
      * Contains all models currently loaded in memory.
@@ -58,13 +58,15 @@ class Store
     /**
      * Constructor.
      *
-     * @param   MetadataFactory     $mf
-     * @param   PersisterManager    $persisterManager
+     * @param   MetadataFactory         $mf
+     * @param   StorageLayerManager     $storageManager
+     * @param   TypeFactory             $typeFactory
+     * @param   EventDispatcher         $dispatcher
      */
-    public function __construct(MetadataFactory $mf, PersisterManager $persisterManager, TypeFactory $typeFactory, EventDispatcher $dispatcher)
+    public function __construct(MetadataFactory $mf, StorageLayerManager $storageManager, TypeFactory $typeFactory, EventDispatcher $dispatcher)
     {
         $this->mf = $mf;
-        $this->persisterManager = $persisterManager;
+        $this->storageManager = $storageManager;
         $this->typeFactory = $typeFactory;
         $this->dispatcher = $dispatcher;
         $this->cache = new Cache();
@@ -118,6 +120,7 @@ class Store
      * @todo    Validate that search is enabled for the model and its attribute.
      * @todo    Determine if full models should be return, or only specific fields.
      *          Autocompleters needs to be fast. If only specific fields are returned, do we need to exclude nulls in serialization?
+     * @todo    Is search enabled for all models, by default, where everything is stored?
      *
      * @param   string  $typeKey
      * @param   string  $attributeKey
@@ -506,7 +509,7 @@ class Store
     protected function getPersisterFor($typeKey)
     {
         $metadata = $this->getMetadataForType($typeKey);
-        return $this->persisterManager->getPersister($metadata->persistence->getPersisterKey());
+        return $this->storageManager->getPersister($metadata->persistence->getKey());
     }
 
     /**
