@@ -5,8 +5,8 @@ namespace Actinoids\Modlr\RestOdm\Metadata;
 use Actinoids\Modlr\RestOdm\Exception\MetadataException;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\AttributeInterface;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\MergeableInterface;
-use Actinoids\Modlr\RestOdm\Metadata\Interfaces\PersistenceInterface;
 use Actinoids\Modlr\RestOdm\Metadata\Interfaces\RelationshipInterface;
+use Actinoids\Modlr\RestOdm\Metadata\Interfaces\StorageLayerInterface;
 
 /**
  * Defines the metadata for an entity (e.g. a database object).
@@ -72,9 +72,16 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     /**
      * The persistence metadata for this entity.
      *
-     * @var PersistenceInterface
+     * @var StorageLayerInterface
      */
     public $persistence;
+
+    /**
+     * The search metadata for this entity.
+     *
+     * @var StorageLayerInterface
+     */
+    public $search;
 
     /**
      * All mixins assigned to this entity.
@@ -144,6 +151,8 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
         $this->defaultValues = array_merge($this->defaultValues, $metadata->defaultValues);
 
         $this->persistence->merge($metadata->persistence);
+        $this->search->merge($metadata->search);
+
         $this->mergeAttributes($metadata->getAttributes());
         $this->mergeRelationships($metadata->getRelationships());
         $this->mergeMixins($metadata->mixins);
@@ -279,12 +288,24 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     /**
      * Sets the persistence metadata for this entity.
      *
-     * @param   PersisterInterface  $persistence
+     * @param   StorageLayerInterface   $persistence
      * @return  self
      */
-    public function setPersistence(PersistenceInterface $persistence)
+    public function setPersistence(StorageLayerInterface $persistence)
     {
         $this->persistence = $persistence;
+        return $this;
+    }
+
+    /**
+     * Sets the search metadata for this entity.
+     *
+     * @param   StorageLayerInterface   $search
+     * @return  self
+     */
+    public function setSearch(StorageLayerInterface $search)
+    {
+        $this->search = $search;
         return $this;
     }
 }

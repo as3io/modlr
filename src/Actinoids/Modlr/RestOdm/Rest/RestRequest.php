@@ -20,6 +20,13 @@ class RestRequest
     const PARAM_FILTERING  = 'filter';
 
     /**
+     * Filter parameters.
+     */
+    const FILTER_AUTOCOMPLETE = 'autocomplete';
+    const FILTER_AUTOCOMPLETE_KEY = 'key';
+    const FILTER_AUTOCOMPLETE_VALUE = 'value';
+
+    /**
      * The request method, such as GET, POST, PATCH, etc.
      *
      * @var string
@@ -249,6 +256,46 @@ class RestRequest
             return false;
         }
         return 'related' === $this->getRelationship()['type'];
+    }
+
+    /**
+     * Determines if this has an autocomplete filter enabled.
+     *
+     * @return  bool
+     */
+    public function isAutocomplete()
+    {
+        if (false === $this->hasFilter(self::FILTER_AUTOCOMPLETE)) {
+            return false;
+        }
+        $autocomplete = $this->getFilter(self::FILTER_AUTOCOMPLETE);
+        return isset($autocomplete[self::FILTER_AUTOCOMPLETE_KEY]) && isset($autocomplete[self::FILTER_AUTOCOMPLETE_VALUE]);
+    }
+
+    /**
+     * Gets the autocomplete attribute key.
+     *
+     * @return  string|null
+     */
+    public function getAutocompleteKey()
+    {
+        if (false === $this->isAutocomplete()) {
+            return null;
+        }
+        return $this->getFilter(self::FILTER_AUTOCOMPLETE)[self::FILTER_AUTOCOMPLETE_KEY];
+    }
+
+    /**
+     * Gets the autocomplete search value.
+     *
+     * @return  string|null
+     */
+    public function getAutocompleteValue()
+    {
+        if (false === $this->isAutocomplete()) {
+            return null;
+        }
+        return $this->getFilter(self::FILTER_AUTOCOMPLETE)[self::FILTER_AUTOCOMPLETE_VALUE];
     }
 
     /**

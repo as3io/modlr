@@ -34,6 +34,13 @@ abstract class FieldMetadata
     public $mixin;
 
     /**
+     * Determines whether this propety is stored in search.
+     *
+     * @var bool
+     */
+    public $searchProperty = false;
+
+    /**
      * Constructor.
      *
      * @param   string  $key
@@ -54,6 +61,28 @@ abstract class FieldMetadata
     public function getKey()
     {
         return $this->key;
+    }
+
+    /**
+     * Sets whether this property is stored in search.
+     *
+     * @param   bool    $bit
+     * @return  self
+     */
+    public function setSearchProperty($bit = true)
+    {
+        $this->searchProperty = (Boolean) $bit;
+        return $this;
+    }
+
+    /**
+     * Determines whether this propety is stored in search.
+     *
+     * @return  bool
+     */
+    public function isSearchProperty()
+    {
+        return $this->searchProperty;
     }
 
     /**

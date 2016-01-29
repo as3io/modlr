@@ -4,6 +4,7 @@ namespace Actinoids\Modlr\RestOdm\Metadata\Traits;
 
 use Actinoids\Modlr\RestOdm\Exception\MetadataException;
 use Actinoids\Modlr\RestOdm\Metadata\AttributeMetadata;
+use Actinoids\Modlr\RestOdm\Metadata\FieldMetadata;
 use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
 
 /**
@@ -93,6 +94,16 @@ trait PropertiesTrait
     }
 
     /**
+     * Gets all properties: attributes + relationships.
+     *
+     * @return  FieldMetadata[]
+     */
+    public function getProperties()
+    {
+        return array_merge($this->getAttributes(), $this->getRelationships());
+    }
+
+    /**
      * Adds a relationship field to this entity.
      *
      * @param   RelationshipMetadata    $relationship
@@ -143,5 +154,82 @@ trait PropertiesTrait
             return null;
         }
         return $this->relationships[$key];
+    }
+
+    /**
+     * Determines whether search is enabled.
+     *
+     * @return  bool
+     */
+    public function isSearchEnabled()
+    {
+        $propertes = $this->getSearchProperties();
+        return !empty($propertes);
+    }
+
+    /**
+     * Gets all properties that are flagged for autocomplete in search.
+     *
+     * @return  AttributeMetadata[]
+     */
+    public function getAutocompleteAttributes()
+    {
+        static $attrs;
+        if (null !== $attrs) {
+            return $attrs;
+        }
+
+        $attrs = [];
+        foreach ($this->getAttributes() as $key => $attribute) {
+            if (false === $attribute->hasAutocomplete()) {
+                continue;
+            }
+            $attrs[$key] = $attribute;
+        }
+        return $attrs;
+    }
+
+    /**
+     * Determines if an attribute supports autocomplete functionality.
+     *
+     * @param   string  $key    The attribute key.
+     * @return  bool
+     */
+    public function attrSupportsAutocomplete($key)
+    {
+        return isset($this->getAutocompleteAttributes()[$key]);
+    }
+
+    /**
+     * Gets all properties that are flagged for storage in search.
+     *
+     * @return  FieldMetadata[]
+     */
+    public function getSearchProperties()
+    {
+        static $props;
+        if (null !== $props) {
+            return $props;
+        }
+
+        $props = [];
+        foreach ($this->getProperties() as $key => $property) {
+            if (false === $property->isSearchProperty()) {
+                continue;
+            }
+            $props[$key] = $property;
+        }
+        return $props;
+    }
+
+    /**
+     * Determines if a property (attribute or relationship) is indexed for search.
+     *
+     * @param   string  $key    The property key.
+     * @return  bool
+     */
+    public function propertySupportsSearch($key)
+    {
+        return isset($this->getSearchProperties()[$key]);
     }
 }

@@ -34,6 +34,10 @@ final class Adapter extends AbstractAdapter
                     }
                     throw AdapterException::badRequest('No GET handler found.');
                 } else {
+                    if (true === $request->isAutocomplete()) {
+                        // @todo Eventually add pagination (limit/skip)
+                        return $this->autocomplete($request->getEntityType(), $request->getAutocompleteKey(), $request->getAutocompleteValue());
+                    }
                     return $this->findAll($request->getEntityType(), []); //, $request->getPagination(), $request->getFieldset(), $request->getInclusions(), $request->getSorting());
                 }
                 throw AdapterException::badRequest('No GET handler found.');
