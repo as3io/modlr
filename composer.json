@@ -10,8 +10,8 @@
         }
     ],
     "autoload": {
-        "psr-0": {
-            "As3\\Modlr\\RestOdm": "src/"
+        "psr-4": {
+            "As3\\Modlr\\RestOdm\\": "src/"
         }
     },
     "require": {
