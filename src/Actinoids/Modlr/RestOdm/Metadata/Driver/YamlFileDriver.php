@@ -1,10 +1,10 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Metadata\Driver;
+namespace As3\Modlr\RestOdm\Metadata\Driver;
 
-use Actinoids\Modlr\RestOdm\Metadata;
-use Actinoids\Modlr\RestOdm\Exception\RuntimeException;
-use Actinoids\Modlr\RestOdm\Exception\MetadataException;
+use As3\Modlr\RestOdm\Metadata;
+use As3\Modlr\RestOdm\Exception\RuntimeException;
+use As3\Modlr\RestOdm\Exception\MetadataException;
 use Symfony\Component\Yaml\Yaml;
 
 /**

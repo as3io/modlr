@@ -1,9 +1,9 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Store\Events;
+namespace As3\Modlr\RestOdm\Store\Events;
 
-use Actinoids\Modlr\RestOdm\Events\EventArguments;
-use Actinoids\Modlr\RestOdm\Models\Model;
+use As3\Modlr\RestOdm\Events\EventArguments;
+use As3\Modlr\RestOdm\Models\Model;
 
 /**
  * Store event constants.

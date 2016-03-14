@@ -1,12 +1,12 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Search\Elastic;
+namespace As3\Modlr\RestOdm\Search\Elastic;
 
-use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
-use Actinoids\Modlr\RestOdm\Metadata\Interfaces\SearchMetadataFactoryInterface;
-use Actinoids\Modlr\RestOdm\Persister\PersisterInterface;
-use Actinoids\Modlr\RestOdm\Persister\Record;
-use Actinoids\Modlr\RestOdm\Search\ClientInterface;
+use As3\Modlr\RestOdm\Metadata\EntityMetadata;
+use As3\Modlr\RestOdm\Metadata\Interfaces\SearchMetadataFactoryInterface;
+use As3\Modlr\RestOdm\Persister\PersisterInterface;
+use As3\Modlr\RestOdm\Persister\Record;
+use As3\Modlr\RestOdm\Search\ClientInterface;
 
 /**
  * Client for searching (and modifying) models via Elastic search.

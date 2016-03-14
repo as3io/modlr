@@ -1,8 +1,8 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Models\Relationships;
+namespace As3\Modlr\RestOdm\Models\Relationships;
 
-use Actinoids\Modlr\RestOdm\Models\Properties;
+use As3\Modlr\RestOdm\Models\Properties;
 
 /**
  * Represents the has-one relationships of a Model.

@@ -1,10 +1,10 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Metadata\Cache;
+namespace As3\Modlr\RestOdm\Metadata\Cache;
 
-use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
-use Actinoids\Modlr\RestOdm\Exception\RuntimeException;
-use Actinoids\Modlr\RestOdm\Exception\InvalidArgumentException;
+use As3\Modlr\RestOdm\Metadata\EntityMetadata;
+use As3\Modlr\RestOdm\Exception\RuntimeException;
+use As3\Modlr\RestOdm\Exception\InvalidArgumentException;
 
 /**
  * Caches and retrieves EntityMetadata objects from the file system.

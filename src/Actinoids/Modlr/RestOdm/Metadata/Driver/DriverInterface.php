@@ -1,6 +1,6 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Metadata\Driver;
+namespace As3\Modlr\RestOdm\Metadata\Driver;
 
 /**
  * Interface for metadata driver implementations.
@@ -16,7 +16,7 @@ interface DriverInterface
      * Loads the EntityMetadata for a type.
      *
      * @param   string  $type
-     * @return  \Actinoids\Modlr\RestOdm\Metadata\EntityMetadata|null
+     * @return  \As3\Modlr\RestOdm\Metadata\EntityMetadata|null
      */
     public function loadMetadataForType($type);
 
@@ -24,7 +24,7 @@ interface DriverInterface
      * Loads the MixinMetadata for a mixin definition.
      *
      * @param   string  $mixinName
-     * @return  \Actinoids\Modlr\RestOdm\Metadata\MixinMetadata|null
+     * @return  \As3\Modlr\RestOdm\Metadata\MixinMetadata|null
      */
     public function loadMetadataForMixin($mixinName);
 
@@ -39,7 +39,7 @@ interface DriverInterface
      * Gets the persistence metadata factory service, based on a persister key.
      *
      * @param   string  $persisterKey
-     * @return  \Actinoids\Modlr\RestOdm\Metadata\Interfaces\PersistenceMetadataFactoryInterface
+     * @return  \As3\Modlr\RestOdm\Metadata\Interfaces\PersistenceMetadataFactoryInterface
      */
     public function getPersistenceMetadataFactory($persisterKey);
 

@@ -1,10 +1,10 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Metadata;
+namespace As3\Modlr\RestOdm\Metadata;
 
-use Actinoids\Modlr\RestOdm\Exception\MetadataException;
-use Actinoids\Modlr\RestOdm\Metadata\Interfaces\AttributeInterface;
-use Actinoids\Modlr\RestOdm\Metadata\Interfaces\RelationshipInterface;
+use As3\Modlr\RestOdm\Exception\MetadataException;
+use As3\Modlr\RestOdm\Metadata\Interfaces\AttributeInterface;
+use As3\Modlr\RestOdm\Metadata\Interfaces\RelationshipInterface;
 
 /**
  * Defines the metadata for an entity mixin.

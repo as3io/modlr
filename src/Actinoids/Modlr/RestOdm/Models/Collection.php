@@ -1,6 +1,6 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Models;
+namespace As3\Modlr\RestOdm\Models;
 
 /**
  * Model collection that contains record representations from a persistence (database) layer.

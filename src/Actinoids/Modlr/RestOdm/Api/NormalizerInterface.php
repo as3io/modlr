@@ -1,8 +1,8 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Api;
+namespace As3\Modlr\RestOdm\Api;
 
-use Actinoids\Modlr\RestOdm\Rest\RestPayload;
+use As3\Modlr\RestOdm\Rest\RestPayload;
 
 /**
  * Interface for normalizing rest payloads in the implementing format.

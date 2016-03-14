@@ -1,6 +1,6 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Metadata\Driver;
+namespace As3\Modlr\RestOdm\Metadata\Driver;
 
 /**
  * File locator service for locating metadata files for use in creating EntityMetadata instances.

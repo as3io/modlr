@@ -1,8 +1,8 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Metadata\Cache;
+namespace As3\Modlr\RestOdm\Metadata\Cache;
 
-use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
+use As3\Modlr\RestOdm\Metadata\EntityMetadata;
 
 /**
  * Metadata Cache Interface.

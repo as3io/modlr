@@ -1,6 +1,6 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Events;
+namespace As3\Modlr\RestOdm\Events;
 
 /**
  * Interface for event subscribers.

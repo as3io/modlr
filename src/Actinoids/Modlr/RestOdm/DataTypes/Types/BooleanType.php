@@ -1,6 +1,6 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\DataTypes\Types;
+namespace As3\Modlr\RestOdm\DataTypes\Types;
 
 /**
  * The boolean data type converter.

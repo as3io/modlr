@@ -1,6 +1,6 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Metadata;
+namespace As3\Modlr\RestOdm\Metadata;
 
 /**
  * Defines metadata for a "standard" field.

@@ -1,6 +1,6 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Events;
+namespace As3\Modlr\RestOdm\Events;
 
 /**
  * Contains the arguments for an event.

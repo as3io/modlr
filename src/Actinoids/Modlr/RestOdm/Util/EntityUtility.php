@@ -1,13 +1,13 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Util;
+namespace As3\Modlr\RestOdm\Util;
 
-use Actinoids\Modlr\RestOdm\Exception\RuntimeException;
-use Actinoids\Modlr\RestOdm\Exception\MetadataException;
-use Actinoids\Modlr\RestOdm\Rest\RestConfiguration;
-use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
-use Actinoids\Modlr\RestOdm\Metadata\MetadataFactory;
-use Actinoids\Modlr\RestOdm\DataTypes\TypeFactory;
+use As3\Modlr\RestOdm\Exception\RuntimeException;
+use As3\Modlr\RestOdm\Exception\MetadataException;
+use As3\Modlr\RestOdm\Rest\RestConfiguration;
+use As3\Modlr\RestOdm\Metadata\EntityMetadata;
+use As3\Modlr\RestOdm\Metadata\MetadataFactory;
+use As3\Modlr\RestOdm\DataTypes\TypeFactory;
 
 /**
  * Responsibile for formatting entity names, such as entity types and field keys.

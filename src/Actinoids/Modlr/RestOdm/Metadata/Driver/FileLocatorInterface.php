@@ -1,6 +1,6 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Metadata\Driver;
+namespace As3\Modlr\RestOdm\Metadata\Driver;
 
 /**
  * Interface for locating metadata mapping files for generating EntityMetadata classes.

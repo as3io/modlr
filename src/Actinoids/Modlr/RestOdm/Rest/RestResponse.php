@@ -1,6 +1,6 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Rest;
+namespace As3\Modlr\RestOdm\Rest;
 
 /**
  * REST Response object.

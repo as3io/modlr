@@ -1,9 +1,9 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Metadata\Cache;
+namespace As3\Modlr\RestOdm\Metadata\Cache;
 
 use Redis;
-use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
+use As3\Modlr\RestOdm\Metadata\EntityMetadata;
 
 /**
  * Caches and retrieves EntityMetadata objects from APC.

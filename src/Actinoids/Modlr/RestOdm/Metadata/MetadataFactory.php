@@ -1,12 +1,12 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Metadata;
+namespace As3\Modlr\RestOdm\Metadata;
 
-use Actinoids\Modlr\RestOdm\Exception\MetadataException;
-use Actinoids\Modlr\RestOdm\Metadata\Driver\DriverInterface;
-use Actinoids\Modlr\RestOdm\Metadata\Cache\CacheInterface;
-use Actinoids\Modlr\RestOdm\Util\EntityUtility;
-use Actinoids\Modlr\RestOdm\Exception\InvalidArgumentException;
+use As3\Modlr\RestOdm\Exception\MetadataException;
+use As3\Modlr\RestOdm\Metadata\Driver\DriverInterface;
+use As3\Modlr\RestOdm\Metadata\Cache\CacheInterface;
+use As3\Modlr\RestOdm\Util\EntityUtility;
+use As3\Modlr\RestOdm\Exception\InvalidArgumentException;
 
 /**
  * The primary MetadataFactory service.

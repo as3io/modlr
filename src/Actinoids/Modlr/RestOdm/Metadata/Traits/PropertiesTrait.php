@@ -1,11 +1,11 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Metadata\Traits;
+namespace As3\Modlr\RestOdm\Metadata\Traits;
 
-use Actinoids\Modlr\RestOdm\Exception\MetadataException;
-use Actinoids\Modlr\RestOdm\Metadata\AttributeMetadata;
-use Actinoids\Modlr\RestOdm\Metadata\FieldMetadata;
-use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
+use As3\Modlr\RestOdm\Exception\MetadataException;
+use As3\Modlr\RestOdm\Metadata\AttributeMetadata;
+use As3\Modlr\RestOdm\Metadata\FieldMetadata;
+use As3\Modlr\RestOdm\Metadata\RelationshipMetadata;
 
 /**
  * Common property (attribute and relationship) metadata get, set, and add methods.

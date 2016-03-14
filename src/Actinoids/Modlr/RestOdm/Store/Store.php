@@ -1,20 +1,20 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Store;
+namespace As3\Modlr\RestOdm\Store;
 
-use Actinoids\Modlr\RestOdm\DataTypes\TypeFactory;
-use Actinoids\Modlr\RestOdm\Events\EventDispatcher;
-use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
-use Actinoids\Modlr\RestOdm\Metadata\MetadataFactory;
-use Actinoids\Modlr\RestOdm\Metadata\RelationshipMetadata;
-use Actinoids\Modlr\RestOdm\Models\AbstractCollection;
-use Actinoids\Modlr\RestOdm\Models\Collection;
-use Actinoids\Modlr\RestOdm\Models\InverseCollection;
-use Actinoids\Modlr\RestOdm\Models\Model;
-use Actinoids\Modlr\RestOdm\Persister\PersisterInterface;
-use Actinoids\Modlr\RestOdm\Persister\Record;
-use Actinoids\Modlr\RestOdm\StorageLayerManager;
-use Actinoids\Modlr\RestOdm\Store\Events\ModelLifecycleArguments;
+use As3\Modlr\RestOdm\DataTypes\TypeFactory;
+use As3\Modlr\RestOdm\Events\EventDispatcher;
+use As3\Modlr\RestOdm\Metadata\EntityMetadata;
+use As3\Modlr\RestOdm\Metadata\MetadataFactory;
+use As3\Modlr\RestOdm\Metadata\RelationshipMetadata;
+use As3\Modlr\RestOdm\Models\AbstractCollection;
+use As3\Modlr\RestOdm\Models\Collection;
+use As3\Modlr\RestOdm\Models\InverseCollection;
+use As3\Modlr\RestOdm\Models\Model;
+use As3\Modlr\RestOdm\Persister\PersisterInterface;
+use As3\Modlr\RestOdm\Persister\Record;
+use As3\Modlr\RestOdm\StorageLayerManager;
+use As3\Modlr\RestOdm\Store\Events\ModelLifecycleArguments;
 
 /**
  * Manages models and their persistence.

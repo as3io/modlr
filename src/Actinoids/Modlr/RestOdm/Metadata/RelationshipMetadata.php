@@ -1,8 +1,8 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Metadata;
+namespace As3\Modlr\RestOdm\Metadata;
 
-use Actinoids\Modlr\RestOdm\Exception\MetadataException;
+use As3\Modlr\RestOdm\Exception\MetadataException;
 
 /**
  * Defines metadata for a relationship field.

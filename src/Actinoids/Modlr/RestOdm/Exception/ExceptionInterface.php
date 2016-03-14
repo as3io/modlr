@@ -1,6 +1,6 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Exception;
+namespace As3\Modlr\RestOdm\Exception;
 
 /**
  * Standard Exception interface.

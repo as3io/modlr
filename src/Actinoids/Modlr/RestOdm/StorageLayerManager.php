@@ -1,11 +1,11 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm;
+namespace As3\Modlr\RestOdm;
 
-use Actinoids\Modlr\RestOdm\Persister\PersisterException;
-use Actinoids\Modlr\RestOdm\Persister\PersisterInterface;
-use Actinoids\Modlr\RestOdm\Search\ClientException;
-use Actinoids\Modlr\RestOdm\Search\ClientInterface;
+use As3\Modlr\RestOdm\Persister\PersisterException;
+use As3\Modlr\RestOdm\Persister\PersisterInterface;
+use As3\Modlr\RestOdm\Search\ClientException;
+use As3\Modlr\RestOdm\Search\ClientInterface;
 
 /**
  * Registers all available storage layers services (search and persistence) by key.

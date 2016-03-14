@@ -1,8 +1,8 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Rest;
+namespace As3\Modlr\RestOdm\Rest;
 
-use Actinoids\Modlr\RestOdm\Api\AdapterInterface;
+use As3\Modlr\RestOdm\Api\AdapterInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 

@@ -1,8 +1,8 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Rest;
+namespace As3\Modlr\RestOdm\Rest;
 
-use Actinoids\Modlr\RestOdm\Util\Validator;
+use As3\Modlr\RestOdm\Util\Validator;
 
 /**
  * REST Configuration.

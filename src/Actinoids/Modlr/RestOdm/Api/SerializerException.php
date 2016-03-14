@@ -1,8 +1,8 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Api;
+namespace As3\Modlr\RestOdm\Api;
 
-use Actinoids\Modlr\RestOdm\Exception\AbstractHttpException;
+use As3\Modlr\RestOdm\Exception\AbstractHttpException;
 
 /**
  * Serializer exceptions.

@@ -1,9 +1,9 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Models;
+namespace As3\Modlr\RestOdm\Models;
 
-use Actinoids\Modlr\RestOdm\Store\Store;
-use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
+use As3\Modlr\RestOdm\Store\Store;
+use As3\Modlr\RestOdm\Metadata\EntityMetadata;
 
 /**
  * Model collection that contains record representations from a persistence (database) layer.

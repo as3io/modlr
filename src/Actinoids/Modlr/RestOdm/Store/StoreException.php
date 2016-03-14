@@ -1,8 +1,8 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Store;
+namespace As3\Modlr\RestOdm\Store;
 
-use Actinoids\Modlr\RestOdm\Exception\AbstractHttpException;
+use As3\Modlr\RestOdm\Exception\AbstractHttpException;
 
 /**
  * Store exceptions.

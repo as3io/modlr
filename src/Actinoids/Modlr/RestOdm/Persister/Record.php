@@ -1,8 +1,8 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Persister;
+namespace As3\Modlr\RestOdm\Persister;
 
-use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
+use As3\Modlr\RestOdm\Metadata\EntityMetadata;
 
 /**
  * Represents a record from the persistence/data layer.

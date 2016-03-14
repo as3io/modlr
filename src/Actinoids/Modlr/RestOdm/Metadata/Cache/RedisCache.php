@@ -1,10 +1,10 @@
 <?php
 
-namespace Actinoids\Modlr\RestOdm\Metadata\Cache;
+namespace As3\Modlr\RestOdm\Metadata\Cache;
 
 use Redis;
-use Actinoids\Modlr\RestOdm\Metadata\EntityMetadata;
-use Actinoids\Modlr\RestOdm\Exception\RuntimeException;
+use As3\Modlr\RestOdm\Metadata\EntityMetadata;
+use As3\Modlr\RestOdm\Exception\RuntimeException;
 
 /**
  * Caches and retrieves EntityMetadata objects from Redis.
