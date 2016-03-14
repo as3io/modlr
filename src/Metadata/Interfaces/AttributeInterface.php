@@ -1,8 +1,8 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Metadata\Interfaces;
+namespace As3\Modlr\Metadata\Interfaces;
 
-use As3\Modlr\RestOdm\Metadata\AttributeMetadata;
+use As3\Modlr\Metadata\AttributeMetadata;
 
 /**
  * Interface for Metadata objects containing attributes.

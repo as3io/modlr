@@ -1,10 +1,10 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Api;
+namespace As3\Modlr\Api;
 
-use As3\Modlr\RestOdm\Metadata\EntityMetadata;
-use As3\Modlr\RestOdm\Models\Collection;
-use As3\Modlr\RestOdm\Models\Model;
+use As3\Modlr\Metadata\EntityMetadata;
+use As3\Modlr\Models\Collection;
+use As3\Modlr\Models\Model;
 
 /**
  * Interface for serializing models in the implementing format.

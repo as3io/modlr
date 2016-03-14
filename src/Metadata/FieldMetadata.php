@@ -1,8 +1,8 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Metadata;
+namespace As3\Modlr\Metadata;
 
-use As3\Modlr\RestOdm\Exception\MetadataException;
+use As3\Modlr\Exception\MetadataException;
 
 /**
  * Abstract field metadata class used for all Entity fields (attributes and relationships).

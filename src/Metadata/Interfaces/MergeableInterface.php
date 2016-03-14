@@ -1,6 +1,6 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Metadata\Interfaces;
+namespace As3\Modlr\Metadata\Interfaces;
 
 /**
  * Defines the metadata instances that support merging.

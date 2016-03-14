@@ -1,6 +1,6 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Metadata;
+namespace As3\Modlr\Metadata;
 
 /**
  * Defines metadata for a "standard" field.

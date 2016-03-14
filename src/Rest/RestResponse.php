@@ -1,6 +1,6 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Rest;
+namespace As3\Modlr\Rest;
 
 /**
  * REST Response object.

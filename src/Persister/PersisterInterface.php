@@ -1,11 +1,11 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Persister;
+namespace As3\Modlr\Persister;
 
-use As3\Modlr\RestOdm\Store\Store;
-use As3\Modlr\RestOdm\Models\Model;
-use As3\Modlr\RestOdm\Metadata\EntityMetadata;
-use As3\Modlr\RestOdm\Metadata\Interfaces\PersistenceMetadataFactoryInterface;
+use As3\Modlr\Store\Store;
+use As3\Modlr\Models\Model;
+use As3\Modlr\Metadata\EntityMetadata;
+use As3\Modlr\Metadata\Interfaces\PersistenceMetadataFactoryInterface;
 
 /**
  * Defines the persister service implementation for persisting models to a data layer.

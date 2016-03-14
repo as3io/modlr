@@ -1,6 +1,6 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Util;
+namespace As3\Modlr\Util;
 
 class Inflector
 {

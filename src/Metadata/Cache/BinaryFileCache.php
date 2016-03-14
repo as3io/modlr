@@ -1,8 +1,8 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Metadata\Cache;
+namespace As3\Modlr\Metadata\Cache;
 
-use As3\Modlr\RestOdm\Metadata\EntityMetadata;
+use As3\Modlr\Metadata\EntityMetadata;
 
 /**
  * Caches and retrieves EntityMetadata objects from the file system using igbinary serialization.

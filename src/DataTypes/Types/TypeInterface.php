@@ -1,6 +1,6 @@
 <?php
 
-namespace As3\Modlr\RestOdm\DataTypes\Types;
+namespace As3\Modlr\DataTypes\Types;
 
 /**
  * The type interface that all data type objects must use.

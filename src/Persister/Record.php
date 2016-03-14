@@ -1,8 +1,8 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Persister;
+namespace As3\Modlr\Persister;
 
-use As3\Modlr\RestOdm\Metadata\EntityMetadata;
+use As3\Modlr\Metadata\EntityMetadata;
 
 /**
  * Represents a record from the persistence/data layer.

@@ -1,20 +1,20 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Store;
+namespace As3\Modlr\Store;
 
-use As3\Modlr\RestOdm\DataTypes\TypeFactory;
-use As3\Modlr\RestOdm\Events\EventDispatcher;
-use As3\Modlr\RestOdm\Metadata\EntityMetadata;
-use As3\Modlr\RestOdm\Metadata\MetadataFactory;
-use As3\Modlr\RestOdm\Metadata\RelationshipMetadata;
-use As3\Modlr\RestOdm\Models\AbstractCollection;
-use As3\Modlr\RestOdm\Models\Collection;
-use As3\Modlr\RestOdm\Models\InverseCollection;
-use As3\Modlr\RestOdm\Models\Model;
-use As3\Modlr\RestOdm\Persister\PersisterInterface;
-use As3\Modlr\RestOdm\Persister\Record;
-use As3\Modlr\RestOdm\StorageLayerManager;
-use As3\Modlr\RestOdm\Store\Events\ModelLifecycleArguments;
+use As3\Modlr\DataTypes\TypeFactory;
+use As3\Modlr\Events\EventDispatcher;
+use As3\Modlr\Metadata\EntityMetadata;
+use As3\Modlr\Metadata\MetadataFactory;
+use As3\Modlr\Metadata\RelationshipMetadata;
+use As3\Modlr\Models\AbstractCollection;
+use As3\Modlr\Models\Collection;
+use As3\Modlr\Models\InverseCollection;
+use As3\Modlr\Models\Model;
+use As3\Modlr\Persister\PersisterInterface;
+use As3\Modlr\Persister\Record;
+use As3\Modlr\StorageLayerManager;
+use As3\Modlr\Store\Events\ModelLifecycleArguments;
 
 /**
  * Manages models and their persistence.

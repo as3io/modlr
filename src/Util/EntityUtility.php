@@ -1,13 +1,13 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Util;
+namespace As3\Modlr\Util;
 
-use As3\Modlr\RestOdm\Exception\RuntimeException;
-use As3\Modlr\RestOdm\Exception\MetadataException;
-use As3\Modlr\RestOdm\Rest\RestConfiguration;
-use As3\Modlr\RestOdm\Metadata\EntityMetadata;
-use As3\Modlr\RestOdm\Metadata\MetadataFactory;
-use As3\Modlr\RestOdm\DataTypes\TypeFactory;
+use As3\Modlr\Exception\RuntimeException;
+use As3\Modlr\Exception\MetadataException;
+use As3\Modlr\Rest\RestConfiguration;
+use As3\Modlr\Metadata\EntityMetadata;
+use As3\Modlr\Metadata\MetadataFactory;
+use As3\Modlr\DataTypes\TypeFactory;
 
 /**
  * Responsibile for formatting entity names, such as entity types and field keys.

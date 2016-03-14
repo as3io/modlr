@@ -1,8 +1,8 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Rest;
+namespace As3\Modlr\Rest;
 
-use As3\Modlr\RestOdm\Util\Validator;
+use As3\Modlr\Util\Validator;
 
 /**
  * REST Configuration.

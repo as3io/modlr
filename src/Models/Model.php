@@ -1,11 +1,11 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Models;
+namespace As3\Modlr\Models;
 
-use As3\Modlr\RestOdm\Models\Relationships;
-use As3\Modlr\RestOdm\Persister\Record;
-use As3\Modlr\RestOdm\Store\Store;
-use As3\Modlr\RestOdm\Metadata\EntityMetadata;
+use As3\Modlr\Models\Relationships;
+use As3\Modlr\Persister\Record;
+use As3\Modlr\Store\Store;
+use As3\Modlr\Metadata\EntityMetadata;
 
 /**
  * Represents a data record from a persistence (database) layer.

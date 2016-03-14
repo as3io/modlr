@@ -1,11 +1,11 @@
 <?php
 
-namespace As3\Modlr\RestOdm;
+namespace As3\Modlr;
 
-use As3\Modlr\RestOdm\Persister\PersisterException;
-use As3\Modlr\RestOdm\Persister\PersisterInterface;
-use As3\Modlr\RestOdm\Search\ClientException;
-use As3\Modlr\RestOdm\Search\ClientInterface;
+use As3\Modlr\Persister\PersisterException;
+use As3\Modlr\Persister\PersisterInterface;
+use As3\Modlr\Search\ClientException;
+use As3\Modlr\Search\ClientInterface;
 
 /**
  * Registers all available storage layers services (search and persistence) by key.

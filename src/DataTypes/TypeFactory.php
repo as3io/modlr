@@ -1,8 +1,8 @@
 <?php
-namespace As3\Modlr\RestOdm\DataTypes;
+namespace As3\Modlr\DataTypes;
 
-use As3\Modlr\RestOdm\DataTypes\Types\TypeInterface;
-use As3\Modlr\RestOdm\Exception\InvalidArgumentException;
+use As3\Modlr\DataTypes\Types\TypeInterface;
+use As3\Modlr\Exception\InvalidArgumentException;
 
 /**
  * Responsible for loading attribute data type classes.
@@ -22,14 +22,14 @@ class TypeFactory
      * @var array
      */
     private $types = [
-        'array'     => 'As3\Modlr\RestOdm\DataTypes\Types\ArrayType',
-        'boolean'   => 'As3\Modlr\RestOdm\DataTypes\Types\BooleanType',
-        'date'      => 'As3\Modlr\RestOdm\DataTypes\Types\DateType',
-        'float'     => 'As3\Modlr\RestOdm\DataTypes\Types\FloatType',
-        'integer'   => 'As3\Modlr\RestOdm\DataTypes\Types\IntegerType',
-        'mixed'     => 'As3\Modlr\RestOdm\DataTypes\Types\MixedType',
-        'object'    => 'As3\Modlr\RestOdm\DataTypes\Types\ObjectType',
-        'string'    => 'As3\Modlr\RestOdm\DataTypes\Types\StringType',
+        'array'     => 'As3\Modlr\DataTypes\Types\ArrayType',
+        'boolean'   => 'As3\Modlr\DataTypes\Types\BooleanType',
+        'date'      => 'As3\Modlr\DataTypes\Types\DateType',
+        'float'     => 'As3\Modlr\DataTypes\Types\FloatType',
+        'integer'   => 'As3\Modlr\DataTypes\Types\IntegerType',
+        'mixed'     => 'As3\Modlr\DataTypes\Types\MixedType',
+        'object'    => 'As3\Modlr\DataTypes\Types\ObjectType',
+        'string'    => 'As3\Modlr\DataTypes\Types\StringType',
     ];
 
     /**

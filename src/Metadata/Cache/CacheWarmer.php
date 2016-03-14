@@ -1,8 +1,8 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Metadata\Cache;
+namespace As3\Modlr\Metadata\Cache;
 
-use As3\Modlr\RestOdm\Metadata\MetadataFactory;
+use As3\Modlr\Metadata\MetadataFactory;
 
 /**
  * Warms up the metadata cache objects by placing all known entities into the cache source.

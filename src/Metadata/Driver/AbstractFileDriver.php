@@ -1,11 +1,11 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Metadata\Driver;
+namespace As3\Modlr\Metadata\Driver;
 
-use As3\Modlr\RestOdm\Exception\MetadataException;
-use As3\Modlr\RestOdm\Metadata\EntityMetadata;
-use As3\Modlr\RestOdm\Metadata\MixinMetadata;
-use As3\Modlr\RestOdm\StorageLayerManager;
+use As3\Modlr\Exception\MetadataException;
+use As3\Modlr\Metadata\EntityMetadata;
+use As3\Modlr\Metadata\MixinMetadata;
+use As3\Modlr\StorageLayerManager;
 
 /**
  * Abstract metadata file driver.

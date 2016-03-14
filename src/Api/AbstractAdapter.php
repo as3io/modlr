@@ -1,13 +1,13 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Api;
+namespace As3\Modlr\Api;
 
-use As3\Modlr\RestOdm\Exception\HttpExceptionInterface;
-use As3\Modlr\RestOdm\Metadata\EntityMetadata;
-use As3\Modlr\RestOdm\Models\Collection;
-use As3\Modlr\RestOdm\Models\Model;
-use As3\Modlr\RestOdm\Rest;
-use As3\Modlr\RestOdm\Store\Store;
+use As3\Modlr\Exception\HttpExceptionInterface;
+use As3\Modlr\Metadata\EntityMetadata;
+use As3\Modlr\Models\Collection;
+use As3\Modlr\Models\Model;
+use As3\Modlr\Rest;
+use As3\Modlr\Store\Store;
 
 /**
  * Abstract Adapter implementation for handling API operations.

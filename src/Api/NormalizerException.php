@@ -1,8 +1,8 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Api;
+namespace As3\Modlr\Api;
 
-use As3\Modlr\RestOdm\Exception\AbstractHttpException;
+use As3\Modlr\Exception\AbstractHttpException;
 
 /**
  * Normalizer exceptions.

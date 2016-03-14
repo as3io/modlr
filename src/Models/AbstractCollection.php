@@ -1,9 +1,9 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Models;
+namespace As3\Modlr\Models;
 
-use As3\Modlr\RestOdm\Store\Store;
-use As3\Modlr\RestOdm\Metadata\EntityMetadata;
+use As3\Modlr\Store\Store;
+use As3\Modlr\Metadata\EntityMetadata;
 use \Iterator;
 use \Countable;
 

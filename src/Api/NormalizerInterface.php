@@ -1,8 +1,8 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Api;
+namespace As3\Modlr\Api;
 
-use As3\Modlr\RestOdm\Rest\RestPayload;
+use As3\Modlr\Rest\RestPayload;
 
 /**
  * Interface for normalizing rest payloads in the implementing format.

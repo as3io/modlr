@@ -1,11 +1,11 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Search;
+namespace As3\Modlr\Search;
 
-use As3\Modlr\RestOdm\Metadata\EntityMetadata;
-use As3\Modlr\RestOdm\Metadata\Interfaces\SearchMetadataFactoryInterface;
-use As3\Modlr\RestOdm\Persister\PersisterInterface;
-use As3\Modlr\RestOdm\Persister\Record;
+use As3\Modlr\Metadata\EntityMetadata;
+use As3\Modlr\Metadata\Interfaces\SearchMetadataFactoryInterface;
+use As3\Modlr\Persister\PersisterInterface;
+use As3\Modlr\Persister\Record;
 
 /**
  * Defines the service implementation for searching for (and modifying) models in the search layer.

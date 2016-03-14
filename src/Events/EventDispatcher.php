@@ -1,6 +1,6 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Events;
+namespace As3\Modlr\Events;
 
 /**
  * Handles and dispatches events.

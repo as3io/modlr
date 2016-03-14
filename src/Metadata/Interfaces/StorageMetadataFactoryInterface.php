@@ -1,8 +1,8 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Metadata\Interfaces;
+namespace As3\Modlr\Metadata\Interfaces;
 
-use As3\Modlr\RestOdm\Metadata\EntityMetadata;
+use As3\Modlr\Metadata\EntityMetadata;
 
 /**
  * Creates Storage Layer Metadata (persistence/search) instances in the implementing format.
@@ -30,7 +30,7 @@ interface StorageMetadataFactoryInterface
      * Handles additional validation specific to this storage layaer.
      *
      * @param   EntityMetadata
-     * @throws  \As3\Modlr\RestOdm\Exception\MetadataException On invalid metadata.
+     * @throws  \As3\Modlr\Exception\MetadataException On invalid metadata.
      */
     public function handleValidate(EntityMetadata $metadata);
 }

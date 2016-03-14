@@ -1,11 +1,11 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Search\Elastic;
+namespace As3\Modlr\Search\Elastic;
 
-use As3\Modlr\RestOdm\Util\EntityUtility;
-use As3\Modlr\RestOdm\Exception\MetadataException;
-use As3\Modlr\RestOdm\Metadata\EntityMetadata;
-use As3\Modlr\RestOdm\Metadata\Interfaces\StorageMetadataFactoryInterface;
+use As3\Modlr\Util\EntityUtility;
+use As3\Modlr\Exception\MetadataException;
+use As3\Modlr\Metadata\EntityMetadata;
+use As3\Modlr\Metadata\Interfaces\StorageMetadataFactoryInterface;
 
 /**
  * Creates Elastic search storage Metadata instances for use with metadata drivers.

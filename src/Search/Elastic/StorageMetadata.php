@@ -1,11 +1,11 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Search\Elastic;
+namespace As3\Modlr\Search\Elastic;
 
-use As3\Modlr\RestOdm\Metadata\AttributeMetadata;
-use As3\Modlr\RestOdm\Metadata\FieldMetadata;
-use As3\Modlr\RestOdm\Metadata\Interfaces\MergeableInterface;
-use As3\Modlr\RestOdm\Metadata\Interfaces\StorageLayerInterface;
+use As3\Modlr\Metadata\AttributeMetadata;
+use As3\Modlr\Metadata\FieldMetadata;
+use As3\Modlr\Metadata\Interfaces\MergeableInterface;
+use As3\Modlr\Metadata\Interfaces\StorageLayerInterface;
 
 /**
  * Defines the storage metadata for Elastic.

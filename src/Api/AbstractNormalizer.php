@@ -1,9 +1,9 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Api;
+namespace As3\Modlr\Api;
 
-use As3\Modlr\RestOdm\Metadata\EntityMetadata;
-use As3\Modlr\RestOdm\Rest\RestPayload;
+use As3\Modlr\Metadata\EntityMetadata;
+use As3\Modlr\Rest\RestPayload;
 
 /**
  * Abstract implementation of normalizing REST payloads into arrays that can be applied to a Model.

@@ -1,9 +1,9 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Models\Relationships;
+namespace As3\Modlr\Models\Relationships;
 
-use As3\Modlr\RestOdm\Models\Collection;
-use As3\Modlr\RestOdm\Models\Properties;
+use As3\Modlr\Models\Collection;
+use As3\Modlr\Models\Properties;
 
 /**
  * Represents the has-many relationships of a Model.

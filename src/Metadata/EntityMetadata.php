@@ -1,12 +1,12 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Metadata;
+namespace As3\Modlr\Metadata;
 
-use As3\Modlr\RestOdm\Exception\MetadataException;
-use As3\Modlr\RestOdm\Metadata\Interfaces\AttributeInterface;
-use As3\Modlr\RestOdm\Metadata\Interfaces\MergeableInterface;
-use As3\Modlr\RestOdm\Metadata\Interfaces\RelationshipInterface;
-use As3\Modlr\RestOdm\Metadata\Interfaces\StorageLayerInterface;
+use As3\Modlr\Exception\MetadataException;
+use As3\Modlr\Metadata\Interfaces\AttributeInterface;
+use As3\Modlr\Metadata\Interfaces\MergeableInterface;
+use As3\Modlr\Metadata\Interfaces\RelationshipInterface;
+use As3\Modlr\Metadata\Interfaces\StorageLayerInterface;
 
 /**
  * Defines the metadata for an entity (e.g. a database object).

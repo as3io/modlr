@@ -1,8 +1,8 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Persister;
+namespace As3\Modlr\Persister;
 
-use As3\Modlr\RestOdm\Exception\AbstractHttpException;
+use As3\Modlr\Exception\AbstractHttpException;
 
 /**
  * Persister exceptions.

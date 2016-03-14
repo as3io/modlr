@@ -1,8 +1,8 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Search;
+namespace As3\Modlr\Search;
 
-use As3\Modlr\RestOdm\Exception\AbstractHttpException;
+use As3\Modlr\Exception\AbstractHttpException;
 
 /**
  * Search client exceptions.

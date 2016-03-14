@@ -1,6 +1,6 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Exception;
+namespace As3\Modlr\Exception;
 
 /**
  * RuntimeException.

@@ -1,8 +1,8 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Store;
+namespace As3\Modlr\Store;
 
-use As3\Modlr\RestOdm\Models\Model;
+use As3\Modlr\Models\Model;
 
 /**
  * Manages Model objects that are currently loaded into memory.

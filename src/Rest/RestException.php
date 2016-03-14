@@ -1,8 +1,8 @@
 <?php
 
-namespace As3\Modlr\RestOdm\Rest;
+namespace As3\Modlr\Rest;
 
-use As3\Modlr\RestOdm\Exception\AbstractHttpException;
+use As3\Modlr\Exception\AbstractHttpException;
 
 /**
  * REST Exceptions.
