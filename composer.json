@@ -1,5 +1,5 @@
 {
-    "name": "actinoids/modlr-rest-odm",
+    "name": "as3/modlr-rest-odm",
     "license": "Apache-2.0",
     "type": "library",
     "description": "Simplified PHP library for fast and efficient RESTful API for MongoDB. Designed for use with front end web frameworks such as EmberJS.",
@@ -11,17 +11,18 @@
     ],
     "autoload": {
         "psr-0": {
-            "Actinoids\\Modlr\\RestOdm": "src/"
+            "As3\\Modlr\\RestOdm": "src/"
         }
     },
     "require": {
-        "php": ">=5.4",
-        "symfony/http-foundation": "~2.6"
+        "php": ">=5.6",
+        "symfony/http-foundation": "^2.6"
     },
     "suggest": {
+        "as3/modlr-api-jsonapiorg": "Provides jsonapi.org REST API spec and functionality.",
+        "as3/modlr-persister-mongodb": "Provides MongoDB persistence functionality.",
         "symfony/yaml": "Required if you'd like load metadata from YAML format.",
         "ext-igbinary": "Required if you'd like to use the provided igbinary metadata cache serialization.",
-        "ext-redis": "Required if you'd like to cache metadata using Redis.",
-        "doctrine/mongodb-odm":"Required if you'd like to load metadata from the Doctrine ODM."
+        "ext-redis": "Required if you'd like to cache metadata using Redis."
     }
 }
