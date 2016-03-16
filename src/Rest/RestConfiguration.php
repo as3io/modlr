@@ -11,6 +11,9 @@ use As3\Modlr\Util\Validator;
  */
 class RestConfiguration
 {
+    /**
+     * @var string
+     */
     private $rootEndpoint = '/';
 
     /**
