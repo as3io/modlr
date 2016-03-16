@@ -736,11 +736,16 @@ class Model
      */
     public function getChangeSet()
     {
-        return [
+        $changeset = [
             'attributes'    => $this->attributes->calculateChangeSet(),
             'hasOne'        => $this->hasOneRelationships->calculateChangeSet(),
             'hasMany'       => $this->hasManyRelationships->calculateChangeSet(),
         ];
+
+        foreach ($changeset as $type => $properties) {
+            $changeset[$type] = $this->filterNotSavedProperties($type, $properties);
+        }
+        return $changeset;
     }
 
     /**
@@ -762,5 +767,24 @@ class Model
     public function getMetadata()
     {
         return $this->metadata;
+    }
+
+    /**
+     * Removes properties marked as non-saved.
+     *
+     * @param   string  $propType
+     * @param   array   $properties
+     * @return  array
+     */
+    private function filterNotSavedProperties($propType, array $properties)
+    {
+        $method = ('attributes' === $propType) ? 'getAttributes' : 'getRelationships';
+        foreach ($this->getMetadata()->$method() as $fieldKey => $propMeta) {
+            if (true === $propMeta->shouldSave() || !isset($properties[$fieldKey])) {
+                continue;
+            }
+            unset($properties[$fieldKey]);
+        }
+        return $properties;
     }
 }

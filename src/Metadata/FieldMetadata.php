@@ -13,13 +13,6 @@ use As3\Modlr\Exception\MetadataException;
 abstract class FieldMetadata
 {
     /**
-     * The field key.
-     *
-     * @var string
-     */
-    public $key;
-
-    /**
      * A friendly description of the field.
      *
      * @var string
@@ -27,11 +20,25 @@ abstract class FieldMetadata
     public $description;
 
     /**
+     * The field key.
+     *
+     * @var string
+     */
+    public $key;
+
+    /**
      * Determines if this field came from a mixin.
      *
      * @var bool
      */
     public $mixin;
+
+    /**
+     * Whether this property should be persisted.
+     *
+     * @var bool
+     */
+    public $save = true;
 
     /**
      * Determines whether this propety is stored in search.
@@ -54,6 +61,18 @@ abstract class FieldMetadata
     }
 
     /**
+     * Enables or disables saving of this property.
+     *
+     * @param   bool    $bit
+     * @return  self
+     */
+    public function enableSave($bit = true)
+    {
+        $this->save = (bool) $bit;
+        return $this;
+    }
+
+    /**
      * Gets the field key.
      *
      * @return  string
@@ -61,6 +80,16 @@ abstract class FieldMetadata
     public function getKey()
     {
         return $this->key;
+    }
+
+    /**
+     * Determines whether this propety is stored in search.
+     *
+     * @return  bool
+     */
+    public function isSearchProperty()
+    {
+        return $this->searchProperty;
     }
 
     /**
@@ -76,13 +105,13 @@ abstract class FieldMetadata
     }
 
     /**
-     * Determines whether this propety is stored in search.
+     * Whether this property should be saved/persisted to the data layer.
      *
      * @return  bool
      */
-    public function isSearchProperty()
+    public function shouldSave()
     {
-        return $this->searchProperty;
+        return $this->save;
     }
 
     /**
