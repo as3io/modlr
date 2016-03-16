@@ -224,7 +224,6 @@ final class YamlFileDriver extends AbstractFileDriver
 
             $attribute = new Metadata\AttributeMetadata($key, $mapping['type'], $this->isMixin($metadata));
 
-            // @todo Handle complex attribute types.
             if (isset($mapping['description'])) {
                 $attribute->description = $mapping['description'];
             }
@@ -245,6 +244,10 @@ final class YamlFileDriver extends AbstractFileDriver
                 $attribute->setAutocomplete(true);
             } else if (isset($mapping['search']['store'])) {
                 $attribute->setSearchProperty(true);
+            }
+
+            if (isset($mapping['save'])) {
+                $attribute->enableSave($mapping['save']);
             }
 
             $metadata->addAttribute($attribute);
@@ -311,6 +314,10 @@ final class YamlFileDriver extends AbstractFileDriver
 
             if (isset($mapping['search']['store'])) {
                 $relationship->setSearchProperty(true);
+            }
+
+            if (isset($mapping['save'])) {
+                $relationship->enableSave($mapping['save']);
             }
 
             $metadata->addRelationship($relationship);
