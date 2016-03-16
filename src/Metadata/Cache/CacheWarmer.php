@@ -30,19 +30,66 @@ class CacheWarmer
     }
 
     /**
-     * Warms up all metadata objects into the cache.
+     * Clears metadata objects from the cache.
      *
+     * @param   string|array|null   $type
      * @return  array
      */
-    public function warm()
+    public function clear($type = null)
     {
-        $warmed = [];
         if (false === $this->mf->hasCache()) {
-            return $warmed;
+            return [];
+        }
+        return $this->doClear($this->getTypes($type));
+    }
+
+    /**
+     * Warms up metadata objects into the cache.
+     *
+     * @param   string|array|null   $type
+     * @return  array
+     */
+    public function warm($type = null)
+    {
+        if (false === $this->mf->hasCache()) {
+            return [];
+        }
+        return $this->doWarm($this->getTypes($type));
+    }
+
+    /**
+     * Clears metadata objects for the provided model types.
+     *
+     * @param   array   $types
+     * @return  array
+     */
+    private function doClear(array $types)
+    {
+        $cleared = [];
+        $this->mf->enableCache(false);
+
+        foreach ($types as $type) {
+            $metadata = $this->mf->getMetadataForType($type);
+            $this->mf->getCache()->evictMetadataFromCache($metadata);
+            $cleared[] = $type;
         }
 
-        $this->clear();
-        foreach ($this->mf->getAllTypeNames() as $type) {
+        $this->mf->enableCache(true);
+        $this->mf->clearMemory();
+        return $cleared;
+    }
+
+    /**
+     * Warms up the metadata objects for the provided model types.
+     *
+     * @param   array   $types
+     * @return  array
+     */
+    private function doWarm(array $types)
+    {
+        $warmed = [];
+        $this->doClear($types);
+        foreach ($types as $type) {
             $this->mf->getMetadataForType($type);
             $warmed[] = $type;
         }
@@ -50,25 +97,16 @@ class CacheWarmer
     }
 
     /**
-     * Clears all metadata objects from the cache.
+     * Gets the model types based on an array, string, or null type value.
      *
+     * @param   string|array|null
      * @return  array
      */
-    public function clear()
+    private function getTypes($type = null)
     {
-        $cleared = [];
-        if (false === $this->mf->hasCache()) {
-            return $cleared;
+        if (null === $type) {
+            return $this->mf->getAllTypeNames();
         }
-
-        $this->mf->enableCache(false);
-        foreach ($this->mf->getAllTypeNames() as $type) {
-            $metadata = $this->mf->getMetadataForType($type);
-            $this->mf->getCache()->evictMetadataFromCache($metadata);
-            $cleared[] = $type;
-        }
-        $this->mf->enableCache(true);
-        $this->mf->clearMemory();
-        return $cleared;
+        return (array) $type;
     }
 }
