@@ -317,7 +317,7 @@ final class YamlFileDriver extends AbstractFileDriver
             }
 
             if (isset($mapping['save'])) {
-                $attribute->enableSave($mapping['save']);
+                $relationship->enableSave($mapping['save']);
             }
 
             $metadata->addRelationship($relationship);
