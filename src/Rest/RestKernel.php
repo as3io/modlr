@@ -10,9 +10,6 @@ use Symfony\Component\HttpFoundation\Response;
  * REST Kernel.
  * Handles incoming Requests, converts them to REST request format, and handles them via the Adapter.
  *
- * @todo    CORS would need to be implemented by account.
- * @todo    Account API key would need to be parsed in order to establish Org and Project.
- *
  * @author  Jacob Bare <jacob.bare@gmail.com>
  */
 class RestKernel
@@ -28,6 +25,11 @@ class RestKernel
     private $config;
 
     /**
+     * @var bool
+     */
+    private $debug = false;
+
+    /**
      * Constructor.
      *
      * @param   AdapterInterface    $adapter
@@ -40,9 +42,20 @@ class RestKernel
     }
 
     /**
+     * Enables/disables debug.
+     *
+     * @param   bool    $debug
+     * @return  self
+     */
+    public function enableDebug($debug = true)
+    {
+        $this->debug = (bool) $debug;
+        return $this;
+    }
+
+    /**
      * Processes an incoming Request object, routes it to the adapter, and returns a response.
      *
-     * @todo    The adapter needs to validate that the core Request object is valid. Ensure JSON, etc.
      * @param   Request     $request
      * @return  Response    $response
      */
@@ -52,8 +65,21 @@ class RestKernel
             $restRequest = new RestRequest($this->config, $request->getMethod(), $request->getUri(), $request->getContent());
             $restResponse = $this->adapter->processRequest($restRequest);
         } catch (\Exception $e) {
+            if (true === $this->debugEnabled()) {
+                throw $e;
+            }
             $restResponse = $this->adapter->handleException($e);
         }
         return new Response($restResponse->getContent(), $restResponse->getStatus(), $restResponse->getHeaders());
+    }
+
+    /**
+     * Whether debug is enabled.
+     *
+     * @return  bool
+     */
+    public function debugEnabled()
+    {
+        return $this->debug;
     }
 }
