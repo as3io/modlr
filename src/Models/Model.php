@@ -689,7 +689,7 @@ class Model
     {
         // Set defaults for each attribute.
         foreach ($this->getMetadata()->getAttributes() as $key => $attrMeta) {
-            if (!isset($attrMeta->defaultValue)) {
+            if (!isset($attrMeta->defaultValue) || isset($attributes[$key])) {
                 continue;
             }
             $attributes[$key] = $this->convertAttributeValue($key, $attrMeta->defaultValue);
@@ -697,6 +697,9 @@ class Model
 
         // Set defaults for the entire entity.
         foreach ($this->getMetadata()->defaultValues as $key => $value) {
+            if (isset($attributes[$key])) {
+                continue;
+            }
             $attributes[$key] = $this->convertAttributeValue($key, $value);
         }
         return $attributes;
