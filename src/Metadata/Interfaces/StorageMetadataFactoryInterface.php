@@ -6,18 +6,18 @@ use As3\Modlr\Metadata\EntityMetadata;
 
 /**
  * Creates Storage Layer Metadata (persistence/search) instances in the implementing format.
- * Is used by the metadata driver and/or factory for creating new instances and validation.
+ * Is used by the metadata driver and/or factory for creating new instances, setting values, and performing validation.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
 interface StorageMetadataFactoryInterface
 {
     /**
-     * Gets a new and empty Storage Layer Metadata object.
+     * Creates a new instance based on a driver mapping.
      *
      * @return  StorageLayerInterface
      */
-    public function getNewInstance();
+    public function createInstance(array $mapping);
 
     /**
      * Handles additional metadata operations on the Factory load.

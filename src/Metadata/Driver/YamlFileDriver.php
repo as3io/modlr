@@ -153,18 +153,7 @@ final class YamlFileDriver extends AbstractFileDriver
         $persisterKey = isset($mapping['key']) ? $mapping['key'] : null;
         $factory = $this->getPersistenceMetadataFactory($persisterKey);
 
-        $persistence = $factory->getNewInstance();
-
-        // @todo Everything here must be done in the MongoDB factory!!!
-        $persistence->persisterKey = $persisterKey;
-
-        if (isset($mapping['db'])) {
-            $persistence->db = $mapping['db'];
-        }
-
-        if (isset($mapping['collection'])) {
-            $persistence->collection = $mapping['collection'];
-        }
+        $persistence = $factory->createInstance($mapping);
 
         $metadata->setPersistence($persistence);
         return $metadata;
@@ -180,20 +169,14 @@ final class YamlFileDriver extends AbstractFileDriver
     protected function setSearch(Metadata\EntityMetadata $metadata, array $mapping)
     {
         $clientKey = isset($mapping['key']) ? $mapping['key'] : null;
+        if (null === $clientKey) {
+            // Search is not enabled for this model.
+            return $metadata;
+        }
+
         $factory = $this->getSearchMetadataFactory($clientKey);
 
-        $search = $factory->getNewInstance();
-
-        // @todo Everything here must be done in the Elastic factory!!!
-        $search->clientKey = $clientKey;
-
-        if (isset($mapping['index'])) {
-            $search->index = $mapping['index'];
-        }
-
-        if (isset($mapping['type'])) {
-            $search->type = $mapping['type'];
-        }
+        $search = $factory->createInstance($mapping);
 
         $metadata->setSearch($search);
         return $metadata;
@@ -202,7 +185,6 @@ final class YamlFileDriver extends AbstractFileDriver
     /**
      * Sets the entity attribute metadata from the metadata mapping.
      *
-     * @todo    Add support for complex attributes, like arrays and objects.
      * @param   Metadata\Interfaces\AttributeInterface  $metadata
      * @param   array                                   $attrMapping
      * @return  Metadata\EntityMetadata
@@ -369,21 +351,9 @@ final class YamlFileDriver extends AbstractFileDriver
             $mapping['entity']['persistence'] = [];
         }
 
-        if (!isset($mapping['entity']['persistence']['key'])) {
-            // @todo Should this be defaulted here, or handled differently?
-            $mapping['entity']['persistence']['key'] = 'mongodb';
-        }
-
         if (!isset($mapping['entity']['search']) || !is_array($mapping['entity']['search'])) {
             $mapping['entity']['search'] = [];
         }
-
-        if (!isset($mapping['entity']['search']['key'])) {
-            // @todo Should this be defaulted here, or handled differently?
-            // @todo Is it ever possible to not have a search client, but still specify search on a property?
-            $mapping['entity']['search']['key'] = 'elastic';
-        }
-
         return $mapping;
     }
 
