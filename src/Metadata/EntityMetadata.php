@@ -17,6 +17,9 @@ use As3\Modlr\Metadata\Interfaces\StorageLayerInterface;
  */
 class EntityMetadata implements AttributeInterface, RelationshipInterface, MergeableInterface
 {
+    /**
+     * Uses properties (attributes and relationships)
+     */
     use Traits\PropertiesTrait;
 
     /**
@@ -24,35 +27,6 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
      */
     const ID_KEY  = 'id';
     const ID_TYPE = 'string';
-
-    /**
-     * Uniquely defines the type of entity.
-     *
-     * @var string
-     */
-    public $type;
-
-    /**
-     * Whether this class is considered polymorphic.
-     *
-     * @var bool
-     */
-    public $polymorphic = false;
-
-    /**
-     * Child entity types this entity owns.
-     * Only used for polymorphic entities.
-     *
-     * @var array
-     */
-    public $ownedTypes = [];
-
-    /**
-     * The entity type this entity extends.
-     *
-     * @var bool
-     */
-    public $extends;
 
     /**
      * Whether this class is abstract.
@@ -70,11 +44,40 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     public $defaultValues = [];
 
     /**
+     * The entity type this entity extends.
+     *
+     * @var bool
+     */
+    public $extends;
+
+    /**
+     * All mixins assigned to this entity.
+     *
+     * @var     MixinMetadata[]
+     */
+    public $mixins = [];
+
+    /**
+     * Child entity types this entity owns.
+     * Only used for polymorphic entities.
+     *
+     * @var array
+     */
+    public $ownedTypes = [];
+
+    /**
      * The persistence metadata for this entity.
      *
      * @var StorageLayerInterface
      */
     public $persistence;
+
+    /**
+     * Whether this class is considered polymorphic.
+     *
+     * @var bool
+     */
+    public $polymorphic = false;
 
     /**
      * The search metadata for this entity.
@@ -84,11 +87,11 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     public $search;
 
     /**
-     * All mixins assigned to this entity.
+     * Uniquely defines the type of entity.
      *
-     * @var     MixinMetadata[]
+     * @var string
      */
-    public $mixins = [];
+    public $type;
 
     /**
      * Constructor.
@@ -139,6 +142,57 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     }
 
     /**
+     * Gets the parent entity type.
+     * For entities that are extended.
+     *
+     * @return  string|null
+     */
+    public function getParentEntityType()
+    {
+        return $this->extends;
+    }
+
+    /**
+     * Whether this metadata represents an abstract class.
+     *
+     * @return  bool
+     */
+    public function isAbstract()
+    {
+        return (Boolean) $this->abstract;
+    }
+
+    /**
+     * Whether this metadata represents a polymorphic class.
+     *
+     * @return  bool
+     */
+    public function isPolymorphic()
+    {
+        return (Boolean) $this->polymorphic;
+    }
+
+    /**
+     * Deteremines whether search is enabled for this model.
+     *
+     * @return  bool
+     */
+    public function isSearchEnabled()
+    {
+        return null !== $this->search;
+    }
+
+    /**
+     * Determines if this is a child entity of another entity.
+     *
+     * @return  bool
+     */
+    public function isChildEntity()
+    {
+        return null !== $this->getParentEntityType();
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function merge(MergeableInterface $metadata)
@@ -161,6 +215,54 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     }
 
     /**
+     * Sets this metadata as representing an abstract class.
+     *
+     * @param   bool    $bit
+     * @return  self
+     */
+    public function setAbstract($bit = true)
+    {
+        $this->abstract = (Boolean) $bit;
+        return $this;
+    }
+
+    /**
+     * Sets the persistence metadata for this entity.
+     *
+     * @param   StorageLayerInterface   $persistence
+     * @return  self
+     */
+    public function setPersistence(StorageLayerInterface $persistence)
+    {
+        $this->persistence = $persistence;
+        return $this;
+    }
+
+    /**
+     * Sets this metadata as representing a polymorphic class.
+     *
+     * @param   bool    $bit
+     * @return  self
+     */
+    public function setPolymorphic($bit = true)
+    {
+        $this->polymorphic = (Boolean) $bit;
+        return $this;
+    }
+
+    /**
+     * Sets the search metadata for this entity.
+     *
+     * @param   StorageLayerInterface   $search
+     * @return  self
+     */
+    public function setSearch(StorageLayerInterface $search)
+    {
+        $this->search = $search;
+        return $this;
+    }
+
+    /**
      * Sets the entity type.
      *
      * @param   string  $type
@@ -173,6 +275,20 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
             throw MetadataException::invalidEntityType($type);
         }
         $this->type = $type;
+        return $this;
+    }
+
+    /**
+     * Merges attributes with this instance's attributes.
+     *
+     * @param   array   $toAdd
+     * @return  self
+     */
+    private function mergeAttributes(array $toAdd)
+    {
+        foreach ($toAdd as $attribute) {
+            $this->addAttribute($attribute);
+        }
         return $this;
     }
 
@@ -193,20 +309,6 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     }
 
     /**
-     * Merges attributes with this instance's attributes.
-     *
-     * @param   array   $toAdd
-     * @return  self
-     */
-    private function mergeAttributes(array $toAdd)
-    {
-        foreach ($toAdd as $attribute) {
-            $this->addAttribute($attribute);
-        }
-        return $this;
-    }
-
-    /**
      * Merges relationships with this instance's relationships.
      *
      * @param   array   $toAdd
@@ -217,95 +319,6 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
         foreach ($toAdd as $relationship) {
             $this->addRelationship($relationship);
         }
-        return $this;
-    }
-
-    /**
-     * Whether this metadata represents a polymorphic class.
-     *
-     * @return  bool
-     */
-    public function isPolymorphic()
-    {
-        return (Boolean) $this->polymorphic;
-    }
-
-    /**
-     * Sets this metadata as representing a polymorphic class.
-     *
-     * @param   bool    $bit
-     * @return  self
-     */
-    public function setPolymorphic($bit = true)
-    {
-        $this->polymorphic = (Boolean) $bit;
-        return $this;
-    }
-
-    /**
-     * Whether this metadata represents an abstract class.
-     *
-     * @return  bool
-     */
-    public function isAbstract()
-    {
-        return (Boolean) $this->abstract;
-    }
-
-    /**
-     * Sets this metadata as representing an abstract class.
-     *
-     * @param   bool    $bit
-     * @return  self
-     */
-    public function setAbstract($bit = true)
-    {
-        $this->abstract = (Boolean) $bit;
-        return $this;
-    }
-
-    /**
-     * Determines if this is a child entity of another entity.
-     *
-     * @return  bool
-     */
-    public function isChildEntity()
-    {
-        return null !== $this->getParentEntityType();
-    }
-
-    /**
-     * Gets the parent entity type.
-     * For entities that are extended.
-     *
-     * @return  string|null
-     */
-    public function getParentEntityType()
-    {
-        return $this->extends;
-    }
-
-    /**
-     * Sets the persistence metadata for this entity.
-     *
-     * @param   StorageLayerInterface   $persistence
-     * @return  self
-     */
-    public function setPersistence(StorageLayerInterface $persistence)
-    {
-        $this->persistence = $persistence;
-        return $this;
-    }
-
-    /**
-     * Sets the search metadata for this entity.
-     *
-     * @param   StorageLayerInterface   $search
-     * @return  self
-     */
-    public function setSearch(StorageLayerInterface $search)
-    {
-        $this->search = $search;
         return $this;
     }
 }

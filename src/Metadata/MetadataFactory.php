@@ -138,18 +138,10 @@ class MetadataFactory implements MetadataFactoryInterface
             $this->entityUtil->validateMetadata($hierType, $loaded, $this);
 
             // Handle persistence specific loading and validation.
-            $persisterKey = $loaded->persistence->getKey();
-            $persistenceFactory = $this->driver->getPersistenceMetadataFactory($persisterKey);
-
-            $persistenceFactory->handleLoad($loaded);
-            $persistenceFactory->handleValidate($loaded);
+            $this->loadPersistenceMetadata($loaded);
 
             // Handle search specific loading and validation.
-            $clientKey = $loaded->search->getKey();
-            $searchFactory = $this->driver->getSearchMetadataFactory($clientKey);
-
-            $searchFactory->handleLoad($loaded);
-            $searchFactory->handleValidate($loaded);
+            $this->loadSearchMetadata($loaded);
 
             $this->mergeMetadata($metadata, $loaded);
             $this->doPutMetadata($loaded);
@@ -255,6 +247,41 @@ class MetadataFactory implements MetadataFactoryInterface
             throw new InvalidArgumentException(sprintf('This resource only supports resources of type "%s" - resource type "%s" was provided', $parentType, $childType));
         }
         return true;
+    }
+
+    /**
+     * Handles persistence specific metadata loading.
+     *
+     * @param   EntityMetadata  $metadata
+     * @return  EntityMetadata
+     */
+    private function loadPersistenceMetadata(EntityMetadata $metadata)
+    {
+        $persisterKey = $metadata->persistence->getKey();
+        $persistenceFactory = $this->driver->getPersistenceMetadataFactory($persisterKey);
+
+        $persistenceFactory->handleLoad($metadata);
+        $persistenceFactory->handleValidate($metadata);
+        return $metadata;
+    }
+
+    /**
+     * Handles search specific metadata loading.
+     *
+     * @param   EntityMetadata  $metadata
+     * @return  EntityMetadata
+     */
+    private function loadSearchMetadata(EntityMetadata $metadata)
+    {
+        if (false === $metadata->isSearchEnabled()) {
+            return $metadata;
+        }
+        $clientKey = $metadata->search->getKey();
+        $searchFactory = $this->driver->getSearchMetadataFactory($clientKey);
+
+        $searchFactory->handleLoad($metadata);
+        $searchFactory->handleValidate($metadata);
+        return $metadata;
     }
 
     /**

@@ -117,7 +117,6 @@ class Store
      * Searches for records (via the search layer) for a specific type, attribute, and value.
      * Uses the autocomplete logic to fullfill the request.
      *
-     * @todo    Validate that search is enabled for the model and its attribute.
      * @todo    Determine if full models should be return, or only specific fields.
      *          Autocompleters needs to be fast. If only specific fields are returned, do we need to exclude nulls in serialization?
      * @todo    Is search enabled for all models, by default, where everything is stored?
@@ -130,8 +129,10 @@ class Store
     public function searchAutocomplete($typeKey, $attributeKey, $searchValue)
     {
         $metadata = $this->getMetadataForType($typeKey);
-        $models = [];
-        return new Collection($metadata, $this, $models);
+        if (false === $metadata->isSearchEnabled()) {
+            throw StoreException::badRequest(sprintf('Search is not enabled for model type "%s"', $metadata->type));
+        }
+        return new Collection($metadata, $this, []);
     }
 
     /**
