@@ -96,7 +96,7 @@ class RestConfiguration
      */
     public function setRootEndpoint($endpoint)
     {
-        $this->rootEndpoint = $endpoint;
+        $this->rootEndpoint = sprintf('/%s', trim($endpoint, '/'));
         return $this;
     }
 
