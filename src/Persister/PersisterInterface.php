@@ -52,6 +52,20 @@ interface PersisterInterface
     public function retrieve(EntityMetadata $metadata, $identifier, Store $store);
 
     /**
+     * Queries for multiple records based on a provided set of criteria.
+     *
+     * @param   EntityMetadata      $metadata   The metadata for the model.
+     * @param   Store               $store      The model store.
+     * @param   array               $criteria   The query criteria.
+     * @param   array               $fields     Fields to include/exclude.
+     * @param   array               $sort       The sort criteria.
+     * @param   int                 $offset     The starting offset, aka the number of Models to skip.
+     * @param   int                 $limit      The number of Models to limit.
+     * @return  Collection
+     */
+    public function query(EntityMetadata $metadata, Store $store, array $criteria, array $fields = [], array $sort = [], $offset = 0, $limit = 0);
+
+    /**
      * Retrieves inverse record references for the provided owner, based on the related metadata, identifiers, and field.
      *
      * @param   EntityMetadata  $owner      The metadata for the owning model.
