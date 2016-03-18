@@ -62,7 +62,7 @@ interface AdapterInterface
      * @param   array       $inclusions The inclusion criteria for side-loading related models.
      * @param   int         $offset     The starting offset, aka the number of Models to skip.
      * @param   int         $limit      The number of Models to limit.
-     * @return  Collection
+     * @return  Rest\RestResponse
      */
     public function findQuery($typeKey, array $criteria, array $fields = [], array $sort = [], array $inclusions =[], $offset = 0, $limit = 0);
 
