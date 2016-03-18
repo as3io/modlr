@@ -55,7 +55,7 @@ abstract class AbstractCollection implements Iterator, Countable
      *
      * @param   EntityMetadata  $metadata
      * @param   Store           $store
-     * @param   Models[]        $models
+     * @param   Model[]         $models
      */
     public function __construct(EntityMetadata $metadata, Store $store, array $models = [])
     {
