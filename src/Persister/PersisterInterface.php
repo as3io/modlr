@@ -61,7 +61,7 @@ interface PersisterInterface
      * @param   array               $sort       The sort criteria.
      * @param   int                 $offset     The starting offset, aka the number of Models to skip.
      * @param   int                 $limit      The number of Models to limit.
-     * @return  Collection
+     * @return  Record[]
      */
     public function query(EntityMetadata $metadata, Store $store, array $criteria, array $fields = [], array $sort = [], $offset = 0, $limit = 0);
 
