@@ -266,7 +266,7 @@ class Store
      * Loads/creates multiple models from persistence layer Records.
      *
      * @param   string      $typeKey    The model type.
-     * @param   Record[]    $record     The persistence layer records.
+     * @param   Record[]    $records    The persistence layer records.
      * @return  Model[]
      */
     protected function loadModels($typeKey, array $records)
