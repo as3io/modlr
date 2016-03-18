@@ -53,6 +53,20 @@ interface AdapterInterface
     public function findAll($typeKey, array $identifiers = []); //, array $pagination = [], array $fields = [], array $inclusions = [], array $sort = []);
 
     /**
+     * Queries records based on a provided set of criteria.
+     *
+     * @param   string      $typeKey    The model type.
+     * @param   array       $criteria   The query criteria.
+     * @param   array       $fields     Fields to include/exclude.
+     * @param   array       $sort       The sort criteria.
+     * @param   array       $inclusions The inclusion criteria for side-loading related models.
+     * @param   int         $offset     The starting offset, aka the number of Models to skip.
+     * @param   int         $limit      The number of Models to limit.
+     * @return  Collection
+     */
+    public function findQuery($typeKey, array $criteria, array $fields = [], array $sort = [], array $inclusions =[], $offset = 0, $limit = 0);
+
+    /**
      * Creates a new model.
      *
      * @param   string              $typeKey

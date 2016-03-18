@@ -88,6 +88,16 @@ abstract class AbstractAdapter implements AdapterInterface
     /**
      * {@inheritDoc}
      */
+    public function findQuery($typeKey, array $criteria, array $fields = [], array $sort = [], array $inclusions =[], $offset = 0, $limit = 0)
+    {
+        $collection = $this->getStore()->findQuery($typeKey, $criteria, $fields, $sort, $offset, $limit);
+        $payload = $this->serializeCollection($collection);
+        return $this->createRestResponse(200, $payload);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function findRelationship($typeKey, $identifier, $fieldKey)
     {
         $model = $this->getStore()->find($typeKey, $identifier);

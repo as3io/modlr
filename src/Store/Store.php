@@ -105,12 +105,31 @@ class Store
         if (!empty($identifiers)) {
             throw StoreException::nyi('Finding multiple records with specified identifiers is not yet supported.');
         }
-        $models = [];
-        foreach ($this->retrieveRecords($typeKey, $identifiers) as $record) {
-            $models[] = $this->loadModel($typeKey, $record);
-        }
-        $collection = new Collection($metadata, $this, $models);
-        return $collection;
+        $records = $this->retrieveRecords($typeKey, $identifiers);
+        $models = $this->loadModels($typeKey, $records);
+        return new Collection($metadata, $this, $models);
+    }
+
+    /**
+     * Queries records based on a provided set of criteria.
+     *
+     * @param   string      $typeKey    The model type.
+     * @param   array       $criteria   The query criteria.
+     * @param   array       $fields     Fields to include/exclude.
+     * @param   array       $sort       The sort criteria.
+     * @param   int         $offset     The starting offset, aka the number of Models to skip.
+     * @param   int         $limit      The number of Models to limit.
+     * @return  Collection
+     */
+    public function findQuery($typeKey, array $criteria, array $fields = [], array $sort = [], $offset = 0, $limit = 0)
+    {
+        $metadata = $this->getMetadataForType($typeKey);
+
+        $persister = $this->getPersisterFor($typeKey);
+        $records = $persister->query($metadata, $this, $criteria, $fields, $sort, $offset, $limit);
+
+        $models = $this->loadModels($typeKey, $records);
+        return new Collection($metadata, $this, $models);
     }
 
     /**
@@ -241,6 +260,22 @@ class Store
 
         $this->cache->push($model);
         return $model;
+    }
+
+    /**
+     * Loads/creates multiple models from persistence layer Records.
+     *
+     * @param   string      $typeKey    The model type.
+     * @param   Record[]    $record     The persistence layer records.
+     * @return  Model[]
+     */
+    protected function loadModels($typeKey, array $records)
+    {
+        $models = [];
+        foreach ($records as $record) {
+            $models[] = $this->loadModel($typeKey, $record);
+        }
+        return $models;
     }
 
     /**

@@ -29,6 +29,11 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     const ID_TYPE = 'string';
 
     /**
+     * The model type key.
+     */
+    const TYPE_KEY = 'type';
+
+    /**
      * Whether this class is abstract.
      *
      * @var bool
