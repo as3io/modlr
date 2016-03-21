@@ -17,6 +17,12 @@ class BooleanType implements TypeInterface
         if (null === $value) {
             return $value;
         }
+        if ('true' === strtolower($value)) {
+            return true;
+        }
+        if ('false' === strtolower($value)) {
+            return false;
+        }
         return (Boolean) $value;
     }
 }
