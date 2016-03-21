@@ -25,6 +25,8 @@ class RestRequest
     const FILTER_AUTOCOMPLETE = 'autocomplete';
     const FILTER_AUTOCOMPLETE_KEY = 'key';
     const FILTER_AUTOCOMPLETE_VALUE = 'value';
+    const FILTER_QUERY = 'query';
+    const FILTER_QUERY_CRITERIA = 'criteria';
 
     /**
      * The request method, such as GET, POST, PATCH, etc.
@@ -296,6 +298,42 @@ class RestRequest
             return null;
         }
         return $this->getFilter(self::FILTER_AUTOCOMPLETE)[self::FILTER_AUTOCOMPLETE_VALUE];
+    }
+
+    /**
+     * Determines if this has the database query filter enabled.
+     *
+     * @return  bool
+     */
+    public function isQuery()
+    {
+        if (false === $this->hasFilter(self::FILTER_QUERY)) {
+            return false;
+        }
+        $autocomplete = $this->getFilter(self::FILTER_QUERY);
+        return isset($autocomplete[self::FILTER_QUERY_CRITERIA]);
+    }
+
+    /**
+     * Gets the query criteria value.
+     *
+     * @return  array
+     */
+    public function getQueryCriteria()
+    {
+        if (false === $this->isQuery()) {
+            return [];
+        }
+
+        $queryKey = self::FILTER_QUERY;
+        $criteriaKey = self::FILTER_QUERY_CRITERIA;
+
+        $decoded = @json_decode($this->getFilter($queryKey)[$criteriaKey], true);
+        if (!is_array($decoded)) {
+            $param = sprintf('%s[%s][%s]', self::PARAM_FILTERING, $queryKey, $criteriaKey);
+            throw RestException::invalidQueryParam($param, 'Was the value sent as valid JSON?');
+        }
+        return $decoded;
     }
 
     /**
