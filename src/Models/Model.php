@@ -113,6 +113,17 @@ class Model
     }
 
     /**
+     * Gets the model store.
+     *
+     * @api
+     * @return  Store
+     */
+    public function getStore()
+    {
+        return $this->store;
+    }
+
+    /**
      * Gets the composite key of the model by combining the model type with the unique id.
      *
      * @api

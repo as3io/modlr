@@ -108,6 +108,11 @@ class RelationshipMetadata extends FieldMetadata
         return 'many' === $this->getRelType();
     }
 
+    /**
+     * Determines whether the relationship is polymorphic.
+     *
+     * @return  bool
+     */
     public function isPolymorphic()
     {
         return $this->polymorphic;
