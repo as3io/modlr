@@ -16,7 +16,7 @@
     },
     "require": {
         "php": ">=5.4",
-        "symfony/http-foundation": "^2.6"
+        "symfony/http-foundation": "^2.6 || ^3.0"
     },
     "suggest": {
         "as3/modlr-api-jsonapiorg": "Provides jsonapi.org REST API spec and functionality.",
