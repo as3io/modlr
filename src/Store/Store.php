@@ -95,7 +95,7 @@ class Store
      *
      * @return  array
      */
-    public function getTypes()
+    public function getModelTypes()
     {
         return $this->mf->getAllTypeNames();
     }
