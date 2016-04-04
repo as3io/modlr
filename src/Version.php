@@ -9,10 +9,10 @@ namespace As3\Modlr;
  */
 class Version
 {
-    const VERSION = '0.2.7';
-    const ID = 207;
+    const VERSION = '0.2.8';
+    const ID = 208;
     const MAJOR = 0;
     const MINOR = 2;
-    const PATCH = 7;
+    const PATCH = 8;
     const EXTRA = '';
 }
