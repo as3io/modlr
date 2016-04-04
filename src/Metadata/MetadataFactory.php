@@ -175,7 +175,7 @@ class MetadataFactory implements MetadataFactoryInterface
     private function dispatchMetadataEvent(EntityMetadata $metadata)
     {
         $metadataArgs = new Events\MetadataArguments($metadata);
-        $this->dispatcher->dispatch(Events::postLoad, $metadataArgs);
+        $this->dispatcher->dispatch(Events::onMetadataLoad, $metadataArgs);
     }
 
     /**
