@@ -7,6 +7,7 @@ use As3\Modlr\Metadata\Driver\DriverInterface;
 use As3\Modlr\Metadata\Cache\CacheInterface;
 use As3\Modlr\Util\EntityUtility;
 use As3\Modlr\Exception\InvalidArgumentException;
+use As3\Modlr\Events\EventDispatcher;
 
 /**
  * The primary MetadataFactory service.
@@ -30,6 +31,13 @@ class MetadataFactory implements MetadataFactoryInterface
      * @var EntityUtility
      */
     private $entityUtil;
+
+    /**
+     * The event dispatcher
+     *
+     * @var EventDispatcher
+     */
+    private $dispatcher;
 
     /**
      * The Metadata cache instance.
@@ -57,11 +65,14 @@ class MetadataFactory implements MetadataFactoryInterface
      * Constructor.
      *
      * @param   DriverInterface $driver
+     * @param   EntityUtility   $entityUtil
+     * @param   EventDispatcher $dispatcher
      */
-    public function __construct(DriverInterface $driver, EntityUtility $entityUtil)
+    public function __construct(DriverInterface $driver, EntityUtility $entityUtil, EventDispatcher $dispatcher)
     {
         $this->driver = $driver;
         $this->entityUtil = $entityUtil;
+        $this->dispatcher = $dispatcher;
     }
 
     /**
@@ -144,6 +155,7 @@ class MetadataFactory implements MetadataFactoryInterface
             $this->loadSearchMetadata($loaded);
 
             $this->mergeMetadata($metadata, $loaded);
+            $this->dispatchMetadataEvent($loaded);
             $this->doPutMetadata($loaded);
         }
 
@@ -153,6 +165,17 @@ class MetadataFactory implements MetadataFactoryInterface
 
         $this->doPutMetadata($metadata);
         return $metadata;
+    }
+
+    /**
+     * Dispatches a Metadata event
+     *
+     * @param   EntityMetadata  $metadata
+     */
+    private function dispatchMetadataEvent(EntityMetadata $metadata)
+    {
+        $metadataArgs = new Events\MetadataArguments($metadata);
+        $this->dispatcher->dispatch(Events::postLoad, $metadataArgs);
     }
 
     /**
