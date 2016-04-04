@@ -9,6 +9,5 @@ namespace As3\Modlr\Metadata;
  */
 class Events
 {
-    const preLoad   = 'preLoad';
     const postLoad  = 'postLoad';
 }
