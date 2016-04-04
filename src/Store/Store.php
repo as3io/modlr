@@ -91,6 +91,16 @@ class Store
     }
 
     /**
+     * Returns the available type keys from the MetadataFactory
+     *
+     * @return  array
+     */
+    public function getModelTypes()
+    {
+        return $this->mf->getAllTypeNames();
+    }
+
+    /**
      * Finds all records (or filtered by specific identifiers) for a type.
      *
      * @todo    Add sorting and pagination (limit/skip).
