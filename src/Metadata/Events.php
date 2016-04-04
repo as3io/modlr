@@ -9,5 +9,5 @@ namespace As3\Modlr\Metadata;
  */
 class Events
 {
-    const postLoadMetadata  = 'postLoadMetadata';
+    const onMetadataLoad  = 'onMetadataLoad';
 }
