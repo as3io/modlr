@@ -392,7 +392,7 @@ class Store
         $identifiers = $collection->getIdentifiers();
         if (empty($identifiers)) {
             // Nothing to query.
-            return $collection;
+            return [];
         }
         if ($collection instanceof InverseCollection) {
             $records = $this->retrieveInverseRecords($collection->getOwner()->getType(), $collection->getType(), $collection->getIdentifiers(), $collection->getQueryField());
