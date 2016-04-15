@@ -10,6 +10,16 @@ namespace As3\Modlr\Metadata\Driver;
 interface FileLocatorInterface
 {
     /**
+     * Finds the file location for a metadata embed file.
+     *
+     * @param   string  $embedName
+     * @param   string  $extension
+     *
+     * @return  string|null
+     */
+    public function findFileForEmbed($embedName, $extension);
+
+    /**
      * Finds the file location for a metadata file (for loading an EntityMetadata class instance), based on entity type.
      *
      * @param   string  $type
