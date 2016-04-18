@@ -6,7 +6,7 @@ use As3\Modlr\Store\Store;
 use As3\Modlr\Metadata\EntityMetadata;
 
 /**
- * Represents the properties (atttributes and relationships) of a Model.
+ * Represents the properties of a Model.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */

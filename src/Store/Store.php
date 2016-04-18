@@ -4,13 +4,13 @@ namespace As3\Modlr\Store;
 
 use As3\Modlr\DataTypes\TypeFactory;
 use As3\Modlr\Events\EventDispatcher;
+use As3\Modlr\Metadata\EmbeddedPropMetadata;
 use As3\Modlr\Metadata\EmbedMetadata;
 use As3\Modlr\Metadata\EntityMetadata;
 use As3\Modlr\Metadata\MetadataFactory;
 use As3\Modlr\Metadata\RelationshipMetadata;
-use As3\Modlr\Models\AbstractCollection;
-use As3\Modlr\Models\Collection;
-use As3\Modlr\Models\InverseCollection;
+use As3\Modlr\Models\Collections;
+use As3\Modlr\Models\Embed;
 use As3\Modlr\Models\Model;
 use As3\Modlr\Persister\PersisterInterface;
 use As3\Modlr\Persister\Record;
@@ -108,7 +108,7 @@ class Store
      * @todo    Handle find all with identifiers.
      * @param   string  $typeKey        The model type.
      * @param   array   $idenitifiers   The model identifiers (optional).
-     * @return  Collection
+     * @return  Collections\Collection
      */
     public function findAll($typeKey, array $identifiers = [])
     {
@@ -118,7 +118,7 @@ class Store
         }
         $records = $this->retrieveRecords($typeKey, $identifiers);
         $models = $this->loadModels($typeKey, $records);
-        return new Collection($metadata, $this, $models);
+        return new Collections\Collection($metadata, $this, $models);
     }
 
     /**
@@ -130,7 +130,7 @@ class Store
      * @param   array       $sort       The sort criteria.
      * @param   int         $offset     The starting offset, aka the number of Models to skip.
      * @param   int         $limit      The number of Models to limit.
-     * @return  Collection
+     * @return  Collections\Collection
      */
     public function findQuery($typeKey, array $criteria, array $fields = [], array $sort = [], $offset = 0, $limit = 0)
     {
@@ -140,7 +140,7 @@ class Store
         $records = $persister->query($metadata, $this, $criteria, $fields, $sort, $offset, $limit);
 
         $models = $this->loadModels($typeKey, $records);
-        return new Collection($metadata, $this, $models);
+        return new Collections\Collection($metadata, $this, $models);
     }
 
     /**
@@ -154,7 +154,7 @@ class Store
      * @param   string  $typeKey
      * @param   string  $attributeKey
      * @param   string  $searchValue
-     * @return  Collection
+     * @return  Collections\Collection
      */
     public function searchAutocomplete($typeKey, $attributeKey, $searchValue)
     {
@@ -162,7 +162,7 @@ class Store
         if (false === $metadata->isSearchEnabled()) {
             throw StoreException::badRequest(sprintf('Search is not enabled for model type "%s"', $metadata->type));
         }
-        return new Collection($metadata, $this, []);
+        return new Collections\Collection($metadata, $this, []);
     }
 
     /**
@@ -264,7 +264,7 @@ class Store
         // Must use the type from the record to cover polymorphic models.
         $metadata = $this->getMetadataForType($record->getType());
 
-        $model = new Model($metadata, $record->getId(), $this, $record);
+        $model = new Model($metadata, $record->getId(), $this, $record->getProperties());
         $model->getState()->setLoaded();
 
         $this->dispatchLifecycleEvent(Events::postLoad, $model);
@@ -347,16 +347,52 @@ class Store
     }
 
     /**
+     * Loads an Embed model
+     *
+     * @param   EmbedMetadata   $embedMeta
+     * @param   array           $embed
+     * @return  Embed
+     */
+    public function loadEmbed(EmbedMetadata $embedMeta, array $embed)
+    {
+        return new Embed($embedMeta, $this, $embed);
+    }
+
+    /**
      * Loads a has-many inverse model collection.
      *
      * @param   RelationshipMetadata    $relMeta
      * @param   Model                   $owner
-     * @return  InverseCollection
+     * @return  Collections\InverseCollection
      */
     public function createInverseCollection(RelationshipMetadata $relMeta, Model $owner)
     {
         $metadata = $this->getMetadataForType($relMeta->getEntityType());
-        return new InverseCollection($metadata, $this, $owner, $relMeta->inverseField);
+        return new Collections\InverseCollection($metadata, $this, $owner, $relMeta->inverseField);
+    }
+
+    /**
+     * Loads a has-many embed collection.
+     *
+     * @param   EmbeddedPropMetadata    $relMeta
+     * @param   array|null              $embedDocs
+     * @return  Collections\EmbedCollection
+     */
+    public function createEmbedCollection(EmbeddedPropMetadata $embededPropMeta, array $embedDocs = null)
+    {
+        if (empty($embedDocs)) {
+            $embedDocs = [];
+        }
+        if (false === $this->isSequentialArray($embedDocs)) {
+            throw StoreException::badRequest(sprintf('Improper has-many data detected for embed "%s" - a sequential array is required.', $embededPropMeta->getKey()));
+        }
+
+        $embeds = [];
+        foreach ($embedDocs as $embedDoc) {
+            $embeds[] = $this->loadEmbed($embededPropMeta->embedMeta, $embedDoc);
+        }
+
+        return new Collections\EmbedCollection($embededPropMeta->embedMeta, $this, $embeds);
     }
 
     /**
@@ -364,7 +400,7 @@ class Store
      *
      * @param   RelationshipMetadata    $relMeta
      * @param   array|null              $references
-     * @return  Collection
+     * @return  Collections\Collection
      */
     public function createCollection(RelationshipMetadata $relMeta, array $references = null)
     {
@@ -373,29 +409,29 @@ class Store
             $references = [];
         }
         if (false === $this->isSequentialArray($references)) {
-            throw StoreException::badRequest(sprintf('Improper has-many data detected for relationship "%s" - a sequential array is required.', $relatedTypeKey));
+            throw StoreException::badRequest(sprintf('Improper has-many data detected for relationship "%s" - a sequential array is required.', $relMeta->getKey()));
         }
         $models = [];
         foreach ($references as $reference) {
             $models[] = $this->loadProxyModel($reference['type'], $reference['id']);
         }
-        return new Collection($metadata, $this, $models);
+        return new Collections\Collection($metadata, $this, $models);
     }
 
     /**
      * Loads/fills a collection of empty (unloaded) models with data from the persistence layer.
      *
-     * @param   AbstractCollection  $collection
+     * @param   Collections\AbstractCollection  $collection
      * @return  Model[]
      */
-    public function loadCollection(AbstractCollection $collection)
+    public function loadCollection(Collections\AbstractCollection $collection)
     {
         $identifiers = $collection->getIdentifiers();
         if (empty($identifiers)) {
             // Nothing to query.
             return [];
         }
-        if ($collection instanceof InverseCollection) {
+        if ($collection instanceof Collections\InverseCollection) {
             $records = $this->retrieveInverseRecords($collection->getOwner()->getType(), $collection->getType(), $collection->getIdentifiers(), $collection->getQueryField());
         } else {
             $records = $this->retrieveRecords($collection->getType(), $collection->getIdentifiers());

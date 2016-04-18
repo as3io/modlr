@@ -48,15 +48,15 @@ class Model extends AbstractModel
     /**
      * Constructor.
      *
-     * @param   EntityMetadata  $metadata   The internal entity metadata that supports this Model.
-     * @param   string          $identifier The database identifier.
-     * @param   Store           $store      The model store service for handling persistence operations.
-     * @param   Record|null     $record     The model's attributes and relationships from the db layer to init the model with. New models will constructed with a null record.
+     * @param   EntityMetadata  $metadata       The internal entity metadata that supports this Model.
+     * @param   string          $identifier     The database identifier.
+     * @param   Store           $store          The model store service for handling persistence operations.
+     * @param   array|null      $properties     The model's properties from the db layer to init the model with. New models will constructed with a null record.
      */
-    public function __construct(EntityMetadata $metadata, $identifier, Store $store, Record $record = null)
+    public function __construct(EntityMetadata $metadata, $identifier, Store $store, array $properties = null)
     {
         $this->identifier = $identifier;
-        parent::__construct($metadata, $store, $record);
+        parent::__construct($metadata, $store, $properties);
     }
 
     /**
@@ -217,13 +217,13 @@ class Model extends AbstractModel
      * Overloaded to support relationships.
      *
      */
-    public function initialize(Record $record = null)
+    public function initialize(array $properties = null)
     {
         $hasOne = [];
         $hasMany = [];
 
-        if (null !== $record) {
-            foreach ($record->getProperties() as $key => $value) {
+        if (null !== $properties) {
+            foreach ($properties as $key => $value) {
                 if (true === $this->isHasOne($key)) {
                     // Load hasOne relationship.
                     $hasOne[$key] = $this->getStore()->loadProxyModel($value['type'], $value['id']);
@@ -239,14 +239,14 @@ class Model extends AbstractModel
             if (true === $relMeta->isInverse) {
                 $hasMany[$key] = $this->getStore()->createInverseCollection($relMeta, $this);
             } else {
-                $references = (null === $record || !isset($record->getProperties()[$key])) ? [] : $record->getProperties()[$key];
+                $references = !isset($properties[$key]) ? [] : $properties[$key];
                 $hasMany[$key] = $this->getStore()->createCollection($relMeta, $references);
             }
         }
 
         $this->hasOneRelationships  = (null === $this->hasOneRelationships) ? new Relationships\HasOne($hasOne) : $this->hasOneRelationships->replace($hasOne);
         $this->hasManyRelationships = (null === $this->hasManyRelationships) ? new Relationships\HasMany($hasMany) : $this->hasManyRelationships->replace($hasMany);
-        return parent::initialize($record);
+        return parent::initialize($properties);
     }
 
     /**
@@ -439,6 +439,26 @@ class Model extends AbstractModel
             unset($properties[$fieldKey]);
         }
         return parent::filterNotSavedProperties($properties);
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * Overloaded to support global model defaults.
+     *
+     */
+    protected function applyDefaultAttrValues(array $attributes = [])
+    {
+        $attributes = parent::applyDefaultAttrValues($attributes);
+
+        // Set defaults for the entire entity.
+        foreach ($this->getMetadata()->defaultValues as $key => $value) {
+            if (isset($attributes[$key])) {
+                continue;
+            }
+            $attributes[$key] = $this->convertAttributeValue($key, $value);
+        }
+        return $attributes;
     }
 
     /**

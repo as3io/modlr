@@ -61,14 +61,14 @@ abstract class AbstractModel
      *
      * @param   AttributeInterface  $metadata
      * @param   Store               $store
-     * @param   Record|null         $record
+     * @param   array|null          $properties
      */
-    public function __construct(AttributeInterface $metadata, Store $store, Record $record = null)
+    public function __construct(AttributeInterface $metadata, Store $store, array $properties = null)
     {
         $this->state = new State();
         $this->metadata = $metadata;
         $this->store = $store;
-        $this->initialize($record);
+        $this->initialize($properties);
     }
 
     /**
@@ -87,11 +87,29 @@ abstract class AbstractModel
                 continue;
             }
 
-            if (true === $this->isEmbed($key)) {
+            if (true === $this->isEmbedHasOne($key)) {
+                if (empty($value)) {
+                    $this->clear($key);
+                    continue;
+                }
+                $value = $this->getStore()->loadEmbed($this->getMetadata()->getEmbed($key)->embedMeta, $value);
                 $this->set($key, $value);
                 continue;
             }
         }
+
+        foreach ($this->getMetadata()->getEmbeds() as $key => $embeddedPropMeta) {
+            if (true === $embeddedPropMeta->isOne() || !isset($properties[$key])) {
+                continue;
+            }
+
+            $this->clear($key);
+            $collection = $this->getStore()->createEmbedCollection($embeddedPropMeta, $properties[$key]);
+            foreach ($collection as $value) {
+                $this->pushEmbed($key, $value);
+            }
+        }
+
         $this->doDirtyCheck();
         return $this;
     }
@@ -165,6 +183,8 @@ abstract class AbstractModel
     {
         return [
             'attributes'    => $this->filterNotSavedProperties($this->attributes->calculateChangeSet()),
+            'embedOne'      => $this->hasOneEmbeds->calculateChangeSet(),
+            'embedMany'     => $this->hasManyEmbeds->calculateChangeSet(),
         ];
     }
 
@@ -205,18 +225,18 @@ abstract class AbstractModel
      * Initializes the model and loads its attributes and relationships.
      *
      * @todo    Made public so collections can initialize models. Not sure if we want this??
-     * @param   Record|null   $record     The db attributes and relationships to apply.
+     * @param   array|null      $properties     The db properties to apply.
      * @return  self
      */
-    public function initialize(Record $record = null)
+    public function initialize(array $properties = null)
     {
         $attributes = [];
         $embedOne = [];
         $embedMany = [];
 
-        if (null !== $record) {
+        if (null !== $properties) {
             $attributes = $this->applyDefaultAttrValues($attributes);
-            foreach ($record->getProperties() as $key => $value) {
+            foreach ($properties as $key => $value) {
                 if (true === $this->isAttribute($key)) {
                     // Load attribute.
                     $attributes[$key] = $this->convertAttributeValue($key, $value);
@@ -232,11 +252,9 @@ abstract class AbstractModel
             if (true === $embeddedPropMeta->isOne()) {
                 continue;
             }
-            $embeds = (null === $record || !isset($record->getProperties()[$key])) ? [] : $record->getProperties()[$key];
-            $embedMany[$key] = $this->getStore()->createEmbedCollection($embeddedPropMeta->embedMeta, $embeds);
+            $embeds = !isset($properties[$key]) ? [] : $properties[$key];
+            $embedMany[$key] = $this->getStore()->createEmbedCollection($embeddedPropMeta, $embeds);
         }
-
-
 
         $this->attributes    = (null === $this->attributes) ? new Attributes($attributes) : $this->attributes->replace($attributes);
         $this->hasOneEmbeds  = (null === $this->hasOneEmbeds) ? new Embeds\HasOne($embedOne) : $this->hasOneEmbeds->replace($embedOne);
@@ -265,7 +283,10 @@ abstract class AbstractModel
      */
     public function isDirty()
     {
-        return true === $this->attributes->areDirty();
+        return true === $this->attributes->areDirty()
+            || true === $this->hasOneEmbeds->areDirty()
+            || true === $this->hasManyEmbeds->areDirty()
+        ;
     }
 
     /**
@@ -413,14 +434,6 @@ abstract class AbstractModel
             }
             $attributes[$key] = $this->convertAttributeValue($key, $attrMeta->defaultValue);
         }
-
-        // Set defaults for the entire entity.
-        foreach ($this->getMetadata()->defaultValues as $key => $value) {
-            if (isset($attributes[$key])) {
-                continue;
-            }
-            $attributes[$key] = $this->convertAttributeValue($key, $value);
-        }
         return $attributes;
     }
 
@@ -504,6 +517,25 @@ abstract class AbstractModel
     protected function getDataType($key)
     {
         return $this->getMetadata()->getAttribute($key)->dataType;
+    }
+
+    /**
+     * Gets an embed value.
+     *
+     * @param   string  $key    The embed key (field) name.
+     * @return  Embed|Collections\EmbedCollection|null
+     */
+    protected function getEmbed($key)
+    {
+        if (true === $this->isEmbedHasOne($key)) {
+            $this->touch();
+            return $this->hasOneEmbeds->get($key);
+        }
+        if (true === $this->isEmbedHasMany($key)) {
+            $this->touch();
+            return $this->hasManyEmbeds->get($key);
+        }
+        return null;
     }
 
     /**
