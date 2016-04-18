@@ -3,8 +3,6 @@
 namespace As3\Modlr\Metadata;
 
 use As3\Modlr\Exception\MetadataException;
-use As3\Modlr\Metadata\Interfaces\AttributeInterface;
-use As3\Modlr\Metadata\Interfaces\RelationshipInterface;
 
 /**
  * Defines the metadata for an entity mixin.
@@ -13,9 +11,27 @@ use As3\Modlr\Metadata\Interfaces\RelationshipInterface;
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class MixinMetadata implements AttributeInterface, RelationshipInterface
+class MixinMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedInterface, Interfaces\RelationshipInterface
 {
+    /**
+     * Uses attributes.
+     */
+    use Traits\AttributesTrait;
+
+    /**
+     * Uses embeds.
+     */
+    use Traits\EmbedsTrait;
+
+    /**
+     * Uses merged properties.
+     */
     use Traits\PropertiesTrait;
+
+    /**
+     * Uses relationships.
+     */
+    use Traits\RelationshipsTrait;
 
     /**
      * The mixin name/key.
@@ -32,5 +48,77 @@ class MixinMetadata implements AttributeInterface, RelationshipInterface
     public function __construct($name)
     {
         $this->name = $name;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getProperties()
+    {
+        return array_merge($this->getAttributes(), $this->getRelationships(), $this->getEmbeds());
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function applyMixinProperties(MixinMetadata $mixin)
+    {
+        foreach ($mixin->getAttributes() as $attribute) {
+            if (true === $this->hasAttribute($attribute->key)) {
+                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'attribute', $attribute->key);
+            }
+            $this->addAttribute($attribute);
+        }
+        foreach ($mixin->getRelationships() as $relationship) {
+            if (true === $this->hasRelationship($relationship->key)) {
+                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'relationship', $relationship->key);
+            }
+            $this->addRelationship($relationship);
+        }
+        foreach ($mixin->getEmbeds() as $embed) {
+            if (true === $this->hasEmbed($embed->key)) {
+                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'embed', $embed->key);
+            }
+            $this->addEmbed($embed);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function validateAttribute(AttributeMetadata $attribute)
+    {
+        if (true === $this->hasRelationship($attribute->getKey())) {
+            throw MetadataException::fieldKeyInUse('attribute', 'relationship', $attribute->getKey(), $this->type);
+        }
+        if (true === $this->hasEmbed($attribute->getKey())) {
+            throw MetadataException::fieldKeyInUse('attribute', 'embed', $attribute->getKey(), $this->type);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function validateEmbed(EmbeddedPropMetadata $embed)
+    {
+        if (true === $this->hasAttribute($embed->getKey())) {
+            throw MetadataException::fieldKeyInUse('embed', 'attribute', $embed->getKey(), $this->type);
+        }
+        if (true === $this->hasRelationship($embed->getKey())) {
+            throw MetadataException::fieldKeyInUse('embed', 'relationship', $embed->getKey(), $this->type);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function validateRelationship(RelationshipMetadata $relationship)
+    {
+        if (true === $this->hasAttribute($relationship->getKey())) {
+            throw MetadataException::fieldKeyInUse('relationship', 'attribute', $relationship->getKey(), $this->type);
+        }
+        if (true === $this->hasEmbed($relationship->getKey())) {
+            throw MetadataException::fieldKeyInUse('relationship', 'embed', $relationship->getKey(), $this->type);
+        }
     }
 }

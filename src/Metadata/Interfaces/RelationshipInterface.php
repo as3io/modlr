@@ -21,6 +21,15 @@ interface RelationshipInterface extends PropertyInterface
     public function addRelationship(RelationshipMetadata $relationship);
 
     /**
+     * Gets a relationship field from the implementing object.
+     * Returns null if the relationship does not exist.
+     *
+     * @param   string  $key
+     * @return  RelationshipMetadata|null
+     */
+    public function getRelationship($key);
+
+    /**
      * Gets all relationship fields for the implementing metadata object.
      *
      * @return  RelationshipMetadata[]
@@ -36,11 +45,9 @@ interface RelationshipInterface extends PropertyInterface
     public function hasRelationship($key);
 
     /**
-     * Gets a relationship field from the implementing object.
-     * Returns null if the relationship does not exist.
+     * Determines if any relationship fields exist on the implementing metadata object.
      *
-     * @param   string  $key
-     * @return  RelationshipMetadata|null
+     * @return  bool
      */
-    public function getRelationship($key);
+    public function hasRelationships();
 }
