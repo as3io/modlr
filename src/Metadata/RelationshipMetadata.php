@@ -132,6 +132,7 @@ class RelationshipMetadata extends FieldMetadata
      */
     public function setRelType($relType)
     {
+        $relType = strtolower($relType);
         $this->validateType($relType);
         $this->relType = $relType;
         return $this;

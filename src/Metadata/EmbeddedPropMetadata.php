@@ -37,8 +37,28 @@ class EmbeddedPropMetadata extends FieldMetadata
     public function __construct($key, $embedType, EmbedMetadata $embedMeta, $mixin = false)
     {
         $this->embedMeta = $embedMeta;
-        $this->embedType = $embedType;
+        $this->setEmbedType($embedType);
         parent::__construct($key, $mixin);
+    }
+
+    /**
+     * Determines if this is a one (single) embed.
+     *
+     * @return  bool
+     */
+    public function isOne()
+    {
+        return 'one' === $this->embedType;
+    }
+
+    /**
+     * Determines if this is a many embed.
+     *
+     * @return bool
+     */
+    public function isMany()
+    {
+        return 'many' === $this->embedType;
     }
 
     /**
@@ -49,6 +69,7 @@ class EmbeddedPropMetadata extends FieldMetadata
      */
     public function setEmbedType($embedType)
     {
+        $embedType = strtolower($embedType);
         $this->validateType($embedType);
         $this->embedType = $embedType;
         return $this;

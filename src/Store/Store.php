@@ -4,6 +4,7 @@ namespace As3\Modlr\Store;
 
 use As3\Modlr\DataTypes\TypeFactory;
 use As3\Modlr\Events\EventDispatcher;
+use As3\Modlr\Metadata\EmbedMetadata;
 use As3\Modlr\Metadata\EntityMetadata;
 use As3\Modlr\Metadata\MetadataFactory;
 use As3\Modlr\Metadata\RelationshipMetadata;
@@ -498,6 +499,22 @@ class Store
 
         $this->dispatchLifecycleEvent(Events::postUpdate, $model);
         return $model;
+    }
+
+    /**
+     * Validates that an embed name/type can be set to an owning embed metadata type.
+     *
+     * @param   EmbedMetadata   $owningMeta     The metadata the type will be added to.
+     * @param   string          $nameToCheck    The name to check.
+     * @return  self
+     * @throws  StoreException  If the type to add is not supported.
+     */
+    public function validateEmbedSet(EmbedMetadata $owningMeta, $nameToCheck)
+    {
+        if ($owningMeta->name !== $nameToCheck) {
+            throw StoreException::badRequest(sprintf('The embed type "%s" cannot be added to "%s", as it is not supported.', $nameToCheck, $owningMeta->name));
+        }
+        return $this;
     }
 
     /**
