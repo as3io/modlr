@@ -60,6 +60,18 @@ class Model extends AbstractModel
     }
 
     /**
+     * Cloner.
+     * Ensures sub objects are also cloned.
+     *
+     */
+    public function __clone()
+    {
+        parent::__clone();
+        $this->hasOneRelationships = clone $this->hasOneRelationships;
+        $this->hasManyRelationships = clone $this->hasManyRelationships;
+    }
+
+    /**
      * {@inheritdoc}
      *
      * Overloaded to support relationships.

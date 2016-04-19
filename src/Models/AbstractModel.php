@@ -72,6 +72,19 @@ abstract class AbstractModel
     }
 
     /**
+     * Cloner.
+     * Ensures sub objects are also cloned.
+     *
+     */
+    public function __clone()
+    {
+        $this->attributes = clone $this->attributes;
+        $this->hasOneEmbeds = clone $this->hasOneEmbeds;
+        $this->hasManyEmbeds = clone $this->hasManyEmbeds;
+        $this->state = clone $this->state;
+    }
+
+    /**
      * Applies an array of raw model properties to the model instance.
      *
      * @todo    Confirm that we want this method. It's currently used for creating and updating via the API adapter. Also see initialize()
@@ -92,8 +105,9 @@ abstract class AbstractModel
                     $this->clear($key);
                     continue;
                 }
-                $value = $this->getStore()->loadEmbed($this->getMetadata()->getEmbed($key)->embedMeta, $value);
-                $this->set($key, $value);
+                $embed = $this->get($key) ?: $this->createEmbedFor($key, $value);
+                $embed->apply($value);
+                $this->set($key, $embed);
                 continue;
             }
         }
@@ -152,7 +166,11 @@ abstract class AbstractModel
         if (false === $this->isEmbed($key)) {
             throw new \RuntimeException(sprintf('Unable to create an Embed instance for property key "%s" - the property is not an embed.', $key));
         }
-        return new Embed($this->getMetadata()->getEmbed($key)->embedMeta, $this->getStore());
+
+        $embedMeta = $this->getMetadata()->getEmbed($key)->embedMeta;
+        $embed = $this->getStore()->loadEmbed($embedMeta, []);
+        $embed->getState()->setNew();
+        return $embed;
     }
 
     /**
@@ -161,7 +179,7 @@ abstract class AbstractModel
      *
      * @api
      * @param   string  $key    The property field key.
-     * @return  Model|Model[]|Embed|Embed[]|null|mixed
+     * @return  Model|Model[]|Embed|Collections\EmbedCollection|null|mixed
      */
     public function get($key)
     {
@@ -385,6 +403,8 @@ abstract class AbstractModel
     public function rollback()
     {
         $this->attributes->rollback();
+        $this->hasOneEmbeds->rollback();
+        $this->hasManyEmbeds->rollback();
         $this->doDirtyCheck();
         return $this;
     }

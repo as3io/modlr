@@ -17,21 +17,21 @@ abstract class Properties
      *
      * @var array
      */
-    private $original = [];
+    protected $original = [];
 
     /**
      * The current/modified property values.
      *
      * @var array
      */
-    private $current = [];
+    protected $current = [];
 
     /**
      * Any properties that have been flagged for removal.
      *
      * @var array
      */
-    private $remove = [];
+    protected $remove = [];
 
     /**
      * Constructor.
