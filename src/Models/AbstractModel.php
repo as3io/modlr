@@ -117,6 +117,7 @@ abstract class AbstractModel
                 continue;
             }
 
+            // @todo This will always mark the model as dirty, even if the applied embed values are the same as the original.
             $this->clear($key);
             $collection = $this->getStore()->createEmbedCollection($embeddedPropMeta, $properties[$key]);
             foreach ($collection as $value) {
