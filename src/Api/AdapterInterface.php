@@ -3,7 +3,7 @@
 namespace As3\Modlr\Api;
 
 use As3\Modlr\Metadata\EntityMetadata;
-use As3\Modlr\Models\Collection;
+use As3\Modlr\Models\Collections\Collection;
 use As3\Modlr\Models\Model;
 use As3\Modlr\Rest;
 use As3\Modlr\Store\Store;
