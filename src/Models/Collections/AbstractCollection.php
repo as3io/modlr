@@ -165,7 +165,7 @@ abstract class AbstractCollection implements Iterator, Countable
     public function hasDirtyModels()
     {
         foreach ($this->models as $model) {
-            if (true === $model->getState()->is('dirty')) {
+            if (true === $model->isDirty()) {
                 return true;
             }
         }
