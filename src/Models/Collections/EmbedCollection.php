@@ -33,6 +33,18 @@ class EmbedCollection extends AbstractCollection
     }
 
     /**
+     * Creates a new Embed model instance based on the collection
+     *
+     * @return  Embed
+     */
+    public function createNewEmbed()
+    {
+        $embed = $this->store->loadEmbed($this->getMetadata(), []);
+        $embed->getState()->setNew();
+        return $embed;
+    }
+
+    /**
      * Gets the metadata for the model collection.
      *
      * @return  EmbedMetadata
