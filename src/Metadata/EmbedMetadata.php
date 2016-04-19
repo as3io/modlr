@@ -64,13 +64,13 @@ class EmbedMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedIn
     {
         foreach ($mixin->getAttributes() as $attribute) {
             if (true === $this->hasAttribute($attribute->key)) {
-                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'attribute', $attribute->key);
+                throw MetadataException::mixinPropertyExists($this->name, $mixin->name, 'attribute', $attribute->key);
             }
             $this->addAttribute($attribute);
         }
         foreach ($mixin->getEmbeds() as $embed) {
             if (true === $this->hasEmbed($embed->key)) {
-                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'embed', $embed->key);
+                throw MetadataException::mixinPropertyExists($this->name, $mixin->name, 'embed', $embed->key);
             }
             $this->addEmbed($embed);
         }

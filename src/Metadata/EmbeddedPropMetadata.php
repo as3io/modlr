@@ -15,7 +15,7 @@ class EmbeddedPropMetadata extends FieldMetadata
     /**
      * The embedded metadata for this embedded property.
      *
-     * @var string
+     * @var EmbedMetadata
      */
     public $embedMeta;
 
@@ -64,7 +64,7 @@ class EmbeddedPropMetadata extends FieldMetadata
     /**
      * Sets the embed type: one or many.
      *
-     * @param   string  $relType
+     * @param   string  $embedType
      * @return  self
      */
     public function setEmbedType($embedType)
@@ -78,7 +78,7 @@ class EmbeddedPropMetadata extends FieldMetadata
     /**
      * Validates the embed type.
      *
-     * @param   string  $type
+     * @param   string  $embedType
      * @return  bool
      * @throws  MetadataException
      */

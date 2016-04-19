@@ -54,7 +54,7 @@ class InverseCollection extends ModelCollection
      */
     public function clear()
     {
-       throw new \BadMethodCallException('You cannot clear inverse collections.');
+        throw new \BadMethodCallException('You cannot clear inverse collections.');
     }
 
     /**

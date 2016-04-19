@@ -35,7 +35,7 @@ abstract class ModelCollection extends AbstractCollection
     /**
      * Returns all models in this collection without triggering auto-loading.
      *
-     * @return  Model[]
+     * @return  AbstractModel[]
      */
     public function allWithoutLoad()
     {
@@ -63,7 +63,7 @@ abstract class ModelCollection extends AbstractCollection
     /**
      * Gets the query field for this collection.
      *
-     * @return  bool
+     * @return  string
      */
     abstract public function getQueryField();
 

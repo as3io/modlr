@@ -49,7 +49,7 @@ abstract class AbstractAdapter implements AdapterInterface
      *
      * @param   SerializerInterface     $serializer
      * @param   NormalizerInterface     $normalizer
-     * @param   StoreInterface          $store
+     * @param   Store                   $store
      * @param   Rest\RestConfiguration  $config
      */
     public function __construct(SerializerInterface $serializer, NormalizerInterface $normalizer, Store $store, Rest\RestConfiguration $config)
@@ -250,7 +250,7 @@ abstract class AbstractAdapter implements AdapterInterface
      */
     public function serialize(Model $model = null)
     {
-        $serialized = $this->getSerializer()->serialize($model, $this);
+        $serialized = (String) $this->getSerializer()->serialize($model, $this);
         $this->validateSerialization($serialized);
         return new Rest\RestPayload($serialized);
     }
@@ -260,7 +260,7 @@ abstract class AbstractAdapter implements AdapterInterface
      */
     public function serializeArray(array $models)
     {
-        $serialized = $this->getSerializer()->serializeArray($models, $this);
+        $serialized = (String) $this->getSerializer()->serializeArray($models, $this);
         $this->validateSerialization($serialized);
         return new Rest\RestPayload($serialized);
     }
@@ -270,7 +270,7 @@ abstract class AbstractAdapter implements AdapterInterface
      */
     public function serializeCollection(Collection $collection)
     {
-        $serialized = $this->getSerializer()->serializeCollection($collection, $this);
+        $serialized = (String) $this->getSerializer()->serializeCollection($collection, $this);
         $this->validateSerialization($serialized);
         return new Rest\RestPayload($serialized);
     }

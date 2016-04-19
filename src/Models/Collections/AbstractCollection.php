@@ -19,7 +19,7 @@ abstract class AbstractCollection implements Iterator, Countable
      * Models added to this collection.
      * Tracks newly added models for rollback/change purposes.
      *
-     * @var Model[]
+     * @var AbstractModel[]
      */
     protected $added = [];
 
@@ -41,7 +41,7 @@ abstract class AbstractCollection implements Iterator, Countable
     /**
      * Original models assigned to this collection.
      *
-     * @var Model[]
+     * @var AbstractModel[]
      */
     protected $original = [];
 
@@ -56,7 +56,7 @@ abstract class AbstractCollection implements Iterator, Countable
      * Models removed from this collection.
      * Tracks removed models for rollback/change purposes.
      *
-     * @var Model[]
+     * @var AbstractModel[]
      */
     protected $removed = [];
 

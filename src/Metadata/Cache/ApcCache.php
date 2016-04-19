@@ -24,14 +24,12 @@ class ApcCache implements CacheInterface
      *
      * @var string
      */
-     private $prefix = 'ModlrData';
+    private $prefix = 'ModlrData';
 
     /**
      * Constructor.
      *
-     * @param   Redis   $redis
      * @param   int     $ttl
-     * @param   int     $serializer
      */
     public function __construct($ttl = 3600)
     {

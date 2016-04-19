@@ -3,6 +3,7 @@
 namespace As3\Modlr\Metadata\Driver;
 
 use As3\Modlr\Exception\MetadataException;
+use As3\Modlr\Metadata\EmbedMetadata;
 use As3\Modlr\Metadata\EntityMetadata;
 use As3\Modlr\Metadata\MixinMetadata;
 use As3\Modlr\StorageLayerManager;
@@ -51,7 +52,6 @@ abstract class AbstractFileDriver implements DriverInterface
      * Constructor.
      *
      * @param   FileLocatorInterface    $fileLocator
-     * @param   Validator               $validator
      * @param   StorageLayerManager     $storageManager
      */
     public function __construct(FileLocatorInterface $fileLocator, StorageLayerManager $storageManager)
@@ -65,7 +65,8 @@ abstract class AbstractFileDriver implements DriverInterface
      */
     public function loadMetadataForEmbed($embedName)
     {
-        return $this->doLoadMetadata('embed', $embedName);
+        $metadata = $this->doLoadMetadata('embed', $embedName);
+        return $metadata instanceof EmbedMetadata ? $metadata : null;
     }
 
     /**
@@ -73,7 +74,8 @@ abstract class AbstractFileDriver implements DriverInterface
      */
     public function loadMetadataForType($modelType)
     {
-        return $this->doLoadMetadata('model', $modelType);
+        $metadata = $this->doLoadMetadata('model', $modelType);
+        return $metadata instanceof EntityMetadata ? $metadata : null;
     }
 
     /**
@@ -81,7 +83,8 @@ abstract class AbstractFileDriver implements DriverInterface
      */
     public function loadMetadataForMixin($mixinName)
     {
-        return $this->doLoadMetadata('mixin', $mixinName);
+        $metadata = $this->doLoadMetadata('mixin', $mixinName);
+        return $metadata instanceof MixinMetadata ? $metadata : null;
     }
 
     /**
@@ -169,7 +172,7 @@ abstract class AbstractFileDriver implements DriverInterface
      * @param string    $embedName
      * @param string    $path
      *
-     * @return  EmbedMetadata|null
+     * @return  EmbedMetadata
      */
     abstract protected function loadEmbedFromFile($embedName, $path);
 

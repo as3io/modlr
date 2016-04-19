@@ -3,7 +3,6 @@
 namespace As3\Modlr\Models;
 
 use As3\Modlr\Metadata\Interfaces\AttributeInterface;
-use As3\Modlr\Persister\Record;
 use As3\Modlr\Store\Store;
 
 /**
@@ -357,13 +356,13 @@ abstract class AbstractModel
      *
      * @api
      * @param   string  $key
-     * @param   Embed   $model
+     * @param   Embed   $embed
      * @return  self
      */
     public function pushEmbed($key, Embed $embed)
     {
         if (true === $this->isEmbedHasOne($key)) {
-            return $this->setEmbedHasOne($key, $model);
+            return $this->setEmbedHasOne($key, $embed);
         }
         if (false === $this->isEmbedHasMany($key)) {
             return $this;
@@ -380,7 +379,7 @@ abstract class AbstractModel
      *
      * @api
      * @param   string  $key    The has-many embed key.
-     * @param   Model   $embed  The embed to remove from the collection.
+     * @param   Embed   $embed  The embed to remove from the collection.
      * @return  self
      */
     public function removeEmbed($key, Embed $embed)
@@ -437,7 +436,7 @@ abstract class AbstractModel
      */
     public function usesMixin($name)
     {
-        return $this->metadata->hasMixin($name);
+        return $this->getMetadata()->hasMixin($name);
     }
 
     /**
@@ -481,7 +480,7 @@ abstract class AbstractModel
         return $this;
     }
 
-     /**
+    /**
      * Removes properties marked as non-saved.
      *
      * @param   array   $properties

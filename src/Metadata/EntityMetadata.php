@@ -67,7 +67,7 @@ class EntityMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedI
     /**
      * The entity type this entity extends.
      *
-     * @var bool
+     * @var string|null
      */
     public $extends;
 
@@ -82,7 +82,7 @@ class EntityMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedI
     /**
      * The persistence metadata for this entity.
      *
-     * @var StorageLayerInterface
+     * @var Interfaces\StorageLayerInterface
      */
     public $persistence;
 
@@ -96,7 +96,7 @@ class EntityMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedI
     /**
      * The search metadata for this entity.
      *
-     * @var StorageLayerInterface
+     * @var Interfaces\StorageLayerInterface
      */
     public $search;
 
@@ -334,7 +334,7 @@ class EntityMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedI
     /**
      * Merges attributes with this instance's attributes.
      *
-     * @param   array   $toAdd
+     * @param   AttributeMetadata[]     $toAdd
      * @return  self
      */
     private function mergeAttributes(array $toAdd)
@@ -348,7 +348,7 @@ class EntityMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedI
     /**
      * Merges embeds with this instance's embeds.
      *
-     * @param   array   $toAdd
+     * @param   EmbeddedPropMetadata[]  $toAdd
      * @return  self
      */
     private function mergeEmbeds(array $toAdd)
@@ -362,7 +362,7 @@ class EntityMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedI
     /**
      * Merges mixins with this instance's mixins.
      *
-     * @param   array   $toAdd
+     * @param   MixinMetadata[]     $toAdd
      * @return  self
      */
     private function mergeMixins(array $toAdd)
@@ -378,7 +378,7 @@ class EntityMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedI
     /**
      * Merges relationships with this instance's relationships.
      *
-     * @param   array   $toAdd
+     * @param   RelationshipMetadata[]  $toAdd
      * @return  self
      */
     private function mergeRelationships(array $toAdd)

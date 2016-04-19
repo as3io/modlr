@@ -3,7 +3,6 @@
 namespace As3\Modlr\Models;
 
 use As3\Modlr\Models\Relationships;
-use As3\Modlr\Persister\Record;
 use As3\Modlr\Store\Store;
 use As3\Modlr\Metadata\EntityMetadata;
 
@@ -15,12 +14,13 @@ use As3\Modlr\Metadata\EntityMetadata;
 class Model extends AbstractModel
 {
     /**
-     * The id value of this model.
-     * Always converted to a string when in the model context.
+     * Enables/disables collection auto-initialization on iteration.
+     * Will not load/fill the collection from the database if false.
+     * Is useful for large hasMany iterations where only id and type are required (ala serialization).
      *
-     * @var string
+     * @var bool
      */
-    protected $identifier;
+    protected $collectionAutoInit = true;
 
     /**
      * The Model's has-one relationships
@@ -37,13 +37,20 @@ class Model extends AbstractModel
     protected $hasManyRelationships;
 
     /**
-     * Enables/disables collection auto-initialization on iteration.
-     * Will not load/fill the collection from the database if false.
-     * Is useful for large hasMany iterations where only id and type are required (ala serialization).
+     * The id value of this model.
+     * Always converted to a string when in the model context.
      *
-     * @var bool
+     * @var string
      */
-    protected $collectionAutoInit = true;
+    protected $identifier;
+
+
+    /**
+     * The metadata that defines this Model.
+     *
+     * @var EntityMetadata
+     */
+    protected $metadata;
 
     /**
      * Constructor.
@@ -210,6 +217,17 @@ class Model extends AbstractModel
     public function getId()
     {
         return $this->identifier;
+    }
+
+    /**
+     * Gets the metadata for this model.
+     *
+     * @api
+     * @return  EntityMetadata
+     */
+    public function getMetadata()
+    {
+        return $this->metadata;
     }
 
     /**

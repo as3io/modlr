@@ -3,7 +3,6 @@
 namespace As3\Modlr\Models;
 
 use As3\Modlr\Metadata\EmbedMetadata;
-use As3\Modlr\Persister\Record;
 use As3\Modlr\Store\Store;
 
 /**
@@ -13,6 +12,13 @@ use As3\Modlr\Store\Store;
  */
 class Embed extends AbstractModel
 {
+    /**
+     * The metadata that defines this Model.
+     *
+     * @var EmbedMetadata
+     */
+    protected $metadata;
+
     /**
      * Constructor.
      *
@@ -27,6 +33,18 @@ class Embed extends AbstractModel
     }
 
     /**
+     * Gets the metadata for this model.
+     *
+     * @api
+     * @return  EmbedMetadata
+     */
+    public function getMetadata()
+    {
+        return $this->metadata;
+    }
+
+
+    /**
      * Gets the embed name.
      *
      * @api
@@ -34,6 +52,6 @@ class Embed extends AbstractModel
      */
     public function getName()
     {
-        return $this->metadata->name;
+        return $this->getMetadata()->name;
     }
 }

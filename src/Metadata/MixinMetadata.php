@@ -65,19 +65,19 @@ class MixinMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedIn
     {
         foreach ($mixin->getAttributes() as $attribute) {
             if (true === $this->hasAttribute($attribute->key)) {
-                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'attribute', $attribute->key);
+                throw MetadataException::mixinPropertyExists($this->name, $mixin->name, 'attribute', $attribute->key);
             }
             $this->addAttribute($attribute);
         }
         foreach ($mixin->getRelationships() as $relationship) {
             if (true === $this->hasRelationship($relationship->key)) {
-                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'relationship', $relationship->key);
+                throw MetadataException::mixinPropertyExists($this->name, $mixin->name, 'relationship', $relationship->key);
             }
             $this->addRelationship($relationship);
         }
         foreach ($mixin->getEmbeds() as $embed) {
             if (true === $this->hasEmbed($embed->key)) {
-                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'embed', $embed->key);
+                throw MetadataException::mixinPropertyExists($this->name, $mixin->name, 'embed', $embed->key);
             }
             $this->addEmbed($embed);
         }
@@ -89,10 +89,10 @@ class MixinMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedIn
     protected function validateAttribute(AttributeMetadata $attribute)
     {
         if (true === $this->hasRelationship($attribute->getKey())) {
-            throw MetadataException::fieldKeyInUse('attribute', 'relationship', $attribute->getKey(), $this->type);
+            throw MetadataException::fieldKeyInUse('attribute', 'relationship', $attribute->getKey(), $this->name);
         }
         if (true === $this->hasEmbed($attribute->getKey())) {
-            throw MetadataException::fieldKeyInUse('attribute', 'embed', $attribute->getKey(), $this->type);
+            throw MetadataException::fieldKeyInUse('attribute', 'embed', $attribute->getKey(), $this->name);
         }
     }
 
@@ -102,10 +102,10 @@ class MixinMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedIn
     protected function validateEmbed(EmbeddedPropMetadata $embed)
     {
         if (true === $this->hasAttribute($embed->getKey())) {
-            throw MetadataException::fieldKeyInUse('embed', 'attribute', $embed->getKey(), $this->type);
+            throw MetadataException::fieldKeyInUse('embed', 'attribute', $embed->getKey(), $this->name);
         }
         if (true === $this->hasRelationship($embed->getKey())) {
-            throw MetadataException::fieldKeyInUse('embed', 'relationship', $embed->getKey(), $this->type);
+            throw MetadataException::fieldKeyInUse('embed', 'relationship', $embed->getKey(), $this->name);
         }
     }
 

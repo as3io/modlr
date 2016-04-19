@@ -28,7 +28,7 @@ abstract class AbstractHttpException extends \Exception implements HttpException
      * Constructor.
      * Overwritten to require a message and an HTTP code.
      *
-     * @param   string                          $message
+     * @param   string                          $detail
      * @param   int                             $httpCode
      * @param   string                          $errorType
      * @param   int                             $code

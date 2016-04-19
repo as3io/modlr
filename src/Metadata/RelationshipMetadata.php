@@ -141,7 +141,7 @@ class RelationshipMetadata extends FieldMetadata
     /**
      * Validates the relationship type.
      *
-     * @param   string  $type
+     * @param   string  $relType
      * @return  bool
      * @throws  MetadataException
      */

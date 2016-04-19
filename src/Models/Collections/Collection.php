@@ -2,7 +2,7 @@
 
 namespace As3\Modlr\Models\Collections;
 
-use As3\Modlr\Models\AbstractModel;
+use As3\Modlr\Models\Model;
 
 /**
  * Model collection that contains record representations from a persistence (database) layer.
@@ -18,6 +18,9 @@ class Collection extends ModelCollection
     {
         $identifiers = [];
         foreach ($this->models as $model) {
+            if (!$model instanceof Model) {
+                continue;
+            }
             if (true === $onlyUnloaded && true === $model->getState()->is('empty')) {
                 $identifiers[] = $model->getId();
             }

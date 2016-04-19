@@ -276,6 +276,9 @@ final class YamlFileDriver extends AbstractFileDriver
             }
 
             $embedMeta = $this->loadMetadataForEmbed($mapping['entity']);
+            if (null === $embedMeta) {
+                continue;
+            }
             $property = new Metadata\EmbeddedPropMetadata($key, $mapping['type'], $embedMeta, $this->isMixin($metadata));
             $metadata->addEmbed($property);
         }
@@ -293,6 +296,9 @@ final class YamlFileDriver extends AbstractFileDriver
     {
         foreach ($mixins as $mixinName) {
             $mixinMeta = $this->loadMetadataForMixin($mixinName);
+            if (null === $mixinMeta) {
+                continue;
+            }
             $metadata->addMixin($mixinMeta);
         }
         return $metadata;
