@@ -17,6 +17,7 @@ final class FileLocator implements FileLocatorInterface
     private $directories = [
         'model'     => [],
         'mixin'     => [],
+        'embed'     => [],
     ];
 
     /**
@@ -24,11 +25,13 @@ final class FileLocator implements FileLocatorInterface
      *
      * @param   string|array   $modelDirs
      * @param   string|array   $mixinDirs
+     * @param   string|array   $embedDirs
      */
-    public function __construct($modelDirs, $mixinDirs = [])
+    public function __construct($modelDirs, $mixinDirs = [], $embedDirs = [])
     {
         $this->directories['model'] = (Array) $modelDirs;
         $this->directories['mixin'] = (Array) $mixinDirs;
+        $this->directories['embed'] = (Array) $embedDirs;
     }
 
     /**
@@ -40,6 +43,14 @@ final class FileLocator implements FileLocatorInterface
     protected function getDirectories($type)
     {
         return $this->directories[$type];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function findFileForEmbed($embedName, $extension)
+    {
+        return $this->findFile('embed', $embedName, $extension);
     }
 
     /**

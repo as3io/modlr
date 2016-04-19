@@ -6,7 +6,7 @@ use As3\Modlr\Store\Store;
 use As3\Modlr\Metadata\EntityMetadata;
 
 /**
- * Represents the properties (atttributes and relationships) of a Model.
+ * Represents the properties of a Model.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
@@ -17,21 +17,21 @@ abstract class Properties
      *
      * @var array
      */
-    private $original = [];
+    protected $original = [];
 
     /**
      * The current/modified property values.
      *
      * @var array
      */
-    private $current = [];
+    protected $current = [];
 
     /**
      * Any properties that have been flagged for removal.
      *
      * @var array
      */
-    private $remove = [];
+    protected $remove = [];
 
     /**
      * Constructor.

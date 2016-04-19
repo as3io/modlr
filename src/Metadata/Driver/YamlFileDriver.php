@@ -22,6 +22,7 @@ final class YamlFileDriver extends AbstractFileDriver
     private $mappings = [
         'model' => [],
         'mixin' => [],
+        'embed' => [],
     ];
 
     /**
@@ -54,8 +55,23 @@ final class YamlFileDriver extends AbstractFileDriver
         $this->setSearch($metadata, $mapping['entity']['search']);
         $this->setAttributes($metadata, $mapping['attributes']);
         $this->setRelationships($metadata, $mapping['relationships']);
+        $this->setEmbeds($metadata, $mapping['embeds']);
         $this->setMixins($metadata, $mapping['mixins']);
         return $metadata;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function loadEmbedFromFile($embedName, $file)
+    {
+        $mapping = $this->getMapping('embed', $embedName, $file);
+
+        $embed = new Metadata\EmbedMetadata($embedName);
+        $this->setAttributes($embed, $mapping['attributes']);
+        $this->setEmbeds($embed, $mapping['embeds']);
+        $this->setMixins($embed, $mapping['mixins']);
+        return $embed;
     }
 
     /**
@@ -237,10 +253,52 @@ final class YamlFileDriver extends AbstractFileDriver
         return $metadata;
     }
 
-    protected function setMixins(Metadata\EntityMetadata $metadata, array $mixins)
+    /**
+     * Sets the entity embed metadata from the metadata mapping.
+     *
+     * @param   Metadata\Interfaces\EmbedInterface  $metadata
+     * @param   array                               $embedMapping
+     * @return  Metadata\EntityMetadata
+     */
+    protected function setEmbeds(Metadata\Interfaces\EmbedInterface $metadata, array $embedMapping)
+    {
+        foreach ($embedMapping as $key => $mapping) {
+            if (!is_array($mapping)) {
+                $mapping = ['type' => null, 'entity' => null];
+            }
+
+            if (!isset($mapping['type'])) {
+                $mapping['type'] = null;
+            }
+
+            if (!isset($mapping['entity'])) {
+                $mapping['entity'] = null;
+            }
+
+            $embedMeta = $this->loadMetadataForEmbed($mapping['entity']);
+            if (null === $embedMeta) {
+                continue;
+            }
+            $property = new Metadata\EmbeddedPropMetadata($key, $mapping['type'], $embedMeta, $this->isMixin($metadata));
+            $metadata->addEmbed($property);
+        }
+        return $metadata;
+    }
+
+    /**
+     * Sets creates mixin metadata instances from a set of mixin mappings ands sets them to the entity metadata instance.
+     *
+     * @param   Metadata\Interfaces\MixinInterface  $metadata
+     * @param   array                   $mixins
+     * @return  Metadata\Interfaces\MixinInterface
+     */
+    protected function setMixins(Metadata\Interfaces\MixinInterface $metadata, array $mixins)
     {
         foreach ($mixins as $mixinName) {
             $mixinMeta = $this->loadMetadataForMixin($mixinName);
+            if (null === $mixinMeta) {
+                continue;
+            }
             $metadata->addMixin($mixinMeta);
         }
         return $metadata;
@@ -331,21 +389,18 @@ final class YamlFileDriver extends AbstractFileDriver
             $mapping = [];
         }
 
-        foreach (['attributes', 'relationships'] as $key) {
-            if (!isset($mapping[$key]) || !is_array($mapping[$key])) {
-                $mapping[$key] = [];
-            }
-        }
-
-        if ('mixin' === $metaType) {
+        $mapping = $this->setRootDefault('attributes', $mapping);
+        $mapping = $this->setRootDefault('embeds', $mapping);
+        $mapping = $this->setRootDefault('mixins', $mapping);
+        if ('embed' === $metaType) {
             return $mapping;
         }
 
-        foreach (['entity', 'mixins'] as $key) {
-            if (!isset($mapping[$key]) || !is_array($mapping[$key])) {
-                $mapping[$key] = [];
-            }
+        $mapping = $this->setRootDefault('relationships', $mapping);
+        if ('mixin' === $metaType) {
+            return $mapping;
         }
+        $this->setRootDefault('entity', $mapping);
 
         if (!isset($mapping['entity']['persistence']) || !is_array($mapping['entity']['persistence'])) {
             $mapping['entity']['persistence'] = [];
@@ -353,6 +408,21 @@ final class YamlFileDriver extends AbstractFileDriver
 
         if (!isset($mapping['entity']['search']) || !is_array($mapping['entity']['search'])) {
             $mapping['entity']['search'] = [];
+        }
+        return $mapping;
+    }
+
+    /**
+     * Sets a root level default value to a metadata mapping array.
+     *
+     * @param   string  $key
+     * @param   array   $mapping
+     * @return  array
+     */
+    private function setRootDefault($key, array $mapping)
+    {
+        if (!isset($mapping[$key]) || !is_array($mapping[$key])) {
+            $mapping[$key] = [];
         }
         return $mapping;
     }

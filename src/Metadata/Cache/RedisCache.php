@@ -43,7 +43,7 @@ class RedisCache implements CacheInterface
      *
      * @var string
      */
-     private $prefix = 'ModlrData';
+    private $prefix = 'ModlrData';
 
     /**
      * Constructor.

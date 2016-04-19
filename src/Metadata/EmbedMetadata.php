@@ -5,13 +5,12 @@ namespace As3\Modlr\Metadata;
 use As3\Modlr\Exception\MetadataException;
 
 /**
- * Defines the metadata for an entity mixin.
- * A mixin is like a PHP trait, in that properties (attributes and relationships) can be reused by multiple models.
+ * Defines the metadata for an embed.
  * Should be loaded using the MetadataFactory, not instantiated directly.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class MixinMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedInterface, Interfaces\RelationshipInterface
+class EmbedMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedInterface, Interfaces\MixinInterface
 {
     /**
      * Uses attributes.
@@ -24,17 +23,17 @@ class MixinMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedIn
     use Traits\EmbedsTrait;
 
     /**
+     * Uses mixins.
+     */
+    use Traits\MixinsTrait;
+
+    /**
      * Uses merged properties.
      */
     use Traits\PropertiesTrait;
 
     /**
-     * Uses relationships.
-     */
-    use Traits\RelationshipsTrait;
-
-    /**
-     * The mixin name/key.
+     * The embed name/key.
      *
      * @var string
      */
@@ -43,7 +42,7 @@ class MixinMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedIn
     /**
      * Constructor.
      *
-     * @param   string  $name   The mixin name.
+     * @param   string  $name   The embed name.
      */
     public function __construct($name)
     {
@@ -55,7 +54,7 @@ class MixinMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedIn
      */
     public function getProperties()
     {
-        return array_merge($this->getAttributes(), $this->getRelationships(), $this->getEmbeds());
+        return array_merge($this->getAttributes(), $this->getEmbeds());
     }
 
     /**
@@ -68,12 +67,6 @@ class MixinMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedIn
                 throw MetadataException::mixinPropertyExists($this->name, $mixin->name, 'attribute', $attribute->key);
             }
             $this->addAttribute($attribute);
-        }
-        foreach ($mixin->getRelationships() as $relationship) {
-            if (true === $this->hasRelationship($relationship->key)) {
-                throw MetadataException::mixinPropertyExists($this->name, $mixin->name, 'relationship', $relationship->key);
-            }
-            $this->addRelationship($relationship);
         }
         foreach ($mixin->getEmbeds() as $embed) {
             if (true === $this->hasEmbed($embed->key)) {
@@ -88,9 +81,6 @@ class MixinMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedIn
      */
     protected function validateAttribute(AttributeMetadata $attribute)
     {
-        if (true === $this->hasRelationship($attribute->getKey())) {
-            throw MetadataException::fieldKeyInUse('attribute', 'relationship', $attribute->getKey(), $this->name);
-        }
         if (true === $this->hasEmbed($attribute->getKey())) {
             throw MetadataException::fieldKeyInUse('attribute', 'embed', $attribute->getKey(), $this->name);
         }
@@ -103,22 +93,6 @@ class MixinMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedIn
     {
         if (true === $this->hasAttribute($embed->getKey())) {
             throw MetadataException::fieldKeyInUse('embed', 'attribute', $embed->getKey(), $this->name);
-        }
-        if (true === $this->hasRelationship($embed->getKey())) {
-            throw MetadataException::fieldKeyInUse('embed', 'relationship', $embed->getKey(), $this->name);
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function validateRelationship(RelationshipMetadata $relationship)
-    {
-        if (true === $this->hasAttribute($relationship->getKey())) {
-            throw MetadataException::fieldKeyInUse('relationship', 'attribute', $relationship->getKey(), $this->name);
-        }
-        if (true === $this->hasEmbed($relationship->getKey())) {
-            throw MetadataException::fieldKeyInUse('relationship', 'embed', $relationship->getKey(), $this->name);
         }
     }
 }

@@ -3,7 +3,7 @@
 namespace As3\Modlr\Api;
 
 use As3\Modlr\Metadata\EntityMetadata;
-use As3\Modlr\Models\Collection;
+use As3\Modlr\Models\Collections\Collection;
 use As3\Modlr\Models\Model;
 
 /**
@@ -18,7 +18,7 @@ interface SerializerInterface
      *
      * @param   Model|null          $model
      * @param   AdapterInterface    $adapter
-     * @return  string|array    Depending on depth
+     * @return  string|array        Depending on depth
      */
     public function serialize(Model $model = null, AdapterInterface $adapter);
 
@@ -27,7 +27,7 @@ interface SerializerInterface
      *
      * @param   Collection          $collection
      * @param   AdapterInterface    $adapter
-     * @return  string|array    Depending on depth
+     * @return  string|array        Depending on depth
      */
     public function serializeCollection(Collection $collection, AdapterInterface $adapter);
 
@@ -36,7 +36,7 @@ interface SerializerInterface
      *
      * @param   Model[]             $models
      * @param   AdapterInterface    $adapter
-     * @return  string|array    Depending on depth
+     * @return  string|array        Depending on depth
      */
     public function serializeArray(array $models, AdapterInterface $adapter);
 

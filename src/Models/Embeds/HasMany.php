@@ -1,16 +1,16 @@
 <?php
 
-namespace As3\Modlr\Models\Relationships;
+namespace As3\Modlr\Models\Embeds;
 
-use As3\Modlr\Models\Collections\Collection;
-use As3\Modlr\Models\Properties;
+use As3\Modlr\Models\Attributes;
+use As3\Modlr\Models\Collections\EmbedCollection;
 
 /**
  * Represents the has-many relationships of a Model.
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class HasMany extends Properties
+class HasMany extends Attributes
 {
     /**
      * Extended to also check for dirty states of has-many Collections.
@@ -39,7 +39,7 @@ class HasMany extends Properties
     {
         parent::rollback();
         foreach ($this->getOriginalAll() as $collection) {
-            if ($collection instanceof Collection) {
+            if ($collection instanceof EmbedCollection) {
                 $collection->rollback();
             }
         }

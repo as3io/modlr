@@ -13,6 +13,14 @@ namespace As3\Modlr\Metadata\Driver;
 interface DriverInterface
 {
     /**
+     * Loads the MixinMetadata for a mixin definition.
+     *
+     * @param   string  $embedName
+     * @return  \As3\Modlr\Metadata\EmbedMetadata|null
+     */
+    public function loadMetadataForEmbed($embedName);
+
+    /**
      * Loads the EntityMetadata for a type.
      *
      * @param   string  $type

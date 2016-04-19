@@ -43,7 +43,7 @@ class MetadataFactory implements MetadataFactoryInterface
      * The Metadata cache instance.
      * Is optional, if defined using the setter.
      *
-     * @var CacheInterface
+     * @var CacheInterface|null
      */
     private $cache;
 
@@ -257,6 +257,12 @@ class MetadataFactory implements MetadataFactoryInterface
         return $this->isDescendantOf($childMeta->getParentEntityType(), $parent);
     }
 
+    /**
+     * @param   string  $parentType
+     * @param   string  $childType
+     * @return  bool
+     * @throws  InvalidArgumentException
+     */
     public function validateResourceTypes($parentType, $childType)
     {
         $meta = $this->getMetadataForType($parentType);
@@ -373,6 +379,7 @@ class MetadataFactory implements MetadataFactoryInterface
     /**
      * Gets a Metadata instance for a type from memory.
      *
+     * @param   string  $type
      * @return  EntityMetadata|null
      */
     private function getFromMemory($type)
@@ -398,6 +405,7 @@ class MetadataFactory implements MetadataFactoryInterface
     /**
      * Retrieves a Metadata instance for a type from cache.
      *
+     * @param   string  $type
      * @return  EntityMetadata|null
      */
     private function getFromCache($type)

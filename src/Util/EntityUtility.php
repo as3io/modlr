@@ -2,12 +2,14 @@
 
 namespace As3\Modlr\Util;
 
-use As3\Modlr\Exception\RuntimeException;
-use As3\Modlr\Exception\MetadataException;
-use As3\Modlr\Rest\RestConfiguration;
-use As3\Modlr\Metadata\EntityMetadata;
-use As3\Modlr\Metadata\MetadataFactory;
 use As3\Modlr\DataTypes\TypeFactory;
+use As3\Modlr\Exception\MetadataException;
+use As3\Modlr\Exception\RuntimeException;
+use As3\Modlr\Metadata\EntityMetadata;
+use As3\Modlr\Metadata\Interfaces\EmbedInterface;
+use As3\Modlr\Metadata\Interfaces\AttributeInterface;
+use As3\Modlr\Metadata\MetadataFactory;
+use As3\Modlr\Rest\RestConfiguration;
 
 /**
  * Responsibile for formatting entity names, such as entity types and field keys.
@@ -108,6 +110,7 @@ class EntityUtility
         $this->validateMetadataInheritance($metadata, $mf);
         $this->validateMetadataAttributes($metadata, $mf);
         $this->validateMetadataRelationships($metadata, $mf);
+        $this->validateMetadataEmbeds($metadata, $mf);
         return true;
     }
 
@@ -181,40 +184,58 @@ class EntityUtility
     }
 
     /**
-     * Validates entity attributes on EntityMetadata.
+     * Validates entity attributes on the AttributeInterface.
      *
-     * @param   EntityMetadata  $metadata
-     * @param   MetadataFactory $mf
+     * @param   AttributeInterface  $metadata
+     * @param   MetadataFactory     $mf
      * @return  bool
      * @throws  MetadataException
      */
-    public function validateMetadataAttributes(EntityMetadata $metadata, MetadataFactory $mf)
+    public function validateMetadataAttributes(AttributeInterface $metadata, MetadataFactory $mf)
     {
+        $type = $metadata instanceof EntityMetadata ? $metadata->type : (property_exists($metadata, 'name') ? $metadata->name : '');
         foreach ($metadata->getAttributes() as $key => $attribute) {
+
             if ($key != $attribute->key) {
-                throw MetadataException::invalidMetadata($metadata->type, sprintf('Attribute key mismtach. "%s" !== "%s"', $key, $attribute->key));
+                throw MetadataException::invalidMetadata($type, sprintf('Attribute key mismtach. "%s" !== "%s"', $key, $attribute->key));
             }
 
             if (false === $this->isFieldKeyValid($attribute->key)) {
-                throw MetadataException::invalidMetadata($metadata->type, sprintf('The attribute key "%s" is invalid based on the configured name format "%s"', $attribute->key, $this->config->getFieldKeyFormat()));
+                throw MetadataException::invalidMetadata($type, sprintf('The attribute key "%s" is invalid based on the configured name format "%s"', $attribute->key, $this->config->getFieldKeyFormat()));
             }
 
             if (false === $this->typeFactory->hasType($attribute->dataType)) {
-                throw MetadataException::invalidMetadata($metadata->type, sprintf('The data type "%s" for attribute "%s" is invalid', $attribute->dataType, $attribute->key));
+                throw MetadataException::invalidMetadata($type, sprintf('The data type "%s" for attribute "%s" is invalid', $attribute->dataType, $attribute->key));
             }
 
-            if (true === $metadata->isChildEntity()) {
+            if ($metadata instanceof EntityMetadata && true === $metadata->isChildEntity()) {
                 $parent = $mf->getMetadataForType($metadata->extends);
                 if ($parent->hasAttribute($attribute->key)) {
-                    throw MetadataException::invalidMetadata($metadata->type, sprintf('Parent entity type "%s" already contains attribute field "%s"', $parent->type, $attribute->key));
+                    throw MetadataException::invalidMetadata($type, sprintf('Parent entity type "%s" already contains attribute field "%s"', $parent->type, $attribute->key));
                 }
             }
 
             if (true === $attribute->isCalculated()) {
                 if (false === class_exists($attribute->calculated['class']) || false === method_exists($attribute->calculated['class'], $attribute->calculated['method'])) {
-                    throw MetadataException::invalidMetadata($metadata->type, sprintf('The attribute field "%s" is calculated, but was unable to find method "%s:%s"', $attribute->key, $attribute->calculated['class'], $attribute->calculated['method']));
+                    throw MetadataException::invalidMetadata($type, sprintf('The attribute field "%s" is calculated, but was unable to find method "%s:%s"', $attribute->key, $attribute->calculated['class'], $attribute->calculated['method']));
                 }
             }
+        }
+        return true;
+    }
+
+    /**
+     * Validates entity relationships on EntityMetadata.
+     *
+     * @param   EmbedInterface  $metadata
+     * @param   MetadataFactory $mf
+     * @return  bool
+     */
+    public function validateMetadataEmbeds(EmbedInterface $metadata, MetadataFactory $mf)
+    {
+        foreach ($metadata->getEmbeds() as $key => $embeddedProp) {
+            $this->validateMetadataAttributes($embeddedProp->embedMeta, $mf);
+            $this->validateMetadataEmbeds($embeddedProp->embedMeta, $mf);
         }
         return true;
     }

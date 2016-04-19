@@ -3,6 +3,7 @@
 namespace As3\Modlr\Metadata\Driver;
 
 use As3\Modlr\Exception\MetadataException;
+use As3\Modlr\Metadata\EmbedMetadata;
 use As3\Modlr\Metadata\EntityMetadata;
 use As3\Modlr\Metadata\MixinMetadata;
 use As3\Modlr\StorageLayerManager;
@@ -24,11 +25,12 @@ abstract class AbstractFileDriver implements DriverInterface
     /**
      * Array cache for in-memory loaded metadata objects.
      *
-     * @var EntityMetadata[]|MixinMetadata[]
+     * @var EntityMetadata[]|MixinMetadata[]|EmbedMetadata[]
      */
     private $arrayCache = [
         'model' => [],
         'mixin' => [],
+        'embed' => [],
     ];
 
     /**
@@ -50,7 +52,6 @@ abstract class AbstractFileDriver implements DriverInterface
      * Constructor.
      *
      * @param   FileLocatorInterface    $fileLocator
-     * @param   Validator               $validator
      * @param   StorageLayerManager     $storageManager
      */
     public function __construct(FileLocatorInterface $fileLocator, StorageLayerManager $storageManager)
@@ -62,9 +63,19 @@ abstract class AbstractFileDriver implements DriverInterface
     /**
      * {@inheritDoc}
      */
+    public function loadMetadataForEmbed($embedName)
+    {
+        $metadata = $this->doLoadMetadata('embed', $embedName);
+        return $metadata instanceof EmbedMetadata ? $metadata : null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function loadMetadataForType($modelType)
     {
-        return $this->doLoadMetadata('model', $modelType);
+        $metadata = $this->doLoadMetadata('model', $modelType);
+        return $metadata instanceof EntityMetadata ? $metadata : null;
     }
 
     /**
@@ -72,15 +83,16 @@ abstract class AbstractFileDriver implements DriverInterface
      */
     public function loadMetadataForMixin($mixinName)
     {
-        return $this->doLoadMetadata('mixin', $mixinName);
+        $metadata = $this->doLoadMetadata('mixin', $mixinName);
+        return $metadata instanceof MixinMetadata ? $metadata : null;
     }
 
     /**
      * Loads the metadata instance for a model or a mixin.
      *
-     * @param   string  $metaType   The metadata type, either model or mixin.
-     * @param   string  $key        The metadat key name, either a model type or a mixin name.
-     * @return  EntityMetadata|MixinMetadata|null
+     * @param   string  $metaType   The metadata type, either model, mixin, or embed.
+     * @param   string  $key        The metadata key name, either a model type, a mixin name, or an embed name.
+     * @return  EntityMetadata|MixinMetadata|EmbedMetadata|null
      */
     protected function doLoadMetadata($metaType, $key)
     {
@@ -93,7 +105,7 @@ abstract class AbstractFileDriver implements DriverInterface
             return null;
         }
 
-        $loadMethod = ('mixin' === $metaType) ? 'loadMixinFromFile' : 'loadMetadataFromFile';
+        $loadMethod = $this->getLoadMethod($metaType);
         $metadata = $this->$loadMethod($key, $path);
         $this->arrayCache[$metaType][$key] = $metadata;
         return $this->arrayCache[$metaType][$key];
@@ -109,7 +121,7 @@ abstract class AbstractFileDriver implements DriverInterface
      */
     protected function getFilePath($metaType, $key)
     {
-        $method = ('mixin' === $metaType) ? 'findFileForMixin' : 'findFileForType';
+        $method = $this->getFindMethod($metaType);
         $path = $this->fileLocator->$method($key, $this->getExtension());
         if (null === $path) {
             throw MetadataException::fatalDriverError($key, sprintf('No mapping file was found.', $path));
@@ -155,6 +167,16 @@ abstract class AbstractFileDriver implements DriverInterface
     abstract protected function loadMetadataFromFile($type, $path);
 
     /**
+     * Reads the content of the file and loads it as an EmbedMetadata instance.
+     *
+     * @param string    $embedName
+     * @param string    $path
+     *
+     * @return  EmbedMetadata
+     */
+    abstract protected function loadEmbedFromFile($embedName, $path);
+
+    /**
      * Reads the content of the file and loads it as a MixinMetadata instance.
      *
      * @param string    $mixinName
@@ -170,4 +192,40 @@ abstract class AbstractFileDriver implements DriverInterface
      * @return string
      */
     abstract protected function getExtension();
+
+    /**
+     * Gets the metadata file finding method based on type.
+     *
+     * @param   string  $metaType
+     * @return  string
+     */
+    private function getFindMethod($metaType)
+    {
+        switch ($metaType) {
+            case 'mixin':
+                return 'findFileForMixin';
+            case 'embed':
+                return 'findFileForEmbed';
+            default:
+                return 'findFileForType';
+        }
+    }
+
+    /**
+     * Gets the metadata loading method based on type.
+     *
+     * @param   string  $metaType
+     * @return  string
+     */
+    private function getLoadMethod($metaType)
+    {
+        switch ($metaType) {
+            case 'mixin':
+                return 'loadMixinFromFile';
+            case 'embed':
+                return 'loadEmbedFromFile';
+            default:
+                return 'loadMetadataFromFile';
+        }
+    }
 }

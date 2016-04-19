@@ -3,24 +3,40 @@
 namespace As3\Modlr\Metadata;
 
 use As3\Modlr\Exception\MetadataException;
-use As3\Modlr\Metadata\Interfaces\AttributeInterface;
-use As3\Modlr\Metadata\Interfaces\MergeableInterface;
-use As3\Modlr\Metadata\Interfaces\RelationshipInterface;
-use As3\Modlr\Metadata\Interfaces\StorageLayerInterface;
 
 /**
  * Defines the metadata for an entity (e.g. a database object).
  * Should be loaded using the MetadataFactory, not instantiated directly.
  *
  * @author  Jacob Bare <jacob.bare@gmail.com>
- * @todo    This should be renamed to ModelMetadata, which extends an abstract EntityMetadata class, which MixinMetadata also extends?
+ * @todo    This should be renamed to ModelMetadata.
  */
-class EntityMetadata implements AttributeInterface, RelationshipInterface, MergeableInterface
+class EntityMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedInterface, Interfaces\MergeableInterface, Interfaces\MixinInterface, Interfaces\RelationshipInterface
 {
     /**
-     * Uses properties (attributes and relationships)
+     * Uses attributes.
+     */
+    use Traits\AttributesTrait;
+
+    /**
+     * Uses embeds.
+     */
+    use Traits\EmbedsTrait;
+
+    /**
+     * Uses mixins.
+     */
+    use Traits\MixinsTrait;
+
+    /**
+     * Uses merged properties.
      */
     use Traits\PropertiesTrait;
+
+    /**
+     * Uses relationships.
+     */
+    use Traits\RelationshipsTrait;
 
     /**
      * The id key name and type.
@@ -51,16 +67,9 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     /**
      * The entity type this entity extends.
      *
-     * @var bool
+     * @var string|null
      */
     public $extends;
-
-    /**
-     * All mixins assigned to this entity.
-     *
-     * @var     MixinMetadata[]
-     */
-    public $mixins = [];
 
     /**
      * Child entity types this entity owns.
@@ -73,7 +82,7 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     /**
      * The persistence metadata for this entity.
      *
-     * @var StorageLayerInterface
+     * @var Interfaces\StorageLayerInterface
      */
     public $persistence;
 
@@ -87,7 +96,7 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     /**
      * The search metadata for this entity.
      *
-     * @var StorageLayerInterface
+     * @var Interfaces\StorageLayerInterface
      */
     public $search;
 
@@ -109,44 +118,6 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     }
 
     /**
-     * Adds a mixin (and its attributes and relationships) to this entity.
-     *
-     * @param   MixinMetadata   $mixin
-     * @return  self
-     */
-    public function addMixin(MixinMetadata $mixin)
-    {
-        if (isset($this->mixins[$mixin->name])) {
-            return $this;
-        }
-        foreach ($mixin->getAttributes() as $attribute) {
-            if (true === $this->hasAttribute($attribute->key)) {
-                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'attribute', $attribute->key);
-            }
-            $this->addAttribute($attribute);
-        }
-        foreach ($mixin->getRelationships() as $relationship) {
-            if (true === $this->hasRelationship($relationship->key)) {
-                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'relationship', $relationship->key);
-            }
-            $this->addRelationship($relationship);
-        }
-        $this->mixins[$mixin->name] = $mixin;
-        return $this;
-    }
-
-    /**
-     * Determines if a mixin exists.
-     *
-     * @param   string  $mixinName
-     * @return  bool
-     */
-    public function hasMixin($mixinName)
-    {
-        return isset($this->mixins[$mixinName]);
-    }
-
-    /**
      * Gets the parent entity type.
      * For entities that are extended.
      *
@@ -155,6 +126,14 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     public function getParentEntityType()
     {
         return $this->extends;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getProperties()
+    {
+        return array_merge($this->getAttributes(), $this->getRelationships(), $this->getEmbeds());
     }
 
     /**
@@ -200,8 +179,12 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     /**
      * {@inheritDoc}
      */
-    public function merge(MergeableInterface $metadata)
+    public function merge(Interfaces\MergeableInterface $metadata)
     {
+        if (!$metadata instanceof EntityMetadata) {
+            throw new MetadataException('Unable to merge metadata. The provided metadata instance is not compatible.');
+        }
+
         $this->setType($metadata->type);
         $this->setPolymorphic($metadata->isPolymorphic());
         $this->setAbstract($metadata->isAbstract());
@@ -214,7 +197,8 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
 
         $this->mergeAttributes($metadata->getAttributes());
         $this->mergeRelationships($metadata->getRelationships());
-        $this->mergeMixins($metadata->mixins);
+        $this->mergeEmbeds($metadata->getEmbeds());
+        $this->mergeMixins($metadata->getMixins());
 
         return $this;
     }
@@ -234,10 +218,10 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     /**
      * Sets the persistence metadata for this entity.
      *
-     * @param   StorageLayerInterface   $persistence
+     * @param   Interfaces\StorageLayerInterface    $persistence
      * @return  self
      */
-    public function setPersistence(StorageLayerInterface $persistence)
+    public function setPersistence(Interfaces\StorageLayerInterface $persistence)
     {
         $this->persistence = $persistence;
         return $this;
@@ -258,10 +242,10 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     /**
      * Sets the search metadata for this entity.
      *
-     * @param   StorageLayerInterface   $search
+     * @param   Interfaces\StorageLayerInterface    $search
      * @return  self
      */
-    public function setSearch(StorageLayerInterface $search)
+    public function setSearch(Interfaces\StorageLayerInterface $search)
     {
         $this->search = $search;
         return $this;
@@ -284,9 +268,73 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     }
 
     /**
+     * {@inheritdoc}
+     */
+    protected function applyMixinProperties(MixinMetadata $mixin)
+    {
+        foreach ($mixin->getAttributes() as $attribute) {
+            if (true === $this->hasAttribute($attribute->key)) {
+                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'attribute', $attribute->key);
+            }
+            $this->addAttribute($attribute);
+        }
+        foreach ($mixin->getRelationships() as $relationship) {
+            if (true === $this->hasRelationship($relationship->key)) {
+                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'relationship', $relationship->key);
+            }
+            $this->addRelationship($relationship);
+        }
+        foreach ($mixin->getEmbeds() as $embed) {
+            if (true === $this->hasEmbed($embed->key)) {
+                throw MetadataException::mixinPropertyExists($this->type, $mixin->name, 'embed', $embed->key);
+            }
+            $this->addEmbed($embed);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function validateAttribute(AttributeMetadata $attribute)
+    {
+        if (true === $this->hasRelationship($attribute->getKey())) {
+            throw MetadataException::fieldKeyInUse('attribute', 'relationship', $attribute->getKey(), $this->type);
+        }
+        if (true === $this->hasEmbed($attribute->getKey())) {
+            throw MetadataException::fieldKeyInUse('attribute', 'embed', $attribute->getKey(), $this->type);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function validateEmbed(EmbeddedPropMetadata $embed)
+    {
+        if (true === $this->hasAttribute($embed->getKey())) {
+            throw MetadataException::fieldKeyInUse('embed', 'attribute', $embed->getKey(), $this->type);
+        }
+        if (true === $this->hasRelationship($embed->getKey())) {
+            throw MetadataException::fieldKeyInUse('embed', 'relationship', $embed->getKey(), $this->type);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function validateRelationship(RelationshipMetadata $relationship)
+    {
+        if (true === $this->hasAttribute($relationship->getKey())) {
+            throw MetadataException::fieldKeyInUse('relationship', 'attribute', $relationship->getKey(), $this->type);
+        }
+        if (true === $this->hasEmbed($relationship->getKey())) {
+            throw MetadataException::fieldKeyInUse('relationship', 'embed', $relationship->getKey(), $this->type);
+        }
+    }
+
+    /**
      * Merges attributes with this instance's attributes.
      *
-     * @param   array   $toAdd
+     * @param   AttributeMetadata[]     $toAdd
      * @return  self
      */
     private function mergeAttributes(array $toAdd)
@@ -298,9 +346,23 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     }
 
     /**
+     * Merges embeds with this instance's embeds.
+     *
+     * @param   EmbeddedPropMetadata[]  $toAdd
+     * @return  self
+     */
+    private function mergeEmbeds(array $toAdd)
+    {
+        foreach ($toAdd as $embed) {
+            $this->addEmbed($embed);
+        }
+        return $this;
+    }
+
+    /**
      * Merges mixins with this instance's mixins.
      *
-     * @param   array   $toAdd
+     * @param   MixinMetadata[]     $toAdd
      * @return  self
      */
     private function mergeMixins(array $toAdd)
@@ -316,7 +378,7 @@ class EntityMetadata implements AttributeInterface, RelationshipInterface, Merge
     /**
      * Merges relationships with this instance's relationships.
      *
-     * @param   array   $toAdd
+     * @param   RelationshipMetadata[]  $toAdd
      * @return  self
      */
     private function mergeRelationships(array $toAdd)

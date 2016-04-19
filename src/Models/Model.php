@@ -3,7 +3,6 @@
 namespace As3\Modlr\Models;
 
 use As3\Modlr\Models\Relationships;
-use As3\Modlr\Persister\Record;
 use As3\Modlr\Store\Store;
 use As3\Modlr\Metadata\EntityMetadata;
 
@@ -12,22 +11,16 @@ use As3\Modlr\Metadata\EntityMetadata;
  *
  * @author Jacob Bare <jacob.bare@gmail.com>
  */
-class Model
+class Model extends AbstractModel
 {
     /**
-     * The id value of this model.
-     * Always converted to a string when in the model context.
+     * Enables/disables collection auto-initialization on iteration.
+     * Will not load/fill the collection from the database if false.
+     * Is useful for large hasMany iterations where only id and type are required (ala serialization).
      *
-     * @var string
+     * @var bool
      */
-    protected $identifier;
-
-    /**
-     * The Model's attributes
-     *
-     * @var Attributes
-     */
-    protected $attributes;
+    protected $collectionAutoInit = true;
 
     /**
      * The Model's has-one relationships
@@ -44,94 +37,104 @@ class Model
     protected $hasManyRelationships;
 
     /**
-     * Enables/disables collection auto-initialization on iteration.
-     * Will not load/fill the collection from the database if false.
-     * Is useful for large hasMany iterations where only id and type are required (ala serialization).
+     * The id value of this model.
+     * Always converted to a string when in the model context.
      *
-     * @var bool
+     * @var string
      */
-    protected $collectionAutoInit = true;
+    protected $identifier;
+
 
     /**
-     * The model state.
-     *
-     * @var State
-     */
-    protected $state;
-
-    /**
-     * The EntityMetadata that defines this Model.
+     * The metadata that defines this Model.
      *
      * @var EntityMetadata
      */
     protected $metadata;
 
     /**
-     * The Model Store for handling lifecycle operations.
-     *
-     * @var Store
-     */
-    protected $store;
-
-    /**
      * Constructor.
      *
-     * @param   EntityMetadata  $metadata   The internal entity metadata that supports this Model.
-     * @param   string          $identifier The database identifier.
-     * @param   Store           $store      The model store service for handling persistence operations.
-     * @param   Record|null     $record     The model's attributes and relationships from the db layer to init the model with. New models will constructed with a null record.
+     * @param   EntityMetadata  $metadata       The internal entity metadata that supports this Model.
+     * @param   string          $identifier     The database identifier.
+     * @param   Store           $store          The model store service for handling persistence operations.
+     * @param   array|null      $properties     The model's properties from the db layer to init the model with. New models will constructed with a null record.
      */
-    public function __construct(EntityMetadata $metadata, $identifier, Store $store, Record $record = null)
+    public function __construct(EntityMetadata $metadata, $identifier, Store $store, array $properties = null)
     {
-        $this->metadata = $metadata;
         $this->identifier = $identifier;
-        $this->store = $store;
-        $this->state = new State();
-        $this->initialize($record);
+        parent::__construct($metadata, $store, $properties);
     }
 
     /**
-     * Gets the unique identifier of this model.
+     * Cloner.
+     * Ensures sub objects are also cloned.
      *
-     * @api
-     * @return  string
      */
-    public function getId()
+    public function __clone()
     {
-        return $this->identifier;
+        parent::__clone();
+        $this->hasOneRelationships = clone $this->hasOneRelationships;
+        $this->hasManyRelationships = clone $this->hasManyRelationships;
     }
 
     /**
-     * Gets the model type.
+     * {@inheritdoc}
      *
-     * @api
-     * @return  string
+     * Overloaded to support relationships.
+     *
      */
-    public function getType()
+    public function apply(array $properties)
     {
-        return $this->metadata->type;
+        foreach ($properties as $key => $value) {
+            if (true === $this->isHasOne($key)) {
+                if (empty($value)) {
+                    $this->clear($key);
+                    continue;
+                }
+                $value = $this->store->loadProxyModel($value['type'], $value['id']);
+                $this->set($key, $value);
+                continue;
+            }
+
+        }
+
+        foreach ($this->getMetadata()->getRelationships() as $key => $relMeta) {
+            if (true === $relMeta->isOne()) {
+                continue;
+            }
+            if (!isset($properties[$key]) || true === $relMeta->isInverse) {
+                continue;
+            }
+            $this->clear($key);
+            $collection = $this->store->createCollection($relMeta, $properties[$key]);
+            foreach ($collection->allWithoutLoad() as $value) {
+                $this->push($key, $value);
+            }
+        }
+        return parent::apply($properties);
     }
 
     /**
-     * Gets the model store.
+     * {@inheritdoc}
      *
-     * @api
-     * @return  Store
+     * Overloaded to support relationships.
      */
-    public function getStore()
+    public function clear($key)
     {
-        return $this->store;
-    }
-
-    /**
-     * Gets the composite key of the model by combining the model type with the unique id.
-     *
-     * @api
-     * @return  string
-     */
-    public function getCompositeKey()
-    {
-        return sprintf('%s.%s', $this->getType(), $this->getId());
+        if (true === $this->isHasOne($key)) {
+            return $this->setHasOne($key, null);
+        }
+        if (true === $this->isInverse($key)) {
+            throw ModelException::cannotModifyInverse($this, $key);
+        }
+        if (true === $this->isHasMany($key)) {
+            $collection = $this->hasManyRelationships->get($key);
+            $collection->clear();
+            $this->doDirtyCheck();
+            return $this;
+        }
+        return parent::clear($key);
     }
 
     /**
@@ -147,120 +150,147 @@ class Model
     }
 
     /**
-     * Gets a model property.
-     * Will either be an attribute value, a has-one model, or an array representation of a has-many collection.
-     * Returns null if the property does not exist on the model or is not set.
-     * Is a proxy for @see getAttribute($key) and getRelationship($key)
+     * Marks the record for deletion.
+     * Will not remove from the database until $this->save() is called.
      *
      * @api
-     * @param   string  $key    The property field key.
-     * @return  Model|Model[]|null|mixed
+     * @return  self
+     * @throws  \RuntimeException   If a new (unsaved) model is deleted.
+     */
+    public function delete()
+    {
+        if (true === $this->getState()->is('new')) {
+            throw new \RuntimeException('You cannot delete a new model');
+        }
+        if (true === $this->getState()->is('deleted')) {
+            return $this;
+        }
+        $this->getState()->setDeleting();
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * Overloaded to support relationships.
+     *
      */
     public function get($key)
     {
-        if (true === $this->isAttribute($key)) {
-            return $this->getAttribute($key);
+        if (true === $this->isRelationship($key)) {
+            return $this->getRelationship($key);
         }
-        return $this->getRelationship($key);
+        return parent::get($key);
     }
 
     /**
-     * Determines if a property key is an attribute.
+     * {@inheritdoc}
+     *
+     * Overloaded to support relationships.
+     *
+     */
+    public function getChangeSet()
+    {
+        $changeset = parent::getChangeSet();
+        $changeset['hasOne']  = $this->filterNotSavedProperties($this->hasOneRelationships->calculateChangeSet());
+        $changeset['hasMany'] = $this->filterNotSavedProperties($this->hasManyRelationships->calculateChangeSet());
+        return $changeset;
+    }
+
+    /**
+     * Gets the composite key of the model by combining the model type with the unique id.
      *
      * @api
-     * @param   string  $key    The property key.
-     * @return  bool
+     * @return  string
      */
-    public function isAttribute($key)
+    public function getCompositeKey()
     {
-        return $this->getMetadata()->hasAttribute($key);
+        return sprintf('%s.%s', $this->getType(), $this->getId());
     }
 
     /**
-     * Determines if an attribute key is calculated.
-     *
-     * @param   string  $key    The attribute key.
-     * @return  bool
-     */
-    protected function isCalculatedAttribute($key)
-    {
-        if (false === $this->isAttribute($key)) {
-            return false;
-        }
-        return $this->getMetadata()->getAttribute($key)->isCalculated();
-    }
-
-    /**
-     * Gets an attribute value.
-     *
-     * @param   string  $key    The attribute key (field) name.
-     * @return  mixed
-     */
-    protected function getAttribute($key)
-    {
-        if (true === $this->isCalculatedAttribute($key)) {
-            return $this->getCalculatedAttribute($key);
-        }
-        $this->touch();
-        return $this->attributes->get($key);
-    }
-
-    /**
-     * Gets a calculated attribute value.
-     *
-     * @param   string  $key    The attribute key (field) name.
-     * @return  mixed
-     */
-    protected function getCalculatedAttribute($key)
-    {
-        $attrMeta = $this->getMetadata()->getAttribute($key);
-        $class  = $attrMeta->calculated['class'];
-        $method = $attrMeta->calculated['method'];
-
-        $value = $class::$method($this);
-        return $this->convertAttributeValue($key, $value);
-    }
-
-    /**
-     * Determines if a property key is a relationship (either has-one or has-many).
+     * Gets the unique identifier of this model.
      *
      * @api
-     * @param   string  $key    The property key.
-     * @return  bool
+     * @return  string
      */
-    public function isRelationship($key)
+    public function getId()
     {
-        return $this->getMetadata()->hasRelationship($key);
+        return $this->identifier;
     }
 
     /**
-     * Determines if a property key is a an inverse relationship.
+     * Gets the metadata for this model.
      *
      * @api
-     * @param   string  $key    The property key.
-     * @return  bool
+     * @return  EntityMetadata
      */
-    public function isInverse($key)
+    public function getMetadata()
     {
-        if (false === $this->isRelationship($key)) {
-            return false;
-        }
-        return $this->getMetadata()->getRelationship($key)->isInverse;
+        return $this->metadata;
     }
 
     /**
-     * Determines if a property key is a has-one relationship.
+     * Gets the model type.
      *
      * @api
-     * @param   string  $key    The property key.
-     * @return  bool
+     * @return  string
      */
-    public function isHasOne($key)
+    public function getType()
     {
-        if (false === $this->isRelationship($key)) {
-            return false;
+        return $this->metadata->type;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * Overloaded to support relationships.
+     *
+     */
+    public function initialize(array $properties = null)
+    {
+        $hasOne = [];
+        $hasMany = [];
+
+        if (null !== $properties) {
+            foreach ($properties as $key => $value) {
+                if (true === $this->isHasOne($key)) {
+                    // Load hasOne relationship.
+                    $hasOne[$key] = $this->getStore()->loadProxyModel($value['type'], $value['id']);
+                    continue;
+                }
+            }
         }
-        return $this->getMetadata()->getRelationship($key)->isOne();
+
+        foreach ($this->getMetadata()->getRelationships() as $key => $relMeta) {
+            if (true === $relMeta->isOne()) {
+                continue;
+            }
+            if (true === $relMeta->isInverse) {
+                $hasMany[$key] = $this->getStore()->createInverseCollection($relMeta, $this);
+            } else {
+                $references = !isset($properties[$key]) ? [] : $properties[$key];
+                $hasMany[$key] = $this->getStore()->createCollection($relMeta, $references);
+            }
+        }
+
+        $this->hasOneRelationships  = (null === $this->hasOneRelationships) ? new Relationships\HasOne($hasOne) : $this->hasOneRelationships->replace($hasOne);
+        $this->hasManyRelationships = (null === $this->hasManyRelationships) ? new Relationships\HasMany($hasMany) : $this->hasManyRelationships->replace($hasMany);
+        return parent::initialize($properties);
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * Overloaded to support relationships.
+     *
+     */
+    public function isDirty()
+    {
+        return true === parent::isDirty()
+            || true === $this->hasOneRelationships->areDirty()
+            || true === $this->hasManyRelationships->areDirty()
+        ;
     }
 
     /**
@@ -279,27 +309,45 @@ class Model
     }
 
     /**
-     * Gets a relationship value.
+     * Determines if a property key is a has-one relationship.
      *
-     * @param   string  $key    The relationship key (field) name.
-     * @return  Model|array|null
-     * @throws  \RuntimeException If hasMany relationships are accessed directly.
+     * @api
+     * @param   string  $key    The property key.
+     * @return  bool
      */
-    protected function getRelationship($key)
+    public function isHasOne($key)
     {
-        if (true === $this->isHasOne($key)) {
-            $this->touch();
-            return $this->hasOneRelationships->get($key);
+        if (false === $this->isRelationship($key)) {
+            return false;
         }
-        if (true === $this->isHasMany($key)) {
-            $this->touch();
-            $collection = $this->hasManyRelationships->get($key);
-            if ($collection->isLoaded($collection)) {
-                return iterator_to_array($collection);
-            }
-            return (true === $this->collectionAutoInit) ? iterator_to_array($collection) : $collection->allWithoutLoad();
+        return $this->getMetadata()->getRelationship($key)->isOne();
+    }
+
+    /**
+     * Determines if a property key is a an inverse relationship.
+     *
+     * @api
+     * @param   string  $key    The property key.
+     * @return  bool
+     */
+    public function isInverse($key)
+    {
+        if (false === $this->isRelationship($key)) {
+            return false;
         }
-        return null;
+        return $this->getMetadata()->getRelationship($key)->isInverse;
+    }
+
+    /**
+     * Determines if a property key is a relationship (either has-one or has-many).
+     *
+     * @api
+     * @param   string  $key    The property key.
+     * @return  bool
+     */
+    public function isRelationship($key)
+    {
+        return $this->getMetadata()->hasRelationship($key);
     }
 
     /**
@@ -331,30 +379,14 @@ class Model
     }
 
     /**
-     * Clears a has-many relationship collection, sets an attribute to null, or sets a has-one relationship to null.
+     * Reloads the model from the database.
      *
      * @api
-     * @param   string  $key    The property key.
      * @return  self
      */
-    public function clear($key)
+    public function reload()
     {
-        if (true === $this->isAttribute($key)) {
-            return $this->setAttribute($key, null);
-        }
-        if (true === $this->isHasOne($key)) {
-            return $this->setHasOne($key, null);
-        }
-        if (true === $this->isInverse($key)) {
-            throw ModelException::cannotModifyInverse($this, $key);
-        }
-        if (true === $this->isHasMany($key)) {
-            $collection = $this->hasManyRelationships->get($key);
-            $collection->clear();
-            $this->doDirtyCheck();
-            return $this;
-        }
-        return $this;
+        return $this->touch(true);
     }
 
     /**
@@ -381,76 +413,106 @@ class Model
     }
 
     /**
+     * {@inheritdoc}
+     * Overloaded to support relationship rollback.
+     */
+    public function rollback()
+    {
+        $this->hasOneRelationships->rollback();
+        $this->hasManyRelationships->rollback();
+        return parent::rollback();
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * Overloaded to support relationships.
      * Sets a model property: an attribute value, a has-one model, or an entire has-many model collection.
      * Note: To push/remove a single Model into a has-many collection, or clear a collection, use @see push(), remove() and clear().
-     * Is a proxy for @see setAttribute() and setRelationship()
      *
-     * @api
-     * @param   string  $key                The property field key.
-     * @param   Model|Collection|null|mixed The value to set.
-     * @return  self.
      */
     public function set($key, $value)
     {
-        if (true === $this->isAttribute($key)) {
-            return $this->setAttribute($key, $value);
+        if (true === $this->isRelationship($key)) {
+            return $this->setRelationship($key, $value);
         }
-        return $this->setRelationship($key, $value);
+        return parent::set($key, $value);
     }
 
     /**
-     * Sets an attribute value.
-     * Will convert the value to the proper, internal PHP/Modlr data type.
-     * Will do a dirty check immediately after setting.
+     * Saves the model.
      *
-     * @param   string  $key    The attribute key (field) name.
-     * @param   mixed   $value  The value to apply.
+     * @api
+     * @param   Implement cascade relationship saves. Or should the store handle this?
      * @return  self
      */
-    protected function setAttribute($key, $value)
+    public function save()
     {
-        if (true === $this->isCalculatedAttribute($key)) {
+        if (true === $this->getState()->is('deleted')) {
             return $this;
         }
-        $this->touch();
-        $value = $this->convertAttributeValue($key, $value);
-        $this->attributes->set($key, $value);
-        $this->doDirtyCheck();
+        $this->store->commit($this);
         return $this;
     }
 
-    protected function convertAttributeValue($key, $value)
+    /**
+     * {@inheritdoc}
+     *
+     * Overloaded to support relationships.
+     */
+    protected function filterNotSavedProperties(array $properties)
     {
-        return $this->store->convertAttributeValue($this->getDataType($key), $value);
+        foreach ($this->getMetadata()->getRelationships() as $fieldKey => $propMeta) {
+            if (true === $propMeta->shouldSave() || !isset($properties[$fieldKey])) {
+                continue;
+            }
+            unset($properties[$fieldKey]);
+        }
+        return parent::filterNotSavedProperties($properties);
     }
 
     /**
-     * Gets a data type from an attribute key.
+     * {@inheritdoc}
      *
-     * @param   string  $key The attribute key.
-     * @return  string
+     * Overloaded to support global model defaults.
+     *
      */
-    protected function getDataType($key)
+    protected function applyDefaultAttrValues(array $attributes = [])
     {
-        return $this->getMetadata()->getAttribute($key)->dataType;
+        $attributes = parent::applyDefaultAttrValues($attributes);
+
+        // Set defaults for the entire entity.
+        foreach ($this->getMetadata()->defaultValues as $key => $value) {
+            if (isset($attributes[$key])) {
+                continue;
+            }
+            $attributes[$key] = $this->convertAttributeValue($key, $value);
+        }
+        return $attributes;
     }
 
     /**
-     * Sets a relationship value.
+     * Gets a relationship value.
      *
-     * @param   string      $key
-     * @param   Model|null  $value
-     * @return  self
+     * @param   string  $key    The relationship key (field) name.
+     * @return  Model|array|null
+     * @throws  \RuntimeException If hasMany relationships are accessed directly.
      */
-    protected function setRelationship($key, $value)
+    protected function getRelationship($key)
     {
         if (true === $this->isHasOne($key)) {
-            return $this->setHasOne($key, $value);
+            $this->touch();
+            return $this->hasOneRelationships->get($key);
         }
         if (true === $this->isHasMany($key)) {
-            throw new \RuntimeException('You cannot set a hasMany relationship directly. Please access using push(), clear(), and/or remove()');
+            $this->touch();
+            $collection = $this->hasManyRelationships->get($key);
+            if ($collection->isLoaded($collection)) {
+                return iterator_to_array($collection);
+            }
+            return (true === $this->collectionAutoInit) ? iterator_to_array($collection) : $collection->allWithoutLoad();
         }
-        return $this;
+        return null;
     }
 
     /**
@@ -475,6 +537,44 @@ class Model
     }
 
     /**
+     * Sets a relationship value.
+     *
+     * @param   string      $key
+     * @param   Model|null  $value
+     * @return  self
+     */
+    protected function setRelationship($key, $value)
+    {
+        if (true === $this->isHasOne($key)) {
+            return $this->setHasOne($key, $value);
+        }
+        if (true === $this->isHasMany($key)) {
+            throw new \RuntimeException('You cannot set a hasMany relationship directly. Please access using push(), clear(), and/or remove()');
+        }
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * Overloaded to handle loading from the database.
+     * If the model is currently empty, it will query the database and fill/load the model.
+     *
+     */
+    protected function touch($force = false)
+    {
+        if (true === $this->getState()->is('deleted')) {
+            return $this;
+        }
+        if (true === $this->getState()->is('empty') || true === $force) {
+            $record = $this->store->retrieveRecord($this->getType(), $this->getId());
+            $this->initialize($record->getProperties());
+            $this->getState()->setLoaded();
+        }
+        return $this;
+    }
+
+    /**
      * Validates that the model type (from a Model or Collection instance) can be set to the relationship field.
      *
      * @param   string  $relKey The relationship field key.
@@ -484,321 +584,8 @@ class Model
     protected function validateRelSet($relKey, $type)
     {
         $relMeta = $this->getMetadata()->getRelationship($relKey);
-        $relatedModelMeta = $this->store->getMetadataForRelationship($relMeta);
-        $this->store->validateRelationshipSet($relatedModelMeta, $type);
+        $relatedModelMeta = $this->getStore()->getMetadataForRelationship($relMeta);
+        $this->getStore()->validateRelationshipSet($relatedModelMeta, $type);
         return $this;
-    }
-
-    /**
-     * Determines if the model uses a particlar mixin.
-     *
-     * @api
-     * @param   string  $name
-     * @return  bool
-     */
-    public function usesMixin($name)
-    {
-        return $this->metadata->hasMixin($name);
-    }
-
-    /**
-     * Saves the model.
-     *
-     * @api
-     * @param   Implement cascade relationship saves. Or should the store handle this?
-     * @return  self
-     */
-    public function save()
-    {
-        if (true === $this->getState()->is('deleted')) {
-            return $this;
-        }
-        $this->store->commit($this);
-        return $this;
-    }
-
-    /**
-     * Rolls back a model to its original, database values.
-     *
-     * @api
-     * @return  self
-     */
-    public function rollback()
-    {
-        $this->attributes->rollback();
-        $this->hasOneRelationships->rollback();
-        $this->hasManyRelationships->rollback();
-        $this->doDirtyCheck();
-        return $this;
-    }
-
-    /**
-     * Reloads the model from the database.
-     *
-     * @api
-     * @return  self
-     */
-    public function reload()
-    {
-        return $this->touch(true);
-    }
-
-    /**
-     * Restores an in-memory deleted object back to the database.
-     *
-     * @api
-     * @todo    Implement if needed. Or should restore clear a pending delete?
-     * @return  self
-     */
-    public function restore()
-    {
-        return $this;
-    }
-
-    /**
-     * Marks the record for deletion.
-     * Will not remove from the database until $this->save() is called.
-     *
-     * @api
-     * @return  self
-     * @throws  \RuntimeException   If a new (unsaved) model is deleted.
-     */
-    public function delete()
-    {
-        if (true === $this->getState()->is('new')) {
-            throw new \RuntimeException('You cannot delete a new model');
-        }
-        if (true === $this->getState()->is('deleted')) {
-            return $this;
-        }
-        $this->getState()->setDeleting();
-        return $this;
-    }
-
-    /**
-     * Touches the model.
-     * If the model is currently empty, it will query the database and fill/load the model.
-     *
-     * @param   bool    $force  Whether to force the load, even if the model is currently loaded.
-     * @return  self
-     */
-    protected function touch($force = false)
-    {
-        if (true === $this->getState()->is('deleted')) {
-            return $this;
-        }
-        if (true === $this->getState()->is('empty') || true === $force) {
-            $record = $this->store->retrieveRecord($this->getType(), $this->getId());
-            $this->initialize($record);
-            $this->state->setLoaded();
-            // @todo Should this trigger a postReload event? Likely not.
-        }
-        return $this;
-    }
-
-    /**
-     * Applies an array of raw model properties (attributes and relationships) to the model instance.
-     *
-     * @todo    Confirm that we want this method. It's currently used for creating and updating via the API adapter. Also see initialize()
-     * @param   array   $properties     The properties to apply.
-     * @return  self
-     */
-    public function apply(array $properties)
-    {
-        $properties = $this->applyDefaultAttrValues($properties);
-        foreach ($properties as $key => $value) {
-            if (true === $this->isAttribute($key)) {
-                $this->set($key, $value);
-                continue;
-            }
-            if (true === $this->isHasOne($key)) {
-                if (empty($value)) {
-                    $this->clear($key);
-                    continue;
-                }
-                $value = $this->store->loadProxyModel($value['type'], $value['id']);
-                $this->set($key, $value);
-                continue;
-            }
-
-        }
-
-        foreach ($this->getMetadata()->getRelationships() as $key => $relMeta) {
-            if (true === $relMeta->isOne()) {
-                continue;
-            }
-            // Array key exists must exist to determine if the
-            if (!isset($properties[$key]) || true === $relMeta->isInverse) {
-                continue;
-            }
-
-            $this->clear($key);
-            $collection = $this->store->createCollection($relMeta, $properties[$key]);
-            foreach ($collection->allWithoutLoad() as $value) {
-                $this->push($key, $value);
-            }
-        }
-        $this->doDirtyCheck();
-        return $this;
-    }
-
-    /**
-     * Initializes the model and loads its attributes and relationships.
-     *
-     * @todo    Made public so collections can initialize models. Not sure if we want this??
-     * @param   Record|null   $record     The db attributes and relationships to apply.
-     * @return  self
-     */
-    public function initialize(Record $record = null)
-    {
-        $hasOne = [];
-        $hasMany = [];
-        $attributes = [];
-
-        if (null !== $record) {
-            $attributes = $this->applyDefaultAttrValues($attributes);
-            foreach ($record->getProperties() as $key => $value) {
-                if (true === $this->isAttribute($key)) {
-                    // Load attribute.
-                    $attributes[$key] = $this->convertAttributeValue($key, $value);
-                    continue;
-                }
-                if (true === $this->isHasOne($key)) {
-                    // Load hasOne relationship.
-                    $hasOne[$key] = $this->store->loadProxyModel($value['type'], $value['id']);
-                    continue;
-                }
-            }
-        }
-
-        foreach ($this->getMetadata()->getRelationships() as $key => $relMeta) {
-            if (true === $relMeta->isOne()) {
-                continue;
-            }
-            if (true === $relMeta->isInverse) {
-                $hasMany[$key] = $this->store->createInverseCollection($relMeta, $this);
-            } else {
-                $references = (null === $record || !isset($record->getProperties()[$key])) ? [] : $record->getProperties()[$key];
-                $hasMany[$key] = $this->store->createCollection($relMeta, $references);
-            }
-        }
-
-        $this->attributes           = (null === $this->attributes) ? new Attributes($attributes) : $this->attributes->replace($attributes);
-        $this->hasOneRelationships  = (null === $this->hasOneRelationships) ? new Relationships\HasOne($hasOne) : $this->hasOneRelationships->replace($hasOne);
-        $this->hasManyRelationships = (null === $this->hasManyRelationships) ? new Relationships\HasMany($hasMany) : $this->hasManyRelationships->replace($hasMany);
-        $this->doDirtyCheck();
-        return $this;
-    }
-
-    /**
-     * Applies default attribute values from metadata, if set.
-     *
-     * @param   array   $attributes     The attributes to apply the defaults to.
-     * @return  array
-     */
-    protected function applyDefaultAttrValues(array $attributes = [])
-    {
-        // Set defaults for each attribute.
-        foreach ($this->getMetadata()->getAttributes() as $key => $attrMeta) {
-            if (!isset($attrMeta->defaultValue) || isset($attributes[$key])) {
-                continue;
-            }
-            $attributes[$key] = $this->convertAttributeValue($key, $attrMeta->defaultValue);
-        }
-
-        // Set defaults for the entire entity.
-        foreach ($this->getMetadata()->defaultValues as $key => $value) {
-            if (isset($attributes[$key])) {
-                continue;
-            }
-            $attributes[$key] = $this->convertAttributeValue($key, $value);
-        }
-        return $attributes;
-    }
-
-    /**
-     * Determines if the model is currently dirty.
-     * Checks against the attribute and relationship dirty states.
-     *
-     * @api
-     * @return  bool
-     */
-    public function isDirty()
-    {
-        return true === $this->attributes->areDirty()
-            || true === $this->hasOneRelationships->areDirty()
-            || true === $this->hasManyRelationships->areDirty()
-        ;
-    }
-
-    /**
-     * Does a dirty check and sets the state to this model.
-     *
-     * @return  self
-     */
-    protected function doDirtyCheck()
-    {
-        $this->state->setDirty($this->isDirty());
-        return $this;
-    }
-
-    /**
-     * Gets the current change set of attributes and relationships.
-     *
-     * @api
-     * @return  array
-     */
-    public function getChangeSet()
-    {
-        $changeset = [
-            'attributes'    => $this->attributes->calculateChangeSet(),
-            'hasOne'        => $this->hasOneRelationships->calculateChangeSet(),
-            'hasMany'       => $this->hasManyRelationships->calculateChangeSet(),
-        ];
-
-        foreach ($changeset as $type => $properties) {
-            $changeset[$type] = $this->filterNotSavedProperties($type, $properties);
-        }
-        return $changeset;
-    }
-
-    /**
-     * Gets the model state object.
-     *
-     * @todo    Should this be public? State setting should likely be locked from the outside world.
-     * @return  State
-     */
-    public function getState()
-    {
-        return $this->state;
-    }
-
-    /**
-     * Gets the metadata for this model.
-     *
-     * @return  EntityMetadata
-     */
-    public function getMetadata()
-    {
-        return $this->metadata;
-    }
-
-    /**
-     * Removes properties marked as non-saved.
-     *
-     * @param   string  $propType
-     * @param   array   $properties
-     * @return  array
-     */
-    private function filterNotSavedProperties($propType, array $properties)
-    {
-        $method = ('attributes' === $propType) ? 'getAttributes' : 'getRelationships';
-        foreach ($this->getMetadata()->$method() as $fieldKey => $propMeta) {
-            if (true === $propMeta->shouldSave() || !isset($properties[$fieldKey])) {
-                continue;
-            }
-            unset($properties[$fieldKey]);
-        }
-        return $properties;
     }
 }
