@@ -4,6 +4,7 @@ namespace As3\Modlr\Models\Collections;
 
 use As3\Modlr\Metadata\EntityMetadata;
 use As3\Modlr\Models\AbstractModel;
+use As3\Modlr\Models\Model;
 use As3\Modlr\Store\Store;
 
 /**
@@ -136,7 +137,7 @@ abstract class ModelCollection extends AbstractCollection
     protected function validateModelClass(AbstractModel $model)
     {
         if (!$model instanceof Model) {
-            throw new \InvalidArgumentExcepton('The model must be an instanceof of Model');
+            throw new \InvalidArgumentException('The model must be an instanceof of Model');
         }
     }
 }
