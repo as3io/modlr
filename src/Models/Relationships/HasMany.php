@@ -2,7 +2,7 @@
 
 namespace As3\Modlr\Models\Relationships;
 
-use As3\Modlr\Models\Collection;
+use As3\Modlr\Models\Collections\Collection;
 use As3\Modlr\Models\Properties;
 
 /**

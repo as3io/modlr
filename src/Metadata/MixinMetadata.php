@@ -115,10 +115,10 @@ class MixinMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedIn
     protected function validateRelationship(RelationshipMetadata $relationship)
     {
         if (true === $this->hasAttribute($relationship->getKey())) {
-            throw MetadataException::fieldKeyInUse('relationship', 'attribute', $relationship->getKey(), $this->type);
+            throw MetadataException::fieldKeyInUse('relationship', 'attribute', $relationship->getKey(), $this->name);
         }
         if (true === $this->hasEmbed($relationship->getKey())) {
-            throw MetadataException::fieldKeyInUse('relationship', 'embed', $relationship->getKey(), $this->type);
+            throw MetadataException::fieldKeyInUse('relationship', 'embed', $relationship->getKey(), $this->name);
         }
     }
 }
