@@ -277,6 +277,12 @@ abstract class AbstractModel
         $this->attributes    = (null === $this->attributes) ? new Attributes($attributes) : $this->attributes->replace($attributes);
         $this->hasOneEmbeds  = (null === $this->hasOneEmbeds) ? new Embeds\HasOne($embedOne) : $this->hasOneEmbeds->replace($embedOne);
         $this->hasManyEmbeds = (null === $this->hasManyEmbeds) ? new Embeds\HasMany($embedMany) : $this->hasManyEmbeds->replace($embedMany);
+
+        if (true === $this->getState()->is('new')) {
+            // Ensure default values are applied to new models.
+            $this->apply([]);
+        }
+
         $this->doDirtyCheck();
         return $this;
     }
