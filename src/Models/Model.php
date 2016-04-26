@@ -198,10 +198,7 @@ class Model extends AbstractModel
     }
 
     /**
-     * Gets the composite key of the model by combining the model type with the unique id.
-     *
-     * @api
-     * @return  string
+     * {@inheritdoc}
      */
     public function getCompositeKey()
     {

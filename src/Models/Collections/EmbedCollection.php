@@ -76,16 +76,6 @@ class EmbedCollection extends AbstractCollection
     /**
      * {@inheritdoc}
      */
-    protected function modelsMatch(AbstractModel $model, AbstractModel $loaded)
-    {
-        $this->validateModelClass($model);
-        $this->validateModelClass($loaded);
-        return spl_object_hash($model) === spl_object_hash($loaded);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     protected function validateAdd(AbstractModel $model)
     {
         $this->validateModelClass($model);

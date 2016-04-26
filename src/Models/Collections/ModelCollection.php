@@ -112,16 +112,6 @@ abstract class ModelCollection extends AbstractCollection
     /**
      * {@inheritdoc}
      */
-    protected function modelsMatch(AbstractModel $model, AbstractModel $loaded)
-    {
-        $this->validateModelClass($model);
-        $this->validateModelClass($loaded);
-        return $model->getType() === $loaded->getType() && $model->getId() === $loaded->getId();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     protected function validateAdd(AbstractModel $model)
     {
         $this->validateModelClass($model);
