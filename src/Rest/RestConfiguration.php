@@ -209,7 +209,7 @@ class RestConfiguration
     {
         return [
             'offset'    => 0,
-            'limit'     => 50,
+            'limit'     => 25,
         ];
     }
 
