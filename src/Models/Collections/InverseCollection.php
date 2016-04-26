@@ -40,7 +40,7 @@ class InverseCollection extends ModelCollection
      */
     public function __construct(EntityMetadata $metadata, Store $store, Model $owner, $inverseField)
     {
-        parent::__construct($metadata, $store, []);
+        parent::__construct($metadata, $store, [], 0);
         $this->owner = $owner;
         $this->inverseField = $inverseField;
     }
@@ -55,6 +55,17 @@ class InverseCollection extends ModelCollection
     public function clear()
     {
         throw new \BadMethodCallException('You cannot clear inverse collections.');
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Overwritten to ensure the collection is loaded, since references aren't sent to inverse collections.
+     */
+    public function count()
+    {
+        $this->loadFromStore();
+        return parent::count();
     }
 
     /**
@@ -95,6 +106,16 @@ class InverseCollection extends ModelCollection
     public function getQueryField()
     {
         return $this->inverseField;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Overwritten to ensure the collection is loaded, since references aren't sent to inverse collections.
+     */
+    public function getTotalCount()
+    {
+        return $this->count();
     }
 
     /**

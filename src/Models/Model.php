@@ -565,7 +565,7 @@ class Model extends AbstractModel
         }
         if (true === $this->getState()->is('empty') || true === $force) {
             $record = $this->store->retrieveRecord($this->getType(), $this->getId());
-            $this->initialize($record->getProperties());
+            $this->initialize($record['properties']);
             $this->getState()->setLoaded();
         }
         return $this;

@@ -36,9 +36,10 @@ interface SerializerInterface
      *
      * @param   Model[]             $models
      * @param   AdapterInterface    $adapter
+     * @param   int                 $totalCount
      * @return  string|array        Depending on depth
      */
-    public function serializeArray(array $models, AdapterInterface $adapter);
+    public function serializeArray(array $models, AdapterInterface $adapter, $totalCount);
 
     /**
      * Gets a serialized error response.

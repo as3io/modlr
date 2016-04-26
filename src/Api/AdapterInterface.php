@@ -28,9 +28,11 @@ interface AdapterInterface
      *
      * @param   string  $typeKey
      * @param   string  $identifier
+     * @param   array   $fields
+     * @param   array   $inclusions
      * @return  Rest\RestResponse
      */
-    public function findRecord($typeKey, $identifier); //, array $fields = [], array $inclusions = []);
+    public function findRecord($typeKey, $identifier, array $fields = [], array $inclusions = []);
 
     /**
      * Finds a model (or models) for a model's related field.
@@ -48,9 +50,13 @@ interface AdapterInterface
      *
      * @param   string  $typeKey
      * @param   array   $identifiers
+     * @param   array   $fields
+     * @param   array   $sort
+     * @param   array   $pagination
+     * @param   array   $inclusions
      * @return  Rest\RestResponse
      */
-    public function findAll($typeKey, array $identifiers = []); //, array $pagination = [], array $fields = [], array $inclusions = [], array $sort = []);
+    public function findAll($typeKey, array $identifiers = [], array $fields = [], array $sort = [], array $pagination = [], array $inclusions = []);
 
     /**
      * Queries records based on a provided set of criteria.
@@ -59,12 +65,11 @@ interface AdapterInterface
      * @param   array       $criteria   The query criteria.
      * @param   array       $fields     Fields to include/exclude.
      * @param   array       $sort       The sort criteria.
+     * @param   array       $pagination The pagination criteria (offset and limit).
      * @param   array       $inclusions The inclusion criteria for side-loading related models.
-     * @param   int         $offset     The starting offset, aka the number of Models to skip.
-     * @param   int         $limit      The number of Models to limit.
      * @return  Rest\RestResponse
      */
-    public function findQuery($typeKey, array $criteria, array $fields = [], array $sort = [], array $inclusions =[], $offset = 0, $limit = 0);
+    public function findQuery($typeKey, array $criteria, array $fields = [], array $sort = [], array $pagination = [], array $inclusions = []);
 
     /**
      * Creates a new model.
@@ -112,6 +117,13 @@ interface AdapterInterface
      * @return  Rest\RestResponse
      */
     public function handleException(\Exception $e);
+
+    /**
+     * Gets the current REST request.
+     *
+     * @return  Rest\RestRequest
+     */
+    public function getRequest();
 
     /**
      * Builds a URL for an entity, or an entity relationship.

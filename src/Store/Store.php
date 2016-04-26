@@ -13,7 +13,7 @@ use As3\Modlr\Models\Collections;
 use As3\Modlr\Models\Embed;
 use As3\Modlr\Models\Model;
 use As3\Modlr\Persister\PersisterInterface;
-use As3\Modlr\Persister\Record;
+use As3\Modlr\Persister\RecordSetInterface;
 use As3\Modlr\StorageLayerManager;
 use As3\Modlr\Store\Events\ModelLifecycleArguments;
 
@@ -108,17 +108,21 @@ class Store
      * @todo    Handle find all with identifiers.
      * @param   string  $typeKey        The model type.
      * @param   array   $idenitifiers   The model identifiers (optional).
+     * @param   array   $fields
+     * @param   array   $sort
+     * @param   int     $offset
+     * @param   int     $limit
      * @return  Collections\Collection
      */
-    public function findAll($typeKey, array $identifiers = [])
+    public function findAll($typeKey, array $identifiers = [], array $fields = [], array $sort = [], $offset = 0, $limit = 0)
     {
         $metadata = $this->getMetadataForType($typeKey);
         if (!empty($identifiers)) {
             throw StoreException::nyi('Finding multiple records with specified identifiers is not yet supported.');
         }
-        $records = $this->retrieveRecords($typeKey, $identifiers);
-        $models = $this->loadModels($typeKey, $records);
-        return new Collections\Collection($metadata, $this, $models);
+        $recordSet = $this->retrieveRecords($typeKey, $identifiers, $fields, $sort, $offset, $limit);
+        $models = $this->loadModels($typeKey, $recordSet);
+        return new Collections\Collection($metadata, $this, $models, $recordSet->totalCount());
     }
 
     /**
@@ -137,10 +141,10 @@ class Store
         $metadata = $this->getMetadataForType($typeKey);
 
         $persister = $this->getPersisterFor($typeKey);
-        $records = $persister->query($metadata, $this, $criteria, $fields, $sort, $offset, $limit);
+        $recordSet = $persister->query($metadata, $this, $criteria, $fields, $sort, $offset, $limit);
 
-        $models = $this->loadModels($typeKey, $records);
-        return new Collections\Collection($metadata, $this, $models);
+        $models = $this->loadModels($typeKey, $recordSet);
+        return new Collections\Collection($metadata, $this, $models, $recordSet->totalCount());
     }
 
     /**
@@ -162,7 +166,7 @@ class Store
         if (false === $metadata->isSearchEnabled()) {
             throw StoreException::badRequest(sprintf('Search is not enabled for model type "%s"', $metadata->type));
         }
-        return new Collections\Collection($metadata, $this, []);
+        return new Collections\Collection($metadata, $this, [], 0);
     }
 
     /**
@@ -198,17 +202,17 @@ class Store
     }
 
     /**
-     * Retrieves a Record object from the persistence layer.
+     * Retrieves a RecordSet object from the persistence layer.
      *
      * @param   string  $typeKey    The model type.
      * @param   string  $identifier The model identifier.
-     * @return  Record
+     * @return  array
      * @throws  StoreException  If the record cannot be found.
      */
     public function retrieveRecord($typeKey, $identifier)
     {
         $persister = $this->getPersisterFor($typeKey);
-        $record = $persister->retrieve($this->getMetadataForType($typeKey), $identifier, $this);
+        $record = $persister->retrieve($this->getMetadataForType($typeKey), $identifier, $this)->getSingleResult();
         if (null === $record) {
             throw StoreException::recordNotFound($typeKey, $identifier);
         }
@@ -221,12 +225,16 @@ class Store
      * @todo    Implement sorting and pagination (limit/skip).
      * @param   string  $typeKey        The model type.
      * @param   array   $identifiers    The model identifier.
-     * @return  Record[]
+     * @param   array   $fields
+     * @param   array   $sort
+     * @param   int     $offset
+     * @param   int     $limit
+     * @return  RecordSetInterface
      */
-    public function retrieveRecords($typeKey, array $identifiers)
+    public function retrieveRecords($typeKey, array $identifiers, array $fields = [], array $sort = [], $offset = 0, $limit = 0)
     {
         $persister = $this->getPersisterFor($typeKey);
-        return $persister->all($this->getMetadataForType($typeKey), $this, $identifiers);
+        return $persister->all($this->getMetadataForType($typeKey), $this, $identifiers, $fields, $sort, $offset, $limit);
     }
 
     /**
@@ -237,7 +245,7 @@ class Store
      * @param   string  $relTypeKey
      * @param   array   $identifiers
      * @param   string  $inverseField
-     * @return  Record[]
+     * @return  RecordSetInterface
      */
     public function retrieveInverseRecords($ownerTypeKey, $relTypeKey, array $identifiers, $inverseField)
     {
@@ -255,16 +263,16 @@ class Store
      * Loads/creates a model from a persistence layer Record.
      *
      * @param   string  $typeKey    The model type.
-     * @param   Record  $record     The persistence layer record.
+     * @param   array   $record     The persistence layer record.
      * @return  Model
      */
-    protected function loadModel($typeKey, Record $record)
+    protected function loadModel($typeKey, array $record)
     {
-        $this->mf->validateResourceTypes($typeKey, $record->getType());
+        $this->mf->validateResourceTypes($typeKey, $record['type']);
         // Must use the type from the record to cover polymorphic models.
-        $metadata = $this->getMetadataForType($record->getType());
+        $metadata = $this->getMetadataForType($record['type']);
 
-        $model = new Model($metadata, $record->getId(), $this, $record->getProperties());
+        $model = new Model($metadata, $record['identifier'], $this, $record['properties']);
         $model->getState()->setLoaded();
 
         $this->dispatchLifecycleEvent(Events::postLoad, $model);
@@ -276,11 +284,11 @@ class Store
     /**
      * Loads/creates multiple models from persistence layer Records.
      *
-     * @param   string      $typeKey    The model type.
-     * @param   Record[]    $records    The persistence layer records.
+     * @param   string              $typeKey    The model type.
+     * @param   RecordSetInterface  $records    The persistence layer records.
      * @return  Model[]
      */
-    protected function loadModels($typeKey, array $records)
+    protected function loadModels($typeKey, RecordSetInterface $records)
     {
         $models = [];
         foreach ($records as $record) {
@@ -415,7 +423,7 @@ class Store
         foreach ($references as $reference) {
             $models[] = $this->loadProxyModel($reference['type'], $reference['id']);
         }
-        return new Collections\Collection($metadata, $this, $models);
+        return new Collections\Collection($metadata, $this, $models, count($models));
     }
 
     /**
@@ -444,15 +452,15 @@ class Store
             return [];
         }
         if ($collection instanceof Collections\InverseCollection) {
-            $records = $this->retrieveInverseRecords($collection->getOwner()->getType(), $collection->getType(), $collection->getIdentifiers(), $collection->getQueryField());
+            $recordSet = $this->retrieveInverseRecords($collection->getOwner()->getType(), $collection->getType(), $collection->getIdentifiers(), $collection->getQueryField());
         } else {
-            $records = $this->retrieveRecords($collection->getType(), $collection->getIdentifiers());
+            $recordSet = $this->retrieveRecords($collection->getType(), $collection->getIdentifiers());
         }
 
         $models = [];
-        foreach ($records as $record) {
-            if (true === $this->cache->has($record->getType(), $record->getId())) {
-                $models[] = $this->cache->get($record->getType(), $record->getId());
+        foreach ($recordSet as $record) {
+            if (true === $this->cache->has($record['type'], $record['identifier'])) {
+                $models[] = $this->cache->get($record['type'], $record['identifier']);
                 continue;
             }
             $models[] = $this->loadModel($collection->getType(), $record);

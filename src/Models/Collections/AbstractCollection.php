@@ -75,16 +75,26 @@ abstract class AbstractCollection implements Iterator, Countable
     protected $store;
 
     /**
+     * The total count of the collection,
+     * Acts as if no offsets or limits were originally applied to the Model set.
+     *
+     * @var int
+     */
+    protected $totalCount;
+
+    /**
      * Constructor.
      *
      * @param   Store           $store
      * @param   AbstractModel[] $models
+     * @param   int             $totalCount
      */
-    public function __construct(Store $store, array $models = [])
+    public function __construct(Store $store, array $models = [], $totalCount)
     {
         $this->pos = 0;
         $this->store = $store;
         $this->setModels($models);
+        $this->totalCount = (Integer) $totalCount;
     }
 
     /**
@@ -145,6 +155,16 @@ abstract class AbstractCollection implements Iterator, Countable
         }
         $this->rewind();
         return $this->current();
+    }
+
+    /**
+     * Gets the 'total' model count, as if a limit and offset were not applied.
+     *
+     * @return  int
+     */
+    public function getTotalCount()
+    {
+        return $this->totalCount;
     }
 
     /**
@@ -377,6 +397,7 @@ abstract class AbstractCollection implements Iterator, Countable
             if (isset($keys[$key])) {
                 unset($keys[$key]);
                 $this->modelKeyMap = array_keys($keys);
+                $this->totalCount--;
             }
         }
         return $this;
@@ -410,6 +431,7 @@ abstract class AbstractCollection implements Iterator, Countable
             $keys = array_flip($this->models);
             if (!isset($keys[$key])) {
                 $this->modelKeyMap[] = $key;
+                $this->totalCount++;
             }
         }
         return $this;
