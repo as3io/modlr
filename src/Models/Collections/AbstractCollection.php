@@ -388,8 +388,8 @@ abstract class AbstractCollection implements Iterator, Countable
     protected function evict($property, AbstractModel $model)
     {
         $key = $model->getCompositeKey();
-        if (isset($this->$property)) {
-            unset($this->$property[$key]);
+        if (isset($this->{$property})) {
+            unset($this->{$property}[$key]);
         }
 
         if ('models' === $property) {
@@ -425,10 +425,10 @@ abstract class AbstractCollection implements Iterator, Countable
     protected function set($property, AbstractModel $model)
     {
         $key = $model->getCompositeKey();
-        $this->$property[$key] = $model;
+        $this->{$property}[$key] = $model;
 
         if ('models' === $property) {
-            $keys = array_flip($this->models);
+            $keys = array_flip($this->modelKeyMap);
             if (!isset($keys[$key])) {
                 $this->modelKeyMap[] = $key;
                 $this->totalCount++;
