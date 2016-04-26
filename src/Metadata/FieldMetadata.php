@@ -41,6 +41,13 @@ abstract class FieldMetadata
     public $save = true;
 
     /**
+     * Whether this property should be serialized.
+     *
+     * @var bool
+     */
+    public $serialize = true;
+
+    /**
      * Determines whether this propety is stored in search.
      *
      * @var bool
@@ -69,6 +76,18 @@ abstract class FieldMetadata
     public function enableSave($bit = true)
     {
         $this->save = (bool) $bit;
+        return $this;
+    }
+
+    /**
+     * Enables or disables serialization of this property.
+     *
+     * @param   bool    $bit
+     * @return  self
+     */
+    public function enableSerialize($bit = true)
+    {
+        $this->serialize = (bool) $bit;
         return $this;
     }
 
@@ -112,6 +131,16 @@ abstract class FieldMetadata
     public function shouldSave()
     {
         return $this->save;
+    }
+
+    /**
+     * Whether this property should be serialized.
+     *
+     * @return  bool
+     */
+    public function shouldSerialize()
+    {
+        return $this->serialize;
     }
 
     /**

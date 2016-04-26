@@ -25,11 +25,12 @@ abstract class ModelCollection extends AbstractCollection
      * @param   EntityMetadata  $metadata
      * @param   Store           $store
      * @param   AbstractModel[] $models
+     * @param   int             $totalCount
      */
-    public function __construct(EntityMetadata $metadata, Store $store, array $models = [])
+    public function __construct(EntityMetadata $metadata, Store $store, array $models = [], $totalCount)
     {
         $this->metadata = $metadata;
-        parent::__construct($store, $models);
+        parent::__construct($store, $models, $totalCount);
     }
 
     /**

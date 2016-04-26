@@ -5,7 +5,7 @@ namespace As3\Modlr\Search;
 use As3\Modlr\Metadata\EntityMetadata;
 use As3\Modlr\Metadata\Interfaces\SearchMetadataFactoryInterface;
 use As3\Modlr\Persister\PersisterInterface;
-use As3\Modlr\Persister\Record;
+use As3\Modlr\Persister\RecordSetInterface;
 
 /**
  * Defines the service implementation for searching for (and modifying) models in the search layer.
@@ -38,7 +38,7 @@ interface ClientInterface
      * @param   EntityMetadata      $metadata
      * @param   array               $criteria
      * @param   PersisterInterface  $persister
-     * @return  Record[]
+     * @return  RecordSetInterface
      */
     public function query(EntityMetadata $metadata, array $criteria, PersisterInterface $persister);
 

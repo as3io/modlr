@@ -38,6 +38,13 @@ abstract class AbstractAdapter implements AdapterInterface
     protected $store;
 
     /**
+     * The current REST request.
+     *
+     * @var Rest\RestRequest
+     */
+    protected $request;
+
+    /**
      * The REST configuration.
      *
      * @var Rest\RestConfiguration
@@ -68,7 +75,7 @@ abstract class AbstractAdapter implements AdapterInterface
     /**
      * {@inheritDoc}
      */
-    public function findRecord($typeKey, $identifier) //, array $fields = [], array $inclusions = [])
+    public function findRecord($typeKey, $identifier, array $fields = [], array $inclusions = [])
     {
         $model = $this->getStore()->find($typeKey, $identifier);
         $payload = $this->serialize($model);
@@ -78,9 +85,9 @@ abstract class AbstractAdapter implements AdapterInterface
     /**
      * {@inheritDoc}
      */
-    public function findAll($typeKey, array $identifiers = []) //, array $pagination = [], array $fields = [], array $inclusions = [], array $sort = [])
+    public function findAll($typeKey, array $identifiers = [], array $fields = [], array $sort = [], array $pagination = [], array $inclusions = [])
     {
-        $collection = $this->getStore()->findAll($typeKey, $identifiers);
+        $collection = $this->getStore()->findAll($typeKey, $identifiers, $fields, $sort, $pagination['offset'], $pagination['limit']);
         $payload = $this->serializeCollection($collection);
         return $this->createRestResponse(200, $payload);
     }
@@ -88,9 +95,9 @@ abstract class AbstractAdapter implements AdapterInterface
     /**
      * {@inheritDoc}
      */
-    public function findQuery($typeKey, array $criteria, array $fields = [], array $sort = [], array $inclusions =[], $offset = 0, $limit = 0)
+    public function findQuery($typeKey, array $criteria, array $fields = [], array $sort = [], array $pagination = [], array $inclusions = [])
     {
-        $collection = $this->getStore()->findQuery($typeKey, $criteria, $fields, $sort, $offset, $limit);
+        $collection = $this->getStore()->findQuery($typeKey, $criteria, $fields, $sort, $pagination['offset'], $pagination['limit']);
         $payload = $this->serializeCollection($collection);
         return $this->createRestResponse(200, $payload);
     }
@@ -114,7 +121,6 @@ abstract class AbstractAdapter implements AdapterInterface
      */
     public function createRecord($typeKey, Rest\RestPayload $payload) //, array $fields = [], array $inclusions = [])
     {
-        // @todo Do normalized payloads need to be wrapped in an object, similar to persistence Records?
         $normalized = $this->normalize($payload);
         $this->validateCreatePayload($typeKey, $normalized);
 
@@ -157,6 +163,14 @@ abstract class AbstractAdapter implements AdapterInterface
         $collection = $this->getStore()->searchAutocomplete($typeKey, $attributeKey, $searchValue);
         $payload = $this->serializeCollection($collection);
         return $this->createRestResponse(200, $payload);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getRequest()
+    {
+        return $this->request;
     }
 
     /**

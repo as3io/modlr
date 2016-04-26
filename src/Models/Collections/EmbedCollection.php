@@ -29,7 +29,7 @@ class EmbedCollection extends AbstractCollection
     public function __construct(EmbedMetadata $metadata, Store $store, array $models = [])
     {
         $this->metadata = $metadata;
-        parent::__construct($store, $models);
+        parent::__construct($store, $models, count($models));
     }
 
     /**

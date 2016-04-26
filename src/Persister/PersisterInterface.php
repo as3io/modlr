@@ -37,9 +37,13 @@ interface PersisterInterface
      * @param   EntityMetadata  $metadata
      * @param   Store           $store
      * @param   array           $identifiers
-     * @return  Record[]
+     * @param   array           $fields
+     * @param   array           $sort
+     * @param   int             $offset
+     * @param   int             $limit
+     * @return  RecordSetInterface
      */
-    public function all(EntityMetadata $metadata, Store $store, array $identifiers = []);
+    public function all(EntityMetadata $metadata, Store $store, array $identifiers = [], array $fields = [], array $sort = [], $offset = 0, $limit = 0);
 
     /**
      * Retrieves a single model record from the database.
@@ -47,7 +51,7 @@ interface PersisterInterface
      * @param   EntityMetadata  $metadata   The metadata for the model/record.
      * @param   string          $identifier The identifier for the record. Always a string. The persister must convert.
      * @param   Store           $store
-     * @return  Record|null
+     * @return  RecordSetInterface
      */
     public function retrieve(EntityMetadata $metadata, $identifier, Store $store);
 
@@ -61,7 +65,7 @@ interface PersisterInterface
      * @param   array               $sort       The sort criteria.
      * @param   int                 $offset     The starting offset, aka the number of Models to skip.
      * @param   int                 $limit      The number of Models to limit.
-     * @return  Record[]
+     * @return  RecordSetInterface
      */
     public function query(EntityMetadata $metadata, Store $store, array $criteria, array $fields = [], array $sort = [], $offset = 0, $limit = 0);
 
@@ -73,7 +77,7 @@ interface PersisterInterface
      * @param   Store           $store
      * @param   string          $inverseField   The field key to query.
      * @param   array           $identifiers    The identifiers to query.
-     * @return  array
+     * @return  RecordSetInterface
      */
     public function inverse(EntityMetadata $owner, EntityMetadata $rel, Store $store, array $identifiers, $inverseField);
 

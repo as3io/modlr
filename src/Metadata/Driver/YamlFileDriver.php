@@ -248,6 +248,10 @@ final class YamlFileDriver extends AbstractFileDriver
                 $attribute->enableSave($mapping['save']);
             }
 
+            if (isset($mapping['serialize'])) {
+                $attribute->enableSerialize($mapping['serialize']);
+            }
+
             $metadata->addAttribute($attribute);
         }
         return $metadata;
@@ -280,6 +284,11 @@ final class YamlFileDriver extends AbstractFileDriver
                 continue;
             }
             $property = new Metadata\EmbeddedPropMetadata($key, $mapping['type'], $embedMeta, $this->isMixin($metadata));
+
+            if (isset($mapping['serialize'])) {
+                $property->enableSerialize($mapping['serialize']);
+            }
+
             $metadata->addEmbed($property);
         }
         return $metadata;
@@ -358,6 +367,10 @@ final class YamlFileDriver extends AbstractFileDriver
 
             if (isset($mapping['save'])) {
                 $relationship->enableSave($mapping['save']);
+            }
+
+            if (isset($mapping['serialize'])) {
+                $relationship->enableSerialize($mapping['serialize']);
             }
 
             $metadata->addRelationship($relationship);
