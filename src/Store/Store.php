@@ -419,6 +419,18 @@ class Store
     }
 
     /**
+     * Determines the persister to use for the provided model key.
+     *
+     * @param   string  $typeKey    The model type key.
+     * @return  PersisterInterface
+     */
+    public function getPersisterFor($typeKey)
+    {
+        $metadata = $this->getMetadataForType($typeKey);
+        return $this->storageManager->getPersister($metadata->persistence->getKey());
+    }
+
+    /**
      * Loads/fills a collection of empty (unloaded) models with data from the persistence layer.
      *
      * @param   Collections\AbstractCollection  $collection
@@ -597,18 +609,6 @@ class Store
     {
         $state = $model->getState();
         return true === $state->is('dirty') || $state->is('new') || $state->is('deleting');
-    }
-
-    /**
-     * Determines the persister to use for the provided model key.
-     *
-     * @param   string  $typeKey    The model type key.
-     * @return  PersisterInterface
-     */
-    protected function getPersisterFor($typeKey)
-    {
-        $metadata = $this->getMetadataForType($typeKey);
-        return $this->storageManager->getPersister($metadata->persistence->getKey());
     }
 
     /**
