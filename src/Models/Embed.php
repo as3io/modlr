@@ -33,6 +33,14 @@ class Embed extends AbstractModel
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function getCompositeKey()
+    {
+        return spl_object_hash($this);
+    }
+
+    /**
      * Gets the metadata for this model.
      *
      * @api

@@ -207,6 +207,14 @@ abstract class AbstractModel
     }
 
     /**
+     * Gets the composite key of the model.
+     *
+     * @api
+     * @return  string
+     */
+    abstract public function getCompositeKey();
+
+    /**
      * Gets the metadata for this model.
      *
      * @api

@@ -39,6 +39,13 @@ abstract class AbstractCollection implements Iterator, Countable
     protected $models = [];
 
     /**
+     * Gets the position of each model key in the collection.
+     *
+     * @var string[]
+     */
+    protected $modelKeyMap = [];
+
+    /**
      * Original models assigned to this collection.
      *
      * @var AbstractModel[]
@@ -122,7 +129,8 @@ abstract class AbstractCollection implements Iterator, Countable
      */
     public function current()
     {
-        return $this->models[$this->pos];
+        $key = $this->modelKeyMap[$this->pos];
+        return $this->models[$key];
     }
 
     /**
@@ -154,7 +162,8 @@ abstract class AbstractCollection implements Iterator, Countable
      */
     public function has(AbstractModel $model)
     {
-        return -1 !== $this->indexOf('models', $model);
+        $key = $model->getCompositeKey();
+        return isset($this->models[$key]);
     }
 
     /**
@@ -295,7 +304,7 @@ abstract class AbstractCollection implements Iterator, Countable
      */
     public function valid()
     {
-        return isset($this->models[$this->pos]);
+        return isset($this->modelKeyMap[$this->pos]);
     }
 
     /**
@@ -306,7 +315,8 @@ abstract class AbstractCollection implements Iterator, Countable
      */
     public function willAdd(AbstractModel $model)
     {
-        return -1 !== $this->indexOf('added', $model);
+        $key = $model->getCompositeKey();
+        return isset($this->added[$key]);
     }
 
     /**
@@ -317,7 +327,8 @@ abstract class AbstractCollection implements Iterator, Countable
      */
     public function willRemove(AbstractModel $model)
     {
-        return -1 !== $this->indexOf('removed', $model);
+        $key = $model->getCompositeKey();
+        return isset($this->removed[$key]);
     }
 
     /**
@@ -336,9 +347,13 @@ abstract class AbstractCollection implements Iterator, Countable
         if (true === $model->getState()->is('empty')) {
             $this->loaded = false;
         }
-        $this->models[] = $model;
+
+        $key = $model->getCompositeKey();
+        $this->models[$key] = $model;
+        $this->modelKeyMap[] = $key;
+
         if (false === $this->hasOriginal($model)) {
-            $this->original[] = $model;
+            $this->original[$key] = $model;
         }
         return $this;
     }
@@ -352,10 +367,18 @@ abstract class AbstractCollection implements Iterator, Countable
      */
     protected function evict($property, AbstractModel $model)
     {
-        $index = $this->indexOf($property, $model);
-        $models = $this->$property;
-        unset($models[$index]);
-        $this->$property = array_values($models);
+        $key = $model->getCompositeKey();
+        if (isset($this->$property)) {
+            unset($this->$property[$key]);
+        }
+
+        if ('models' === $property) {
+            $keys = array_flip($this->modelKeyMap);
+            if (isset($keys[$key])) {
+                unset($keys[$key]);
+                $this->modelKeyMap = array_keys($keys);
+            }
+        }
         return $this;
     }
 
@@ -367,38 +390,9 @@ abstract class AbstractCollection implements Iterator, Countable
      */
     protected function hasOriginal(AbstractModel $model)
     {
-        return -1 !== $this->indexOf('original', $model);
+        $key = $model->getCompositeKey();
+        return isset($this->original[$key]);
     }
-
-    /**
-     * Gets the Model array index from a collection property (original, added, removed, models).
-     * Will return -1 if the model was not found.
-     *
-     * @param   string          $property   The property key
-     * @param   AbstractModel   $model      The model to check.
-     * @return  int
-     */
-    protected function indexOf($property, AbstractModel $model)
-    {
-        $this->validateModelClass($model);
-
-        // @todo For performance, can we create a map using the model's composite key to avoid these loops?
-        foreach ($this->$property as $index => $loaded) {
-            if (true === $this->modelsMatch($model, $loaded)) {
-                return $index;
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Determines if the provided models match.
-     *
-     * @param   AbstractModel   $model
-     * @param   AbstractModel   $loaded
-     * @return  bool
-     */
-    abstract protected function modelsMatch(AbstractModel $model, AbstractModel $loaded);
 
     /**
      * Sets a model to a collection property (original, added, removed, models).
@@ -409,9 +403,15 @@ abstract class AbstractCollection implements Iterator, Countable
      */
     protected function set($property, AbstractModel $model)
     {
-        $models = $this->$property;
-        $models[] = $model;
-        $this->$property = $models;
+        $key = $model->getCompositeKey();
+        $this->$property[$key] = $model;
+
+        if ('models' === $property) {
+            $keys = array_flip($this->models);
+            if (!isset($keys[$key])) {
+                $this->modelKeyMap[] = $key;
+            }
+        }
         return $this;
     }
 
