@@ -370,7 +370,7 @@ final class YamlFileDriver extends AbstractFileDriver
             }
 
             if (isset($mapping['serialize'])) {
-                $attribute->enableSerialize($mapping['serialize']);
+                $relationship->enableSerialize($mapping['serialize']);
             }
 
             $metadata->addRelationship($relationship);
