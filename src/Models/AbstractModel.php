@@ -105,6 +105,9 @@ abstract class AbstractModel
                     continue;
                 }
                 $embed = $this->get($key) ?: $this->createEmbedFor($key, $value);
+                if (!is_array($value)) {
+                    continue;
+                }
                 $embed->apply($value);
                 $this->set($key, $embed);
                 continue;
@@ -266,7 +269,7 @@ abstract class AbstractModel
                 if (true === $this->isAttribute($key)) {
                     // Load attribute.
                     $attributes[$key] = $this->convertAttributeValue($key, $value);
-                } else if (true === $this->isEmbedHasOne($key)) {
+                } else if (true === $this->isEmbedHasOne($key) && is_array($value)) {
                     // Load embed one.
                     $embedOne[$key] = $this->getStore()->loadEmbed($this->getMetadata()->getEmbed($key)->embedMeta, $value);
                 }
