@@ -142,6 +142,24 @@ class RestRequest
     }
 
     /**
+     * Generates the request URL based on its current object state.
+     *
+     * @todo    Add support for inclusions and other items.
+     * @return  string
+     */
+    public function getUrl()
+    {
+        $query = $this->getQueryString();
+        return sprintf('%s://%s/%s/%s%s',
+            $this->getScheme(),
+            trim($this->getHost(), '/'),
+            trim($this->config->getRootEndpoint(), '/'),
+            $this->getEntityType(),
+            empty($query) ? '' : sprintf('?%s', $query)
+        );
+    }
+
+    /**
      * Gets the scheme, such as http or https.
      *
      * @return  string
@@ -189,6 +207,33 @@ class RestRequest
     public function getIdentifier()
     {
         return $this->identifier;
+    }
+
+    /**
+     * Gets the query string based on the current object properties.
+     *
+     * @return  string
+     */
+    public function getQueryString()
+    {
+        $query = [];
+        if (!empty($this->pagination)) {
+            $query[self::PARAM_PAGINATION] = $this->pagination;
+        }
+        if (!empty($this->filters)) {
+            $query[self::PARAM_FILTERING] = $this->filters;
+        }
+        foreach ($this->fields as $modelType => $fields) {
+            $query[self::PARAM_FIELDSETS][$modelType] = implode(',', $fields);
+        }
+        $sort = [];
+        foreach ($this->sorting as $key => $direction) {
+            $sort[] = (1 === $direction) ? $key : sprintf('-%s', $key);
+        }
+        if (!empty($sort)) {
+            $query[self::PARAM_SORTING] = implode(',', $sort);
+        }
+        return http_build_query($query);
     }
 
     /**
@@ -310,8 +355,8 @@ class RestRequest
         if (false === $this->hasFilter(self::FILTER_QUERY)) {
             return false;
         }
-        $autocomplete = $this->getFilter(self::FILTER_QUERY);
-        return isset($autocomplete[self::FILTER_QUERY_CRITERIA]);
+        $query = $this->getFilter(self::FILTER_QUERY);
+        return isset($query[self::FILTER_QUERY_CRITERIA]);
     }
 
     /**
@@ -400,7 +445,7 @@ class RestRequest
     }
 
     /**
-     * Determines if the request has specified pagination (limit/skip) criteria.
+     * Determines if the request has specified pagination (limit/offset) criteria.
      *
      * @return  bool
      */
@@ -411,13 +456,27 @@ class RestRequest
     }
 
     /**
-     * Gets the pagination (limit/skip) criteria.
+     * Gets the pagination (limit/offset) criteria.
      *
      * @return  array
      */
     public function getPagination()
     {
         return $this->pagination;
+    }
+
+    /**
+     * Sets the pagination (limit/offset) criteria.
+     *
+     * @param   int     $offset
+     * @param   int     $limit
+     * @return  self
+     */
+    public function setPagination($offset, $limit)
+    {
+        $this->pagination['offset'] = (Integer) $offset;
+        $this->pagination['limit'] = (Integer) $limit;
+        return $this;
     }
 
     /**
@@ -636,6 +695,7 @@ class RestRequest
             return $this;
         }
         $sort = explode(',', $params[self::PARAM_SORTING]);
+        $this->sorting = [];
         foreach ($sort as $field) {
             $direction = 1;
             if (0 === strpos($field, '-')) {
