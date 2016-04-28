@@ -121,6 +121,7 @@ abstract class AbstractCollection implements Iterator, Countable
     public function clear()
     {
         $this->models = [];
+        $this->modelKeyMap = [];
         $this->added = [];
         $this->removed = $this->original;
         return $this;
