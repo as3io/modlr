@@ -16,6 +16,7 @@ use As3\Modlr\Persister\PersisterInterface;
 use As3\Modlr\Persister\RecordSetInterface;
 use As3\Modlr\StorageLayerManager;
 use As3\Modlr\Store\Events\ModelLifecycleArguments;
+use As3\Modlr\Store\Events\PreQueryArguments;
 
 /**
  * Manages models and their persistence.
@@ -139,8 +140,9 @@ class Store
     public function findQuery($typeKey, array $criteria, array $fields = [], array $sort = [], $offset = 0, $limit = 0)
     {
         $metadata = $this->getMetadataForType($typeKey);
-
         $persister = $this->getPersisterFor($typeKey);
+        $this->dispatcher->dispatch(Events::preQuery, new PreQueryArguments($metadata, $this, $persister, $criteria));
+
         $recordSet = $persister->query($metadata, $this, $criteria, $fields, $sort, $offset, $limit);
 
         $models = $this->loadModels($typeKey, $recordSet);

@@ -24,4 +24,6 @@ class Events
 
     const preDelete  = 'preDelete';
     const postDelete = 'postDelete';
+
+    const preQuery   = 'preQuery';
 }
