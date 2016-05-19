@@ -74,10 +74,15 @@ abstract class Properties
         }
         $this->clearRemoval($key);
 
-        if ($value === $this->getOriginal($key)) {
+        $original = $this->getOriginal($key);
+        if ($value === $original) {
             $this->clearChange($key);
         } else {
-            $this->current[$key] = $value;
+            if (($value instanceof \DateTime && $original instanceof \DateTime) && ($value->getTimestamp() === $original->getTimestamp())) {
+                $this->clearChange($key);
+            } else {
+                $this->current[$key] = $value;
+            }
         }
         return $this;
     }
