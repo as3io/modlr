@@ -155,7 +155,7 @@ class MetadataFactory implements MetadataFactoryInterface
             $this->loadSearchMetadata($loaded);
 
             $this->mergeMetadata($metadata, $loaded);
-            $this->dispatchMetadataEvent($loaded);
+            $this->dispatchMetadataEvent(Events::onMetadataLoad, $loaded);
             $this->doPutMetadata($loaded);
         }
 
@@ -170,12 +170,13 @@ class MetadataFactory implements MetadataFactoryInterface
     /**
      * Dispatches a Metadata event
      *
+     * @param   string          $eventName
      * @param   EntityMetadata  $metadata
      */
-    private function dispatchMetadataEvent(EntityMetadata $metadata)
+    private function dispatchMetadataEvent($eventName, EntityMetadata $metadata)
     {
         $metadataArgs = new Events\MetadataArguments($metadata);
-        $this->dispatcher->dispatch(Events::onMetadataLoad, $metadataArgs);
+        $this->dispatcher->dispatch($eventName, $metadataArgs);
     }
 
     /**
@@ -344,6 +345,7 @@ class MetadataFactory implements MetadataFactoryInterface
 
         if (null !== $meta = $this->getFromCache($type)) {
             // Found in cache.
+            $this->dispatchMetadataEvent(Events::onMetadataCacheLoad, $meta);
             $this->setToMemory($meta);
             return $meta;
         }
