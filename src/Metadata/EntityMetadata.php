@@ -193,7 +193,10 @@ class EntityMetadata implements Interfaces\AttributeInterface, Interfaces\EmbedI
         $this->defaultValues = array_merge($this->defaultValues, $metadata->defaultValues);
 
         $this->persistence->merge($metadata->persistence);
-        $this->search->merge($metadata->search);
+
+        if ($this->search instanceof Interfaces\StorageLayerInterface && $metadata->search instanceof Interfaces\StorageLayerInterface) {
+            $this->search->merge($metadata->search);
+        }
 
         $this->mergeAttributes($metadata->getAttributes());
         $this->mergeRelationships($metadata->getRelationships());
