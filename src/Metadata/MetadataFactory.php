@@ -339,6 +339,7 @@ class MetadataFactory implements MetadataFactoryInterface
     private function doLoadMetadata($type)
     {
         if (null !== $meta = $this->getFromMemory($type)) {
+            $this->dispatchMetadataEvent(Events::onMetadataCacheLoad, $meta);
             // Found in memory.
             return $meta;
         }
