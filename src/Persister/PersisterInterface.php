@@ -90,6 +90,20 @@ interface PersisterInterface
     public function create(Model $model);
 
     /**
+     * Applies configured schemata to the underlying storage layer
+     *
+     * @param   EntityMetadata   $metadata
+     */
+    public function createSchemata(EntityMetadata $metadata);
+
+    /**
+     * Re-applies configured schemata to the underlying storage layer
+     *
+     * @param   EntityMetadata   $metadata
+     */
+    public function syncSchemata(EntityMetadata $metadata);
+
+    /**
      * Updates an existing database record from a model instance.
      *
      * @param   Model   $model
