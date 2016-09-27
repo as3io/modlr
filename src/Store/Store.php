@@ -150,6 +150,16 @@ class Store
     }
 
     /**
+     * Gets the model memory cache (identity map).
+     *
+     * @return  Cache
+     */
+    public function getModelCache()
+    {
+        return $this->cache;
+    }
+
+    /**
      * Searches for records (via the search layer) for a specific type, attribute, and value.
      * Uses the autocomplete logic to fullfill the request.
      *
