@@ -41,6 +41,50 @@ class Embed extends AbstractModel
     }
 
     /**
+     * Gets the unique hash for this embed.
+     *
+     * @return  string
+     */
+    public function getHash()
+    {
+        $hash = [];
+        foreach ($this->metadata->getAttributes() as $key => $attrMeta) {
+            $value = $this->get($key);
+            if (null === $value) {
+                $hash[$key] = $value;
+                continue;
+            }
+            switch ($attrMeta->dataType) {
+                case 'date':
+                    $value = $value->getTimestamp();
+                    break;
+                case 'object':
+                    $value = (array) $object;
+                    ksort($value);
+                    break;
+                case 'mixed':
+                    $value = serialize($value);
+                    break;
+                case 'array':
+                    sort($value);
+                    break;
+            }
+            $hash[$key] = $value;
+        }
+        foreach ($this->metadata->getEmbeds() as $key => $embbedPropMeta) {
+            if (true === $embbedPropMeta->isOne()) {
+                $embed = $this->get($key);
+                $hash[$key] = (null === $embed) ? null : $embed->getHash();
+            } else {
+                $collection = $this->get($key);
+                $hash[$key] = $collection->getHash();
+            }
+        }
+        ksort($hash);
+        return md5(serialize($hash));
+    }
+
+    /**
      * Gets the metadata for this model.
      *
      * @api
