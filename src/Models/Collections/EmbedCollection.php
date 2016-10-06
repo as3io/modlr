@@ -45,6 +45,21 @@ class EmbedCollection extends AbstractCollection
     }
 
     /**
+     * Gets the unique hash for this collection.
+     *
+     * @return  string
+     */
+    public function getHash()
+    {
+        $hash = [];
+        foreach ($this as $embed) {
+            $hash[] = $embed->getHash();
+        }
+        sort($hash);
+        return md5(serialize($hash));
+    }
+
+    /**
      * Gets the metadata for the model collection.
      *
      * @return  EmbedMetadata
