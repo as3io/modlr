@@ -42,6 +42,11 @@ class HasOne extends Attributes
                 return true;
             }
         }
+        foreach ($this->getOriginalAll() as $original) {
+            if (true === $original->isDirty()) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -51,6 +56,15 @@ class HasOne extends Attributes
     public function calculateChangeSet()
     {
         $set = [];
+        foreach ($this->original as $key => $current) {
+            if (false === $current->isDirty()) {
+                continue;
+            }
+            $original = isset($this->original[$key]) ? $this->original[$key] : null;
+            $set[$key]['old'] = $original;
+            $set[$key]['new'] = $current;
+        }
+
         foreach ($this->current as $key => $current) {
             if (false === $current->isDirty()) {
                 continue;
