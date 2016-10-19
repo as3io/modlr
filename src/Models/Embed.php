@@ -59,7 +59,7 @@ class Embed extends AbstractModel
                     $value = $value->getTimestamp();
                     break;
                 case 'object':
-                    $value = (array) $object;
+                    $value = (array) $value;
                     ksort($value);
                     break;
                 case 'mixed':
