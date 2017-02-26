@@ -75,6 +75,16 @@ abstract class Properties
         $this->clearRemoval($key);
 
         $original = $this->getOriginal($key);
+        
+        if ($value instanceof \stdClass && $original instanceof \stdClass) {
+            if ($value == $original) {
+                $this->clearChange($key);
+            } else {
+                $this->current[$key] = $value;
+            }
+            return $this;
+        }
+        
         if ($value === $original) {
             $this->clearChange($key);
         } else {
