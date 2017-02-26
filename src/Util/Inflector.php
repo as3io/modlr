@@ -21,6 +21,7 @@ class Inflector
         }
         return strtolower(preg_replace('~(?<=\\w)([A-Z])~', '_$1', $word));
     }
+
     /**
      * Convert word into dasherized format (e.g. some-name-here).
      *
@@ -31,6 +32,7 @@ class Inflector
     {
         return str_replace('_', '-', $this->underscore($word));
     }
+
     /**
      * Convert word into camelized format (e.g. someNameHere).
      *
@@ -41,6 +43,7 @@ class Inflector
     {
         return lcfirst($this->studlify($word));
     }
+
     /**
      * Convert word into studly caps format (e.g. SomeNameHere).
      *
@@ -49,6 +52,17 @@ class Inflector
      */
     public function studlify($word)
     {
-        return str_replace(" ", "", ucwords(strtr($this->underscore($word), "_", " ")));
+        return str_replace(" ", "", $this->wordify($word));
+    }
+
+    /**
+     * Convert word into wordified format (e.g. Some Name Here).
+     *
+     * @param   string  $word
+     * @return  string
+     */
+    public function wordify($word)
+    {
+        return ucwords(strtr($this->underscore($word), "_", " "));
     }
 }

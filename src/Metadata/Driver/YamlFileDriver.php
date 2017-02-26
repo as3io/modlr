@@ -280,7 +280,13 @@ final class YamlFileDriver extends AbstractFileDriver
                 $mapping['entity'] = null;
             }
 
-            $embedMeta = $this->loadMetadataForEmbed($mapping['entity']);
+            if ($metadata instanceof Metadata\EmbedMetadata && $mapping['entity'] === $metadata->name) {
+                // This embed meta is referencing itself as an embed property. As such, do not recreate.
+                // This prevents infinite recursion.
+                $embedMeta = $metadata;
+            } else {
+                $embedMeta = $this->loadMetadataForEmbed($mapping['entity']);
+            }
             if (null === $embedMeta) {
                 continue;
             }

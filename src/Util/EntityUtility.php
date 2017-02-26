@@ -235,7 +235,10 @@ class EntityUtility
     {
         foreach ($metadata->getEmbeds() as $key => $embeddedProp) {
             $this->validateMetadataAttributes($embeddedProp->embedMeta, $mf);
-            $this->validateMetadataEmbeds($embeddedProp->embedMeta, $mf);
+            if ($metadata !== $embeddedProp->embedMeta) {
+                // Only re-validate if the embedded prop reference isn't the same as the parent.
+                $this->validateMetadataEmbeds($embeddedProp->embedMeta, $mf);
+            }
         }
         return true;
     }
