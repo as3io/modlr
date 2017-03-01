@@ -128,7 +128,6 @@ class RestRequest
     public function __construct(RestConfiguration $config, $method, $uri, $payload = null)
     {
         $this->config = $config;
-        $this->uri = $uri;
         $this->requestMethod = strtoupper($method);
 
         $this->sorting      = $config->getDefaultSorting();
