@@ -159,6 +159,16 @@ class RestRequest
         );
     }
 
+    protected function adjustRootEndpoint($path)
+    {
+        $root = $this->config->getRootEndpoint();
+        if (0 !== strpos($path, $root)) {
+            $end = strrpos($path, $root) + strlen($root);
+            $endpoint = substr($path, 0, $end);
+            $this->config->setRootEndpoint($endpoint);
+        }
+    }
+
     /**
      * Gets the scheme, such as http or https.
      *
@@ -548,6 +558,8 @@ class RestRequest
         if (false === strstr($this->parsedUri['path'], $this->config->getRootEndpoint())) {
             throw RestException::invalidEndpoint($this->parsedUri['path']);
         }
+
+        $this->adjustRootEndpoint($this->parsedUri['path']);
 
         $this->parsedUri['path'] = str_replace($this->config->getRootEndpoint(), '', $this->parsedUri['path']);
         $this->parsePath($this->parsedUri['path']);
