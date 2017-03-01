@@ -118,6 +118,11 @@ class RestRequest
     private $config;
 
     /**
+     * @var string
+     */
+    private $uri;
+
+    /**
      * Constructor.
      *
      * @param   RestConfiguration   $config     The REST configuration.
@@ -128,7 +133,12 @@ class RestRequest
     public function __construct(RestConfiguration $config, $method, $uri, $payload = null)
     {
         $this->config = $config;
+        $this->uri = $uri;
         $this->requestMethod = strtoupper($method);
+
+        if ($this->config->getRootEndpoint() !== $this->getEndpointPrefix()) {
+            $this->config->setRootEndpoint($this->getEndpointPrefix());
+        }
 
         $this->sorting      = $config->getDefaultSorting();
         $this->pagination   = $config->getDefaultPagination();
@@ -153,9 +163,22 @@ class RestRequest
         return sprintf('%s://%s/%s/%s%s',
             $this->getScheme(),
             trim($this->getHost(), '/'),
-            trim($this->config->getRootEndpoint(), '/'),
+            trim($this->getEndpointPrefix(), '/'),
             $this->getEntityType(),
             empty($query) ? '' : sprintf('?%s', $query)
+        );
+    }
+
+    protected function getEndpointPrefix()
+    {
+        $path = parse_url($this->uri)['path'];
+        return substr(
+            $path,
+            0,
+            strrpos(
+                $path,
+                $this->config->getRootEndpoint()
+            ) + strlen($this->config->getRootEndpoint())
         );
     }
 
