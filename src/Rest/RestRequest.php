@@ -118,11 +118,6 @@ class RestRequest
     private $config;
 
     /**
-     * @var string
-     */
-    private $uri;
-
-    /**
      * Constructor.
      *
      * @param   RestConfiguration   $config     The REST configuration.
@@ -135,10 +130,6 @@ class RestRequest
         $this->config = $config;
         $this->uri = $uri;
         $this->requestMethod = strtoupper($method);
-
-        if ($this->config->getRootEndpoint() !== $this->getEndpointPrefix()) {
-            $this->config->setRootEndpoint($this->getEndpointPrefix());
-        }
 
         $this->sorting      = $config->getDefaultSorting();
         $this->pagination   = $config->getDefaultPagination();
@@ -163,23 +154,20 @@ class RestRequest
         return sprintf('%s://%s/%s/%s%s',
             $this->getScheme(),
             trim($this->getHost(), '/'),
-            trim($this->getEndpointPrefix(), '/'),
+            trim($this->config->getRootEndpoint(), '/'),
             $this->getEntityType(),
             empty($query) ? '' : sprintf('?%s', $query)
         );
     }
 
-    protected function getEndpointPrefix()
+    protected function adjustRootEndpoint($path)
     {
-        $path = parse_url($this->uri)['path'];
-        return substr(
-            $path,
-            0,
-            strrpos(
-                $path,
-                $this->config->getRootEndpoint()
-            ) + strlen($this->config->getRootEndpoint())
-        );
+        $root = $this->config->getRootEndpoint();
+        if (0 !== strpos($path, $root)) {
+            $end = strrpos($path, $root) + strlen($root);
+            $endpoint = substr($path, 0, $end);
+            $this->config->setRootEndpoint($endpoint);
+        }
     }
 
     /**
@@ -571,6 +559,8 @@ class RestRequest
         if (false === strstr($this->parsedUri['path'], $this->config->getRootEndpoint())) {
             throw RestException::invalidEndpoint($this->parsedUri['path']);
         }
+
+        $this->adjustRootEndpoint($this->parsedUri['path']);
 
         $this->parsedUri['path'] = str_replace($this->config->getRootEndpoint(), '', $this->parsedUri['path']);
         $this->parsePath($this->parsedUri['path']);
