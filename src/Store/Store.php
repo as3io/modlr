@@ -503,7 +503,7 @@ class Store
             // Deletes must execute before updates to prevent an update then a delete.
             $this->doCommitDelete($model);
 
-        } elseif (true === $model->getState()->is('dirty')) {
+        } elseif (true === $model->isDirty()) {
             $this->doCommitUpdate($model);
 
         } else {
@@ -628,7 +628,7 @@ class Store
     protected function shouldCommit(Model $model)
     {
         $state = $model->getState();
-        return true === $state->is('dirty') || $state->is('new') || $state->is('deleting');
+        return $model->isDirty() || $state->is('new') || $state->is('deleting');
     }
 
     /**
