@@ -75,7 +75,7 @@ abstract class Properties
         $this->clearRemoval($key);
 
         $original = $this->getOriginal($key);
-        
+
         if ($value instanceof \stdClass && $original instanceof \stdClass) {
             if ($value == $original) {
                 $this->clearChange($key);
@@ -84,7 +84,7 @@ abstract class Properties
             }
             return $this;
         }
-        
+
         if ($value === $original) {
             $this->clearChange($key);
         } else {
@@ -135,8 +135,8 @@ abstract class Properties
      */
     public function replace(array $original)
     {
-        $this->rollback();
         $this->original = $original;
+        $this->rollback();
         return $this;
     }
 
