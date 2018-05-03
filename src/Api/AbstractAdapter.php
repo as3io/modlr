@@ -211,6 +211,9 @@ abstract class AbstractAdapter implements AdapterInterface
      */
     public function handleException(\Exception $e)
     {
+        if (extension_loaded('newrelic')) {
+            newrelic_notice_error($e->getMessage(), $e);
+        }
         $refl = new \ReflectionClass($e);
         if ($e instanceof HttpExceptionInterface) {
             $title  = sprintf('%s::%s', $refl->getShortName(), $e->getErrorType());
